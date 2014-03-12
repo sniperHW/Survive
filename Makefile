@@ -2,8 +2,8 @@ CFLAGS = -O2 -g -Wall
 LDFLAGS = -lpthread -lrt -lm -ltcmalloc
 SHARED = -fPIC --shared
 CC = gcc
-INCLUDE = -I../kendynet -I../kendynet/core -I.. -I. -Igateserver -Igameserver\
-		  -I../kendynet/deps/luajit-2.0/src -I../kendynet/deps/hiredis
+INCLUDE = -I../KendyNet -I../KendyNet/core -I.. -I. -Igateserver -Igameserver\
+		  -I../KendyNet/deps/luajit-2.0/src -I../KendyNet/deps/hiredis
 DEFINE = -D_DEBUG -D_LINUX -DMQ_HEART_BEAT
 
 gateservice.a:\

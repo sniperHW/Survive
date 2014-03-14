@@ -22,6 +22,9 @@ gameservice.a:\
 		gameserver/avatar.h\
 		gameserver/superservice/superservice.c\
 		gameserver/superservice/superservice.h\
+		gameserver/superservice/handlefunction.c\
+		gameserver/superservice/gamedb.c\
+		gameserver/superservice/gamedb.h\
 		gameserver/battleservice/battleservice.h\
 		gameserver/battleservice/battleservice.c\
 		gameserver/battleservice/map.c\

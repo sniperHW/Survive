@@ -35,7 +35,7 @@ enum{
 	
 	//游戏服到客户端	
 	CMD_GAME2C = 300,
-
+	CMD_GAME2C_CREATE,    //通知客户端创建角色
 	CMD_GAME2C_ENTERVIEW, //对象进入视野
 	CMD_GAME2C_LEAVEVIEW, //对象离开视野
 	
@@ -51,7 +51,7 @@ enum{
 
 	//游戏服到网关
 	CMD_GAME2GATE = 500,
-	
+	CMD_GAME2GATE_INVID_CON, //非法连接，直接断开
 	CMD_GAME2GATE_BUSY,
 	
 	CMD_GAME2GATE_END,

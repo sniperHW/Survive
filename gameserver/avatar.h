@@ -25,13 +25,14 @@ typedef struct avatarid{
 enum{
 	normal  = 0,   
 	playing = 1,   //战场中
+	loading,       //导入角色数据中
 	queueing,      //战场排队中   
 	logout,        //请求登出
 };
 
 typedef struct player{
 	struct refbase ref;
-	agentsession _agentsession;
+	uint32_t     _agentsession;
 	string_t     _actname;
 	msgdisp_t    _msgdisp;
 	uint16_t     _index;

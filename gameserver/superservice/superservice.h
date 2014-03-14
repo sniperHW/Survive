@@ -30,8 +30,8 @@ int32_t send2gate(wpacket_t);
 void reg_super_cmd_handler(uint16_t cmd,cmd_handler_t handler);
 void build_super_cmd_handler();
 
-player_t create_player(string_t actname,uint32_t gateident);
+player_t create_player(const char* actname,uint32_t gateident);
 
-player_t find_player_by_actname(string_t actname);
+player_t find_player_by_actname(const char* actname);
 
 #endif

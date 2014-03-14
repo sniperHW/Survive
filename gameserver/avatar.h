@@ -7,6 +7,7 @@
 #include "core/kn_string.h"
 #include "core/rpacket.h"
 #include "core/wpacket.h"
+#include "core/lua_util.h"
 
 #define MAX_PLAYER    8191*8  //superservice最多容纳8191*8个玩家对象
 
@@ -37,6 +38,7 @@ typedef struct player{
 	msgdisp_t    _msgdisp;
 	uint16_t     _index;
 	uint8_t      _status;
+	luaObject_t  _luaply;
 }player,*player_t;
 
 static inline avatarid rpk_read_avatarid(rpacket_t rpk)

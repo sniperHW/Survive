@@ -7,6 +7,7 @@
 #include "common/tls_define.h"
 #include "core/tls.h"
 #include "../battleservice/battleservice.h"
+#include "core/lua_util.h"
 
 //向gate发送短通告消息
 void shortmsg2gate(uint16_t cmd,uint32_t gateident){
@@ -24,8 +25,19 @@ void load_ply_info_cb(struct db_result *result)
 		if(result->result_set){
 			redisReply *r = (redisReply*)result->result_set;	
 			if(r->type != REDIS_REPLY_NIL){
-				
-				
+				lua_State *L = tls_get(LUASTATE);
+				if(0 != CALL_LUA_FUNC2(L,"CreateLuaPlayer",1,
+						               PUSH_LUSRDATA(L,ply),
+									   PUSH_TABLE3(L,
+									   PUSH_STRING(L,r->element[0]->str),
+									   PUSH_STRING(L,r->element[1]->str),
+									   PUSH_STRING(L,r->element[2]->str))))
+				{
+					const char * error = lua_tostring(L, -1);
+					lua_pop(L,1);
+					printf("%s\n",error);
+				}else
+					ply->_luaply = create_luaObj(L,-1);							
 			}else{
 				//没有角色，通知客户端创建角色
 				shortmsg2gate(CMD_GAME2C_CREATE,ply->_agentsession);					

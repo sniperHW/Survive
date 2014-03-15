@@ -99,6 +99,14 @@ struct logincall_context{
     string_t         passwd;    
 };
 
+void logincall_context_free(asyncall_context_t context)
+{
+	struct logincall_context *lcontext = (struct logincall_context*)context;
+	release_string(lcontext->acctname);
+	release_string(lcontext->passwd);
+	free(lcontext);	
+}
+
 void login_result(struct asyncall_context *_context,void *result)
 {
 	struct logincall_context *context = (struct logincall_context*)_context;
@@ -118,9 +126,7 @@ void login_result(struct asyncall_context *_context,void *result)
 			send2player(ply,wpk);
 		}
 	}
-	release_string(context->acctname);
-	release_string(context->passwd);
-	free(context);	
+	_context->fn_free(_context);	
 }
 		
 
@@ -135,7 +141,8 @@ static void agent_cmd_login(rpacket_t rpk)
 		lcontext->session = session;
 		lcontext->acctname = new_string(acctname);
 		lcontext->passwd = new_string(passwd);
-		if(0 != verify_login((asyncall_context_t)lcontext,login_result,lcontext->acctname,lcontext->passwd))
+		(struct asyncall_context*)lcontext->fn_free = logincall_context_free;
+		if(0 != verify_login((asyncall_context_t)lcontext,lcontext->acctname,lcontext->passwd))
 		{
 			//通知用户登录系统故障，断开连接
 			asynsock_close(sock);
@@ -165,7 +172,6 @@ static inline void agent_game_busy(rpacket_t rpk)
 		asynsock_close(ply->con);
 	}	
 }
-
 
 int32_t agent_processpacket(msgdisp_t disp,rpacket_t rpk)
 {

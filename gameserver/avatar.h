@@ -8,20 +8,9 @@
 #include "core/rpacket.h"
 #include "core/wpacket.h"
 #include "core/lua_util.h"
+#include "core/rbtree.h"
 
 #define MAX_PLAYER    8191*8  //superservice最多容纳8191*8个玩家对象
-
-typedef struct avatarid{	
-	union{
-		struct{
-			uint32_t battleservice_id:5; //最多允许32个battleservice       
-			uint32_t map_id:9;           //一个battleservice最大允许创建512张地图
-			uint32_t ojb_index:10;       //每张地图最多允许1023个对象
-			uint32_t check:8;            //一个简单的校验值
-		};
-		uint32_t     data;
-	};
-}avatarid;
 
 enum{
 	normal  = 0,   
@@ -31,36 +20,20 @@ enum{
 	logout,        //请求登出
 };
 
+typedef uint32_t avatarid;
+
 typedef struct player{
 	struct refbase ref;
-	uint32_t     _agentsession;
-	string_t     _actname;
-	msgdisp_t    _msgdisp;
-	uint16_t     _index;
-	uint8_t      _status;
-	luaObject_t  _luaply;
+	struct rbnode _rbnode;
+	uint32_t      _agentsession;
+	string_t      _actname;
+	uint8_t       _status;
+	luaObject_t   _luaply;
+	//以下字段表示玩家在战场地图中的信息
+	//int8_t       _battleserviceid;
+	//int16_t      _mapid;
+	//avatarid     _avatid;
 }player,*player_t;
-
-static inline avatarid rpk_read_avatarid(rpacket_t rpk)
-{
-	avatarid _avatarid;
-	_avatarid.data = rpk_read_uint32(rpk);
-	return _avatarid;
-}
-
-static inline avatarid rpk_reverse_read_avatarid(rpacket_t rpk)
-{
-	avatarid _avatarid;
-	_avatarid.data = reverse_read_uint32(rpk);
-	return _avatarid;	
-}
-
-static inline void wpk_write_avatarid(wpacket_t wpk,avatarid _avatarid)
-{
-	wpk_write_uint32(wpk,_avatarid.data);
-}
-
-player_t idx2player(uint16_t index);
 
 //增加玩家对象的引用计数
 void     player_incref(player_t _player);

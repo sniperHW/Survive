@@ -26,13 +26,16 @@ enum
 
 //gateserver中的用户表示结构
 typedef struct agentplayer{
-	ident        gameident;
 	agentsession session;
 	uint16_t     identity;
 	uint8_t      state;
 	sock_ident   con;        //到客户端的通信连接
 	string_t     actname;    //账号名
-	uint32_t     avatarid;   //战场中的角色id
+	ident        gameident;  //player对象的ident
+	//以下字段表示玩家在战场地图中的信息
+	int8_t       battleserviceid;
+	int16_t      mapid;
+	uint32_t     avatid;	
 }agentplayer,*agentplayer_t;
 
 #endif

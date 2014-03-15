@@ -45,9 +45,8 @@ void load_ply_info_cb(struct db_result *result)
 		}else{
 			//数据库访问出错
 			shortmsg2gate(CMD_GAME2GATE_BUSY,ply->_agentsession);	
-			player_decref(ply);	
+			remove_player(ply);	
 		}
-		player_decref(ply);
 	}
 }
 
@@ -59,7 +58,6 @@ static int32_t load_player_info(player_t ply)
 		int32_t ret = gamedb_request(ply,new_dbrequest(str,load_ply_info_cb,ply,tls_get(MSGDISCP_TLS)));
 		if(ret == 0){ 
 			ply->_status = loading;
-			player_incref(ply);//增加引用计数，防止ply被意外释放
 		}
 		return ret;
 	}
@@ -88,7 +86,7 @@ void player_login(rpacket_t rpk,player_t ply)
 		}
 		if(0 != load_player_info(ply)){
 			shortmsg2gate(CMD_GAME2GATE_BUSY,gateident);
-			player_decref(ply);
+			remove_player(ply);
 		}
 	}
 }
@@ -115,8 +113,8 @@ void enter_battle(rpacket_t rpk,player_t ply)
 			if(battleservid == 0){
 				//随机挑选一个battleservice
 			}else{
-				battleservice_t battle = get_battle_by_index((uint8_t)(battleservid >> 16));
-				uint32_t mapindex = battleservid/65536;
+				//battleservice_t battle = get_battle_by_index((uint8_t)(battleservid >> 16));
+				//uint32_t mapindex = battleservid/65536;
 				//让玩家进入battle的mapindex
 			}		
 		}else{

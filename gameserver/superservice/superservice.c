@@ -101,9 +101,3 @@ void start_superservice()
 	g_superservice = calloc(1,sizeof(*g_superservice));
 }
 
-void build_super_cmd_handler()
-{
-	reg_super_cmd_handler(CMD_ENTER_BATTLE,new_lua_handler("request_enter_battle"));
-}
-
-

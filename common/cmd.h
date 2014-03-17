@@ -19,7 +19,8 @@ enum{
 
 	//客户端到游戏服务器
 	CMD_C2GAME = 100,
-	CMD_ENTER_BATTLE,  //请求进入战场
+	CMD_C2GAME_LOGOUT,
+	CMD_C2GAME_ENTER_BATTLE,  //请求进入战场
 	
 	CMD_C2BATTLE,
 	CMD_C2GAME_MOVE,   //客户端移动请求
@@ -47,6 +48,7 @@ enum{
 	
 	CMD_GATE2GAME_CDISCONNECT, //客户端连接断开
 	CMD_GATE2GAME_LOGIN,
+	
 	
 	CMD_GATE2GAME_END,
 

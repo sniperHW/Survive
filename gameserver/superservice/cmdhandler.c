@@ -97,3 +97,16 @@ void player_logout(rpacket_t rpk,player_t ply)
 {
 
 }
+
+void client_disconnect(rpacket_t rpk,player_t ply)
+{
+	
+}
+
+void build_super_cmd_handler()
+{
+	reg_super_cmd_handler(CMD_C2GAME_ENTER_BATTLE,new_lua_handler("request_enter_battle"));
+	reg_super_cmd_handler(CMD_GATE2GAME_LOGIN,new_c_handler(player_login));
+	reg_super_cmd_handler(CMD_C2GAME_LOGOUT,new_c_handler(player_logout));
+	reg_super_cmd_handler(CMD_GATE2GAME_CDISCONNECT,new_c_handler(client_disconnect));
+}

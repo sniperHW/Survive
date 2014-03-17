@@ -17,9 +17,9 @@ int32_t gamedb_request(player_t ply,db_request_t request)
 		const char *actname = to_cstr(ply->_actname);
 		uint64_t hashcode = burtle_hash((uint8_t*)actname,strlen(actname),0);
 		uint64_t dbindex = hashcode%(g_dbcount-1);
-		return g_asyndbs[dbindex]->request(g_asyndbs[dbindex],request);
+		return g_asyndbs[dbindex]->asyn_request(g_asyndbs[dbindex],request);
 	}else{
-		return 	g_asyndbs[g_dbcount-1]->request(g_asyndbs[g_dbcount-1],request);
+		return 	g_asyndbs[g_dbcount-1]->asyn_request(g_asyndbs[g_dbcount-1],request);
 		
 	}	
 }

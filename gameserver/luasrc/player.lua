@@ -1,83 +1,12 @@
 --在superservice中的player结构
---基本属性
-base_attr = {
-	attrs = nil,
-	dirty, --是否有脏数据  
-}
 
-function base_attr:new()
-    local o = {}
-    self.__index = self
-    setmetatable(o, self)
-    return o
-end
-
-function base_attr:GetAttr(attr)
-
-end
-
-function base_attr:SetAttr(attr,value)
-	self.dirty = true
-end
-
-function base_attr:Init(data)
-	self.dirty = false
-	return self
-end
-
-function base_attr:Save2DB()
-	if self.dirty then
-		self.dirty = false
-	end	
-end
-
---角色技能
-skill = {
-	dirty, --是否有脏数据  
-}
-
-function skill:new()
-    local o = {}
-    self.__index = self
-    setmetatable(o, self)
-    return o
-end
-
-function skill:Save2DB()
-	if self.dirty then
-		self.dirty = false
-	end	
-end
-
-function skill:Init(data)
-	self.dirty = false
-	return self
-end
-
---背包
-bag = {
-	dirty, --是否有脏数据  
-}
-
-function bag:new()
-    local o = {}
-    self.__index = self
-    setmetatable(o, self)
-    return o
-end
-
-function bag:Init(data)
-	self.dirty = false
-end
-
-function bag:Save2DB()
-	if self.dirty then
-		self.dirty = false
-	end	
-end
+dofile("bag.lua")
+dofile("attr.lua")
+dofile("skill.lua")
 
 player = {
-	cply = nil, --C中的player对象
+	cply = nil,        --C中的player对象
+	select_item = nil, --玩家选择带入战场的物品
 }
 
 function player:new()

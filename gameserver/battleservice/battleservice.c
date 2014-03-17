@@ -56,3 +56,19 @@ void destroy_battleservice(battleservice_t bservice)
 	bservice->stop = 1;
 	thread_join(bservice->thd);
 }
+
+void asyncall_enter_battle(asyncall_context_t context,void **param)
+{
+	/*char req[256];
+	snprintf(req,256,"get %s",to_cstr((string_t)param[0]));	
+	//发出到redis的验证
+	struct login_context *lcontext = calloc(1,sizeof(*lcontext));
+	lcontext->asyncontext = context;
+	lcontext->passwd = (string_t)param[1];
+	if(0 != db2redis->request(db2redis,
+	                          new_dbrequest(db_get,req,db_login_callback,lcontext,g_verifyservice->msgdisp)))
+	{
+		free(lcontext);
+		ASYNRETURN(context,NULL);
+	}*/
+}

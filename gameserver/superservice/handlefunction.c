@@ -8,7 +8,7 @@
 #include "core/tls.h"
 #include "../battleservice/battleservice.h"
 #include "core/lua_util.h"
-
+void remove_player(player_t ply);
 //向gate发送短通告消息
 void shortmsg2gate(uint16_t cmd,uint32_t gateident){
 	wpacket_t wpk = wpk_create(64,0);
@@ -104,21 +104,14 @@ void player_logout(rpacket_t rpk,player_t ply)
 */
 void enter_battle(rpacket_t rpk,player_t ply)
 {
-	uint16_t mapid = rpk_read_uint16(rpk);
-	struct mapdefine *mapdef = get_mapdefine_byid(mapid);
-	if(mapdef){
-		if(mapdef->maptype == map_open){
-			//开放地图
-			uint32_t battleservid = get_openinstance_byid(mapid);
-			if(battleservid == 0){
-				//随机挑选一个battleservice
-			}else{
-				//battleservice_t battle = get_battle_by_index((uint8_t)(battleservid >> 16));
-				//uint32_t mapindex = battleservid/65536;
-				//让玩家进入battle的mapindex
-			}		
-		}else{
-			//进入配对系统
-		}
+	lua_State *L = tls_get(LUASTATE);
+	luaObject_t o = g_superservice->battleMgr;
+	if( 0 != CALL_OBJ_FUNC2(o,"on_enter_battle",1,
+			        PUSH_LUSRDATA(L,rpk),PUSH_LUAOBJECT(L,ply->_luaply)))
+	{
+		const char * error = lua_tostring(L, -1);
+		lua_pop(L,1);
+		SYS_LOG(LOG_ERROR,"lua script error on_enter_battle:%s",error);
+		return;
 	}
 }

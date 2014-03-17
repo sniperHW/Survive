@@ -141,9 +141,10 @@ static void agent_cmd_login(rpacket_t rpk)
 		lcontext->session = session;
 		lcontext->acctname = new_string(acctname);
 		lcontext->passwd = new_string(passwd);
-		(struct asyncall_context*)lcontext->fn_free = logincall_context_free;
+		((struct asyncall_context*)lcontext)->fn_free = logincall_context_free;
 		if(0 != verify_login((asyncall_context_t)lcontext,lcontext->acctname,lcontext->passwd))
 		{
+			logincall_context_free((struct asyncall_context*)lcontext);
 			//通知用户登录系统故障，断开连接
 			asynsock_close(sock);
 		}			

@@ -8,6 +8,7 @@
 #include "../avatar.h"
 #include "core/kn_string.h"
 #include "common/cmd.h"
+#include "core/lua_util.h"
 
 typedef struct superservice
 {
@@ -15,7 +16,8 @@ typedef struct superservice
 	thread_t           thd;
 	msgdisp_t          msgdisp;
 	sock_ident         togate;   //到gate的套接口
-	asyndb_t           asydb; 
+	asyndb_t           asydb;
+	luaObject_t        battleMgr; 
 }*superservice_t;
 
 

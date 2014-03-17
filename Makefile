@@ -23,6 +23,7 @@ gameservice.a:\
 		gameserver/superservice/superservice.c\
 		gameserver/superservice/superservice.h\
 		gameserver/superservice/handlefunction.c\
+		gameserver/superservice/clua.c\
 		gameserver/superservice/gamedb.c\
 		gameserver/superservice/gamedb.h\
 		gameserver/battleservice/battleservice.h\

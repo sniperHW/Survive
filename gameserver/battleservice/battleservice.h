@@ -10,6 +10,7 @@
 #include "core/lua_util.h"
 #include "core/timer.h"
 #include "common/cmd.h"
+#include "core/asynnet/asyncall.h"
 
 #define	MAX_BATTLE_SERVICE 64//每线程运行一个battle service
 
@@ -32,6 +33,7 @@ void build_battle_cmd_handler();
 void register_battle_cfunction(lua_State *L);
 
 battleservice_t get_battle_by_index(uint8_t);
+void asyncall_enter_battle(asyncall_context_t context,void **param);
 
 
 

@@ -2,6 +2,8 @@
 #include "battleservice.h"
 #include "core/tls.h"
 #include "common/tls_define.h"
+#include "../asyncall_st_define.h"
+#include "core/log.h"
 
 
 static cmd_handler_t battle_cmd_handlers[MAX_CMD] = {NULL};
@@ -30,7 +32,7 @@ battleservice_t new_battleservice()
 	if (luaL_dofile(L,"battlemgr.lua")) {
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
-		printf("%s\n",error);
+		SYS_LOG(LOG_ERROR,"do file error battlemgr.lua:%s\n",error);
 		exit(0);
 	}
 	register_battle_cfunction(L);
@@ -39,7 +41,7 @@ battleservice_t new_battleservice()
 	{
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
-		printf("%s\n",error);
+		SYS_LOG(LOG_ERROR,"script error CreateBattleMgr:%s\n",error);
 		exit(0);
 	}
 	bservice->battlemgr = create_luaObj(L,-1);
@@ -59,16 +61,34 @@ void destroy_battleservice(battleservice_t bservice)
 
 void asyncall_enter_battle(asyncall_context_t context,void **param)
 {
-	/*char req[256];
-	snprintf(req,256,"get %s",to_cstr((string_t)param[0]));	
-	//发出到redis的验证
-	struct login_context *lcontext = calloc(1,sizeof(*lcontext));
-	lcontext->asyncontext = context;
-	lcontext->passwd = (string_t)param[1];
-	if(0 != db2redis->request(db2redis,
-	                          new_dbrequest(db_get,req,db_login_callback,lcontext,g_verifyservice->msgdisp)))
+	uint8_t  battleid = (uint8_t)param[0];
+	uint16_t type = (uint16_t)param[1];
+	struct st_ply *plys = (struct st_ply*)param[3];
+	int size = (int)param[4];
+	
+	luaObject_t o = ((battleservice_t)tls_get(BATTLESERVICE_TLS))->battlemgr;
+	lua_State *L = o->L;	
+	lua_rawgeti(L,LUA_REGISTRYINDEX,o->rindex);
+	lua_pushstring(L,"enter_battle");
+	lua_gettable(L,-2);
+	lua_rawgeti(L,LUA_REGISTRYINDEX,o->rindex);
+	lua_pushnumber(L,type);
+	lua_pushnumber(L,battleid);
+	lua_newtable(L);
+	int i = 0;
+	for(; i < size; ++i){
+		PUSH_TABLE4(L,
+					lua_pushlightuserdata(L,plys[i].player),
+					lua_pushstring(L,to_cstr(plys[i].attr)),
+					lua_pushstring(L,to_cstr(plys[i].skill)),
+					lua_pushstring(L,to_cstr(plys[i].item)));
+		lua_rawseti(L,-2,i+1);
+	}	
+	if(0 != lua_pcall(L,4,0,0))
 	{
-		free(lcontext);
-		ASYNRETURN(context,NULL);
-	}*/
+		const char * error = lua_tostring(L, -1);
+		lua_pop(L,1);
+		SYS_LOG(LOG_ERROR,"script error enter_battle:%s\n",error);
+	}
+	lua_pop(L,1);	
 }

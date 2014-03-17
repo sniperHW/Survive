@@ -26,7 +26,7 @@ function request_enter_battle(rpk,ply)
 			serviceid = math.rand(0,self.max_service)
 			battleid = 0
 		end
-		enter_battle_map(serviceid,battleid,{{ply=ply.cply,attr=ply.attr:to_str(),skill=ply.skill:to_str(),item=ply.select_item}})						 		
+		enter_battle_map(serviceid,battleid,type,{{ply=ply.cply,attr=ply.attr:to_str(),skill=ply.skill:to_str(),item=ply.select_item}})						 		
 	else
 		--进入配对
 	end

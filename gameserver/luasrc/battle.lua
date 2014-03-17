@@ -1,4 +1,5 @@
 battle = {
+	type,
 	avatars={}, --地图上所有的avatar
 	aoi = nil,  --视野处理
 	path = nil, --寻路处理
@@ -11,7 +12,8 @@ function battle:new()
     return o
 end
 
-function battle:init()
+function battle:init(type)
+	self.type = type
 	self.aoi = NewAoiMap()
 	self.path = CreateAstarMap()
 	--创建地图上的资源,NPC等
@@ -19,9 +21,13 @@ function battle:init()
 	return self
 end
 
-function battle:ondestroy()
+function battle:destroy()
 	DestroyAstarMap(self.path)
 	DestroyAoiMap(self.aoi)
+end
+
+function battle:enter(plys)
+
 end
 
 --地图定时器函数

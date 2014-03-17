@@ -8,14 +8,7 @@
 #include "../battleservice/battleservice.h"
 #include "core/lua_util.h"
 #include "core/asynnet/asyncall.h"
-
-
-struct st_ply{
-	player_t player;
-	string_t attr;
-	string_t skill;
-	string_t item;
-};
+#include "../asyncall_st_define.h"
 
 struct st_enter_context
 {
@@ -40,14 +33,15 @@ void st_enter_context_free(asyncall_context_t c)
 static int enter_battle_map(lua_State *L){
 	uint8_t  serviceid = (uint8_t)lua_tonumber(L,-1);
 	uint32_t battleid = (uint32_t)lua_tonumber(L,-2);
-	int len = lua_objlen(L,-3);
+	uint16_t battletype = (uint16_t)lua_tonumber(L,-3);
+	int len = lua_objlen(L,-4);
 	struct st_enter_context *context = calloc(1,sizeof(*context)+sizeof(struct st_ply)*len);
 	context->battleid = battleid;
 	context->len = (uint16_t)len;
 	int i = 1;
 	for(; i <= len; ++i)
 	{
-		lua_rawgeti(L,-3-i+1,i);
+		lua_rawgeti(L,-4-i+1,i);
 		luaObject_t o = create_luaObj(L,-1);
 		context->plys[i-1].player = GET_OBJ_FIELD(o,"ply",player_t,lua_touserdata);
 		context->plys[i-1].attr = new_string(GET_OBJ_FIELD(o,"attr",const char *,lua_tostring));
@@ -61,7 +55,7 @@ static int enter_battle_map(lua_State *L){
 	
 	msgdisp_t from = (msgdisp_t)tls_get(MSGDISCP_TLS);
 	msgdisp_t to = service->msgdisp;
-	if(0 != ASYNCALL3(from,to,asyncall_enter_battle,context,NULL,battleid,context->plys,len))
+	if(0 != ASYNCALL4(from,to,asyncall_enter_battle,context,NULL,battletype,battleid,context->plys,len))
 	{
 		st_enter_context_free((struct asyncall_context*)context);
 	}

@@ -67,3 +67,9 @@ static int enter_battle_map(lua_State *L){
 	}
 	return 0;	
 }
+
+
+void reg_super_clua_function(lua_State *L)
+{
+	lua_register(L,"enter_battle_map",&enter_battle_map);
+}

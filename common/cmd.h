@@ -2,6 +2,7 @@
 #define _CMD_H
 
 #include "core/kn_string.h"
+#include <stdlib.h>
 /*
 *   命令码的定义
 */
@@ -75,6 +76,23 @@ typedef struct cmd_handler{
 		string_t lua_fn;             //for lua function
 	};
 }*cmd_handler_t;
+
+
+static inline cmd_handler_t new_lua_handler(const char *fn_name)
+{
+	cmd_handler_t handler = calloc(1,sizeof(*handler));
+	handler->_type = FN_LUA;
+	handler->lua_fn = new_string(fn_name);
+	return handler;
+}
+
+static inline cmd_handler_t new_c_handler(void (*fn)(struct rpacket*,struct player*))
+{
+	cmd_handler_t handler = calloc(1,sizeof(*handler));
+	handler->_type = FN_C;
+	handler->_fn = fn;
+	return handler;
+}
 
 void call_handler(cmd_handler_t,struct rpacket*,struct player*);
 

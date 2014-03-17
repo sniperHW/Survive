@@ -97,21 +97,3 @@ void player_logout(rpacket_t rpk,player_t ply)
 {
 
 }
-
-
-/*请求进入战场，如果请求进入的是大地图则选择一个让玩家进入。
-* 否则进入配对系统，配对完成后进入
-*/
-void enter_battle(rpacket_t rpk,player_t ply)
-{
-	lua_State *L = tls_get(LUASTATE);
-	luaObject_t o = g_superservice->battleMgr;
-	if( 0 != CALL_OBJ_FUNC2(o,"on_enter_battle",1,
-			        PUSH_LUSRDATA(L,rpk),PUSH_LUAOBJECT(L,ply->_luaply)))
-	{
-		const char * error = lua_tostring(L, -1);
-		lua_pop(L,1);
-		SYS_LOG(LOG_ERROR,"lua script error on_enter_battle:%s",error);
-		return;
-	}
-}

@@ -91,7 +91,7 @@ int32_t super_processpacket(msgdisp_t disp,rpacket_t rpk)
     return 1;
 }
 
-void reg_super_cmd_handler(uint16_t cmd,cmd_handler_t handler)
+static void reg_super_cmd_handler(uint16_t cmd,cmd_handler_t handler)
 {
 	if(cmd < MAX_CMD) super_cmd_handlers[cmd] = handler;
 }
@@ -99,6 +99,11 @@ void reg_super_cmd_handler(uint16_t cmd,cmd_handler_t handler)
 void start_superservice()
 {
 	g_superservice = calloc(1,sizeof(*g_superservice));
+}
+
+void build_super_cmd_handler()
+{
+	reg_super_cmd_handler(CMD_ENTER_BATTLE,new_lua_handler("request_enter_battle"));
 }
 
 

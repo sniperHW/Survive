@@ -55,7 +55,7 @@ static int enter_battle_map(lua_State *L){
 	
 	msgdisp_t from = (msgdisp_t)tls_get(MSGDISCP_TLS);
 	msgdisp_t to = service->msgdisp;
-	if(0 != ASYNCALL4(from,to,asyncall_enter_battle,context,NULL,battletype,battleid,context->plys,len))
+	if(0 != ASYNCALL4(from,to,asyncall_enter_battle,context,battletype,battleid,context->plys,len))
 	{
 		st_enter_context_free((struct asyncall_context*)context);
 	}

@@ -63,9 +63,7 @@ static void agent_connected(msgdisp_t disp,sock_ident sock,const char *ip,int32_
 		asynsock_close(sock);
 	}else
 	{
-		//agentservice_t service = get_thd_agentservice();
-		asynsock_set_ud(sock,(void*)ply->session.data);
-		//service->msgdisp->bind(service->msgdisp,0,sock,4096,0,30*1000,0);//由系统选择poller
+		asynsock_set_ud(sock,(void*)ply);
 	}
 }
 
@@ -86,10 +84,12 @@ static void agent_disconnected(msgdisp_t disp,sock_ident sock,const char *ip,int
 	}
 }
 
-#define GET_AGENT_PLAYER\
-		agentsession session;\
-		session.data = (uint32_t)asynsock_get_ud(sock);\
-		agentplayer_t ply = get_agentplayer(session)
+
+static inline agentplayer_t get_ply_from_packet(rpacket_t rpk){
+	agentsession session;
+	session.data = rpk_read_uint32(rpk);
+	return get_agentplayer(session);
+}
 
 
 struct logincall_context{
@@ -132,13 +132,12 @@ void login_result(struct asyncall_context *_context,void *result)
 
 static void agent_cmd_login(rpacket_t rpk)
 {
-	sock_ident sock = TO_SOCK(MSG_IDENT(rpk));
-	GET_AGENT_PLAYER;
+	agentplayer_t ply = (agentplayer_t)asynsock_get_ud(TO_SOCK(MSG_IDENT(rpk)));
 	if(ply){
 		const char *acctname = rpk_read_string(rpk);
 		const char *passwd =   rpk_read_string(rpk);		
 		struct logincall_context *lcontext = calloc(1,sizeof(*lcontext));
-		lcontext->session = session;
+		lcontext->session = ply->session;
 		lcontext->acctname = new_string(acctname);
 		lcontext->passwd = new_string(passwd);
 		((struct asyncall_context*)lcontext)->fn_free = logincall_context_free;
@@ -147,26 +146,15 @@ static void agent_cmd_login(rpacket_t rpk)
 		{
 			logincall_context_free((struct asyncall_context*)lcontext);
 			//通知用户登录系统故障，断开连接
-			asynsock_close(sock);
+			asynsock_close(TO_SOCK(MSG_IDENT(rpk)));
 		}			
 	}
-}
-
-static void agent_cmd_create(rpacket_t rpk)
-{
-	sock_ident sock = TO_SOCK(MSG_IDENT(rpk));
-	GET_AGENT_PLAYER;
-	if(ply){
-		
-	}	
 }
 
 static inline void agent_game_busy(rpacket_t rpk)
 {
 	rpk_read_uint16(rpk);//丢掉命令码
-	agentsession session;
-	session.data = rpk_read_uint32(rpk);
-	agentplayer_t ply = get_agentplayer(session);
+	agentplayer_t ply = get_ply_from_packet(rpk);
 	if(ply){
 		wpacket_t wpk = wpk_create(64,0);
 		wpk_write_uint16(wpk,CMD_GATE2C_BUSY);
@@ -182,8 +170,6 @@ int32_t agent_processpacket(msgdisp_t disp,rpacket_t rpk)
 		rpk_read_uint16(rpk);//丢掉命令码
 		if(cmd == CMD_C2GATE_LOGIN)
 			agent_cmd_login(rpk);
-		else if(cmd == CMD_C2GATE_CREATE)
-			agent_cmd_create(rpk);
 	}else{
 		//agentservice_t service = get_thd_agentservice();
 		if(cmd >= CMD_GAME2C && cmd < CMD_GAME2C_END){
@@ -197,9 +183,7 @@ int32_t agent_processpacket(msgdisp_t disp,rpacket_t rpk)
 			//发送给所有需要接收的客户端
 			for( ; i < size; ++i)
 			{
-				agentsession session;
-				session.data = rpk_read_uint32(r);
-				agentplayer_t ply = get_agentplayer(session);
+				agentplayer_t ply = get_ply_from_packet(r);
 				if(ply)	
 					asyn_send(ply->con,wpk);
 			}
@@ -209,13 +193,23 @@ int32_t agent_processpacket(msgdisp_t disp,rpacket_t rpk)
 			if(cmd == CMD_GAME2GATE_BUSY)
 				agent_game_busy(rpk);
 		}
-		else if(cmd >= CMD_GAME2C && cmd < CMD_GAME2C_END){
-			sock_ident sock = TO_SOCK(MSG_IDENT(rpk));
-			GET_AGENT_PLAYER;
-			if(ply && ply->state == agent_playing)
-			{
-				//转发到gameserver
-				send2game(wpk_create_by_rpacket(rpk));
+		else if(cmd >= CMD_C2GAME && cmd < CMD_C2GAME_END){
+			agentplayer_t ply = (agentplayer_t)asynsock_get_ud(TO_SOCK(MSG_IDENT(rpk)));
+			if(ply){
+				wpacket_t wpk = NULL;
+				if(cmd == CMD_C2GAME_CREATE){
+					wpk = wpk_create_by_rpacket(rpk);
+					wpk_write_uint32(wpk,ply->session.data);
+				}
+				if(ply->state == agent_playing){
+					wpk = wpk_create_by_rpacket(rpk);
+					if(cmd >= CMD_C2BATTLE && cmd <= CMD_C2BATTLE_END)
+						wpk_write_uint32(wpk,ply->avatid);
+					else
+						wpk_write_ident(wpk,ply->gameident);
+					
+				}
+				if(wpk) send2game(wpk);	
 			}
 		}
 	}

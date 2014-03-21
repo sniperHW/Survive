@@ -12,7 +12,6 @@ enum{
 	CMD_C2GATE = 0,
 
 	CMD_C2GATE_LOGIN,     //玩家登录
-	CMD_C2GATE_CREATE,    //创建角色
 	CMD_C2GATE_RECONNECT, //连接短暂掉了之后的重连
 	
 	CMD_C2GATE_END,
@@ -20,6 +19,7 @@ enum{
 	//客户端到游戏服务器
 	CMD_C2GAME = 100,
 	CMD_C2GAME_LOGOUT,
+	CMD_C2GAME_CREATE,    //创建角色
 	CMD_C2GAME_ENTER_BATTLE,  //请求进入战场
 	
 	CMD_C2BATTLE,

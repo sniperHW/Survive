@@ -28,7 +28,7 @@ void   destroy_superservice(superservice_t*);
 
 int32_t send2gate(wpacket_t);
 
-//void reg_super_cmd_handler(uint16_t cmd,cmd_handler_t handler);
+void reg_super_cmd_handler(uint16_t cmd,cmd_handler_t handler);
 void setup_super_cmd_handler();
 
 player_t create_player(const char* actname,uint32_t gateident);

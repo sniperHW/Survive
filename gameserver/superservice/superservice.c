@@ -91,7 +91,7 @@ int32_t super_processpacket(msgdisp_t disp,rpacket_t rpk)
     return 1;
 }
 
-static void reg_super_cmd_handler(uint16_t cmd,cmd_handler_t handler)
+void reg_super_cmd_handler(uint16_t cmd,cmd_handler_t handler)
 {
 	if(cmd < MAX_CMD) super_cmd_handlers[cmd] = handler;
 }

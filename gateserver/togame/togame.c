@@ -5,8 +5,8 @@
 #include "agentservice/agentservice.h"
 
 static toGame_t g_togame = NULL;
-static string_t g_gameip = NULL;
-static int32_t  g_gameport = 0;
+string_t g_gameip = NULL;
+int32_t  g_gameport = 0;
 
 
 
@@ -14,8 +14,6 @@ void send2game(wpacket_t wpk)
 {
 	asyn_send(g_togame->togame,wpk);
 }
-
-agentservice_t get_agent_byindex(uint8_t);
 
 int32_t togame_processpacket(msgdisp_t disp,rpacket_t rpk)
 {

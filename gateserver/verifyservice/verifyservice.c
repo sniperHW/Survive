@@ -8,6 +8,9 @@ static verfiyservice_t g_verifyservice = NULL;
 
 static asyndb_t db2redis = NULL;
 
+string_t g_redisip = NULL;
+int32_t  g_redisport = 0;
+
 static void *service_main(void *ud){
     while(!g_verifyservice->stop){
         msg_loop(g_verifyservice->msgdisp,50);
@@ -15,19 +18,11 @@ static void *service_main(void *ud){
     return NULL;
 }
 
-int32_t start_verifyservice(){
-	//读取配置
-	
+int32_t start_verifyservice(){	
 	g_verifyservice= calloc(1,sizeof(*g_verifyservice));
 	g_verifyservice->msgdisp = new_msgdisp(NULL,0);
 	g_verifyservice->thd = create_thread(THREAD_JOINABLE);
-	g_verifyservice->dbredis = new_asyndb(db_redis);
-	
-	/*
-	 * TODO
-	 * 建立到redis的连接
-	*/
-	
+	g_verifyservice->dbredis = new_asyndb(db_redis,to_cstr(g_redisip),g_redisport);
 	thread_start_run(g_verifyservice->thd,service_main,NULL);
 	return 0;
 }
@@ -64,18 +59,17 @@ void verify_asyncall_login(asyncall_context_t context,void **param)
 	struct login_context *lcontext = calloc(1,sizeof(*lcontext));
 	lcontext->asyncontext = context;
 	lcontext->passwd = (string_t)param[1];
-	if(0 != db2redis->request(db2redis,
-	                          new_dbrequest(db_get,req,db_login_callback,lcontext,g_verifyservice->msgdisp)))
+	if(0 != db2redis->asyn_request(db2redis,
+	                          new_dbrequest(req,db_login_callback,lcontext,g_verifyservice->msgdisp)))
 	{
 		free(lcontext);
 		ASYNRETURN(context,NULL);
 	}
 }
 
-int32_t verify_login(asyncall_context_t context,fn_asyncall_result fn_result,
-					 string_t acctname,string_t passwd)
+int32_t verify_login(asyncall_context_t context,string_t acctname,string_t passwd)
 {
 	msgdisp_t from = (msgdisp_t)tls_get(MSGDISCP_TLS);
 	msgdisp_t to = g_verifyservice->msgdisp;
-	return ASYNCALL2(from,to,verify_asyncall_login,context,fn_result,acctname,passwd);
+	return ASYNCALL2(from,to,verify_asyncall_login,context,acctname,passwd);
 }

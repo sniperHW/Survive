@@ -20,7 +20,7 @@ typedef struct verfiyservice
 int32_t start_verifyservice();
 void    stop_verifyservice();
 
-int32_t verify_login(asyncall_context_t,fn_asyncall_result,string_t acctname,string_t passwd);
+int32_t verify_login(asyncall_context_t,string_t acctname,string_t passwd);
 void verify_reconnect();
 
 

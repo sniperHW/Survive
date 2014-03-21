@@ -1,9 +1,9 @@
 #include "agentservice.h"
-#include "core/tls.h"
 #include "togame/togame.h"
-#include "common/tls_define.h"
 #include "common/cmd.h"
 #include "verifyservice/verifyservice.h"
+
+agentservice_t g_agents[MAX_AGENT] = {NULL};
 
 static void *service_main(void *ud){
     agentservice_t service = (agentservice_t)ud;
@@ -54,7 +54,7 @@ void send2player(agentplayer_t ply,wpacket_t wpk)
 }
 
 
-static void agent_connect(msgdisp_t disp,sock_ident sock,const char *ip,int32_t port)
+static void agent_connected(msgdisp_t disp,sock_ident sock,const char *ip,int32_t port)
 {
 	agentplayer_t ply = new_agentplayer(sock);
 	if(!ply)
@@ -63,9 +63,9 @@ static void agent_connect(msgdisp_t disp,sock_ident sock,const char *ip,int32_t 
 		asynsock_close(sock);
 	}else
 	{
-		agentservice_t service = get_thd_agentservice();
+		//agentservice_t service = get_thd_agentservice();
 		asynsock_set_ud(sock,(void*)ply->session.data);
-		service->msgdisp->bind(service->msgdisp,0,sock,4096,0,30*1000,0);//由系统选择poller
+		//service->msgdisp->bind(service->msgdisp,0,sock,4096,0,30*1000,0);//由系统选择poller
 	}
 }
 
@@ -142,6 +142,7 @@ static void agent_cmd_login(rpacket_t rpk)
 		lcontext->acctname = new_string(acctname);
 		lcontext->passwd = new_string(passwd);
 		((struct asyncall_context*)lcontext)->fn_free = logincall_context_free;
+		((struct asyncall_context*)lcontext)->fn_result = login_result;
 		if(0 != verify_login((asyncall_context_t)lcontext,lcontext->acctname,lcontext->passwd))
 		{
 			logincall_context_free((struct asyncall_context*)lcontext);
@@ -223,11 +224,12 @@ int32_t agent_processpacket(msgdisp_t disp,rpacket_t rpk)
 
 
 agentservice_t new_agentservice(uint8_t agentid,asynnet_t asynet){
+	if(agentid > MAX_AGENT) return NULL;
 	agentservice_t service = calloc(1,sizeof(*service));
 	service->agentid = agentid;
 	service->_idmgr = new_idmgr(1,MAX_ANGETPLAYER);
 	service->msgdisp = new_msgdisp(asynet,3,
-                                   CB_CONNECT(agent_connect),
+                                   CB_CONNECTED(agent_connected),
                                    CB_DISCNT(agent_disconnected),
                                    CB_PROCESSPACKET(agent_processpacket)
                                    );
@@ -237,14 +239,10 @@ agentservice_t new_agentservice(uint8_t agentid,asynnet_t asynet){
 }
 
 
-void destroy_agentservice(agentservice_t s)
+void stop_agentservice(agentservice_t s)
 {
 	//destroy_agentservice应该在gateserver关闭时调用，所以这里不需要做任何释放操作了
 	s->stop = 1;
 	thread_join(s->thd);
 }
 
-agentservice_t get_thd_agentservice()
-{
-	return (agentservice_t)tls_get(AGETNSERVICE_TLS);
-}

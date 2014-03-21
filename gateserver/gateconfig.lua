@@ -10,11 +10,12 @@ toclient = {
 
 --redis服务连接配置
 toredis = {
-
+	ip = "127.0.0.1",
+	port = 6380,
 }
 
 --gameserver的监听端口
 togame = {
 	ip = "127.0.0.1",
-	port = 8010,
+	port = 8011,
 }

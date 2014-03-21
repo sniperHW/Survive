@@ -33,4 +33,8 @@ gameservice.a:\
 		$(CC) $(CFLAGS) -c $^ $(INCLUDE) $(DEFINE)
 		ar -rc gameservice.a *.o
 		rm -f *.o
+		
+gate:gateserver/gateserver.c kendynet.a gateservice.a
+	$(CC) $(CFLAGS) -o gate gateserver/gateserver.c gateservice.a kendynet.a\
+	 ../KendyNet/deps/hiredis/libhiredis.a ../KendyNet/deps/luajit-2.0/src/libluajit.a  $(INCLUDE) $(LDFLAGS) $(DEFINE)	-rdynamic -ldl	
 

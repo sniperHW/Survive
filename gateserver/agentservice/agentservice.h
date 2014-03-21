@@ -5,8 +5,12 @@
 #include "core/asynnet/msgdisp.h"
 #include "core/thread.h"
 #include "core/idmgr.h"
+#include "core/tls.h"
+#include "common/tls_define.h"
 
 #define MAX_ANGETPLAYER   8191
+
+#define MAX_AGENT 32
 
 
 typedef struct agentservice
@@ -21,15 +25,24 @@ typedef struct agentservice
 }*agentservice_t;
 
 agentservice_t new_agentservice(uint8_t agentid,asynnet_t asynet);
-void           destroy_agentservice(agentservice_t);
+void           stop_agentservice(agentservice_t);
+
+extern agentservice_t g_agents[MAX_AGENT];
 
 //获得当前线程的agentservice
-agentservice_t get_thd_agentservice();
+static inline agentservice_t get_thd_agentservice(){
+	return (agentservice_t)tls_get(AGETNSERVICE_TLS);
+}
+
+static inline agentservice_t get_agent_byindex(uint8_t idx){
+	return g_agents[idx];
+}
 
 
 agentplayer_t get_agentplayer(agentsession session);
 
 void send2player(agentplayer_t,wpacket_t);
+
 
 
 #endif

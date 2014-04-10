@@ -6,6 +6,7 @@
 agentservice_t g_agents[MAX_AGENT] = {NULL};
 
 static void *service_main(void *ud){
+	printf("agent service运行\n");
     agentservice_t service = (agentservice_t)ud;
     tls_set(MSGDISCP_TLS,(void*)service->msgdisp);
     tls_set(AGETNSERVICE_TLS,(void*)service);
@@ -56,6 +57,7 @@ void send2player(agentplayer_t ply,wpacket_t wpk)
 
 static void agent_connected(msgdisp_t disp,sock_ident sock,const char *ip,int32_t port)
 {
+	printf("agent_connected\n");
 	agentplayer_t ply = new_agentplayer(sock);
 	if(!ply)
 	{
@@ -69,6 +71,7 @@ static void agent_connected(msgdisp_t disp,sock_ident sock,const char *ip,int32_
 
 static void agent_disconnected(msgdisp_t disp,sock_ident sock,const char *ip,int32_t port,uint32_t err)
 {
+	printf("agent_disconnected\n");
 	//agentservice_t service = get_thd_agentservice();
 	agentsession session;
 	session.data = (uint32_t)asynsock_get_ud(sock);
@@ -111,6 +114,10 @@ void login_result(struct asyncall_context *_context,void *result)
 {
 	struct logincall_context *context = (struct logincall_context*)_context;
 	if(result != NULL){
+		
+		printf("帐号验证成功:%s\n",to_cstr(context->acctname));
+		return;
+		
 		//验证成功，发送消息到game,请求调入角色信息
 		wpacket_t wpk = wpk_create(64,0);
 		wpk_write_uint16(wpk,CMD_GATE2GAME_LOGIN);
@@ -136,6 +143,7 @@ static void agent_cmd_login(rpacket_t rpk)
 	if(ply){
 		const char *acctname = rpk_read_string(rpk);
 		const char *passwd =   rpk_read_string(rpk);		
+		printf("%s,请求登录\n",acctname);
 		struct logincall_context *lcontext = calloc(1,sizeof(*lcontext));
 		lcontext->session = ply->session;
 		lcontext->acctname = new_string(acctname);

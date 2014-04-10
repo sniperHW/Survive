@@ -69,17 +69,17 @@ int main(){
 	
 	
 	//两个poller,一个用于accept,一个用于数据传输
-	asynnet_t asynet = asynnet_new(2);
+	asynnet_t asynet = asynnet_new(1);
 	
 	if(start_verifyservice() != 0){
 		SYS_LOG(LOG_ERROR,"start verifyservice failed\n");
 		return 0;
 	}
 	
-	if(start_togame_service(asynet) != 0){
+	/*if(start_togame_service(asynet) != 0){
 		SYS_LOG(LOG_ERROR,"start togame service failed\n");
 		return 0;
-	}
+	}*/
 		
 	uint8_t i;
 	for(i = 0; i < agentcount; ++i){
@@ -100,7 +100,7 @@ int main(){
         msg_loop(listener,500);
     }
     
-	stop_togame_service();
+	//stop_togame_service();
 	stop_verifyservice();
 	
 	for(i = 0; i < agentcount; ++i){

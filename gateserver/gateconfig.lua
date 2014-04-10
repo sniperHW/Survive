@@ -1,5 +1,5 @@
 gateserver = {
-	agentservice_count = 8,--启动几个agentservice
+	agentservice_count = 1,--启动几个agentservice
 }
 
 --监听客户端的配置
@@ -11,7 +11,7 @@ toclient = {
 --redis服务连接配置
 toredis = {
 	ip = "127.0.0.1",
-	port = 6380,
+	port = 6379,
 }
 
 --gameserver的监听端口

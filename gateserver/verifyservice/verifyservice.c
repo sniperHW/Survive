@@ -6,12 +6,13 @@
 
 static verfiyservice_t g_verifyservice = NULL;
 
-static asyndb_t db2redis = NULL;
+//static asyndb_t db2redis = NULL;
 
 string_t g_redisip = NULL;
 int32_t  g_redisport = 0;
 
 static void *service_main(void *ud){
+	printf("verifyservice启动运行\n");
     while(!g_verifyservice->stop){
         msg_loop(g_verifyservice->msgdisp,50);
     }
@@ -45,7 +46,7 @@ void db_login_callback(struct db_result *result)
 	redisReply *r = (redisReply*)result->result_set;
 	void *ret = NULL;
 	if(strcmp(r->str,to_cstr(lcontext->passwd)) == 0)
-		*(int*)ret = 1;
+		ret = (void*)1;
 	free(lcontext);
 	free_dbresult(result);	
 	ASYNRETURN(context,ret);
@@ -53,13 +54,14 @@ void db_login_callback(struct db_result *result)
 
 void verify_asyncall_login(asyncall_context_t context,void **param)
 {
+	printf("verify_asyncall_login\n");
 	char req[256];
 	snprintf(req,256,"get %s",to_cstr((string_t)param[0]));	
 	//发出到redis的验证
 	struct login_context *lcontext = calloc(1,sizeof(*lcontext));
 	lcontext->asyncontext = context;
 	lcontext->passwd = (string_t)param[1];
-	if(0 != db2redis->asyn_request(db2redis,
+	if(0 != g_verifyservice->dbredis->asyn_request(g_verifyservice->dbredis,
 	                          new_dbrequest(req,db_login_callback,lcontext,g_verifyservice->msgdisp)))
 	{
 		free(lcontext);

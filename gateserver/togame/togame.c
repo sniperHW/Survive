@@ -42,15 +42,19 @@ static void togame_connect(msgdisp_t disp,sock_ident sock,const char *ip,int32_t
 static void togame_connected(msgdisp_t disp,sock_ident sock,const char *ip,int32_t port)
 {
 	g_togame->togame = sock;
+	SYS_LOG(LOG_ERROR,"连接gameserver成功\n");
 }
 
 static void togame_disconnected(msgdisp_t disp,sock_ident sock,const char *ip,int32_t port,uint32_t err)
 {
 	MAKE_EMPTY_IDENT(g_togame->togame);
+	SYS_LOG(LOG_ERROR,"到gameserver的连接断开\n");
 }
 
 static void togame_connect_failed(msgdisp_t disp,const char *ip,int32_t port,uint32_t reason)
 {
+	//printf("到game的连接失败,1秒后再尝试连接\n");
+	sleepms(1000);
 	//再次发起连接尝试
 	g_togame->msgdisp->connect(g_togame->msgdisp,0,to_cstr(g_gameip),g_gameport,30*1000);
 }

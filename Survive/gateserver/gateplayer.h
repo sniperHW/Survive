@@ -5,6 +5,7 @@
 #include "kn_ref.h"
 #include "common/agentsession.h"
 
+/*
 enum
 {
 	agent_unusing = 0,  //没被分配
@@ -30,5 +31,5 @@ typedef struct agentplayer{
 	uint8_t         state;
 	kn_string_t     actname;       //帐号名 
 }agentplayer,*agentplayer_t;
-
+*/
 #endif

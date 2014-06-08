@@ -1,9 +1,52 @@
 #include "agent.h"
+#include "common/cmdhandler.h"
+#include "netcmd.h"
+#include "gateplayer.h"
+#include "chanmsg.h"
+#include "togrpgame.h"
+
+static const uint16_t MAXCMD = 65536;
+
+static cmd_handler_t handler[MAXCMD] = {NULL}
+
+static __thread agent  t_agent = NULL;
+
+static void forward_game(kn_stream_conn_t con,rpacket_t rpk){
+	agentplayer_t ply = (agentplayer_t)kn_stream_conn_getud(con);
+	wpacket_t wpk = wpk_create_by_rpacket(rpk);
+	wpk_write_uint32(wpk,ply->gameid);
+	struct chanmsg_forward_game *msg = calloc(1,sizeof(*msg));
+	msg->chanmsg.msgtype = FORWARD_GAME;
+	msg->game = ply->togame;
+	msg->wpk = wpk;
+	kn_channel_putmsg(g_togrpgame->chan,NULL,msg,chanmsg_forward_game_destroy);
+}
+
+static void forward_group(kn_stream_conn_t con,rpacket_t rpk){
+	agentplayer_t ply = (agentplayer_t)kn_stream_conn_getud(con);
+	wpacket_t wpk = wpk_create_by_rpacket(rpk);
+	wpk_write_uint32(wpk,ply->groupid);
+	struct chanmsg_forward_group *msg = calloc(1,sizeof(*msg));
+	msg->chanmsg.msgtype = FORWARD_GROUP;
+	msg->wpk = wpk;
+	kn_channel_putmsg(g_togrpgame->chan,NULL,msg,chanmsg_forward_group_destroy);
+}
+
 
 //处理来自客户端的网络包
 static int on_packet(kn_stream_conn_t con,rpacket_t rpk){
-
-
+	uint16_t cmd = rpk_peek_uint16(rpk);
+	if(cmd > CMD_CA_BEGIN && cmd < CMD_CA_END){
+		rpk_read_uint16(rpk);
+		if(handler[cmd]->_fn) handler[cmd]->_fn(rpk,con);
+	}else if(cmd > CMD_CS_BEGIN && cmd < CMD_CS_END){
+		 //转发到gameserver
+		forward_game(con,rpk);
+	}else if(cmd > CMD_CG_BEGIN && cmd < CMD_CG_END){
+		//转发到groupserver
+		forward_group(con,rpk);
+	}
+	return 1;
 }
 
 //处理来自channel的消息
@@ -27,18 +70,17 @@ static	void on_redis_disconnected(redisconn_t conn,void *ud){
 
 static void *service_main(void *ud){
 	printf("agent service运行\n");	
-	agent *agent = (agent*)ud;
-
-	if(0 != kn_redisAsynConnect(agent->p,
+	t_agent = (agent*)ud;
+	if(0 != kn_redisAsynConnect(t_agent->p,
 		"127.0.0.1",8010,
 		on_redis_connect,
 		on_redis_disconnected,
-		agent)){
+		t_agent)){
 		//记录日志
 		return NULL;
 	}
-	while(!agent->stop){
-		kn_proactor_run(agent->p,50);
+	while(!t_agent->stop){
+		kn_proactor_run(t_agent->p,50);
 	}
 	return NULL;
 }

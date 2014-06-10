@@ -51,21 +51,21 @@ int lua_rpk_read_string(lua_State *L){
 
 int lua_new_wpk(lua_State *L){
 	wpacket_t wpk = wpk_create(128,0);
-	lua_pushligthuserdata(L,wpk);
+	lua_pushlightuserdata(L,wpk);
 	return 1;
 }
 
 int lua_new_wpk_by_rpk(lua_State *L){
 	rpacket_t rpk = lua_touserdata(L,1);
 	wpacket_t wpk = wpk_create_by_rpacket(rpk);
-	lua_pushligthuserdata(L,wpk);
+	lua_pushlightuserdata(L,wpk);
 	return 1;
 }
 
 int lua_new_wpk_by_wpk(lua_State *L){
 	wpacket_t l_wpk = lua_touserdata(L,1);
-	wpacket_t wpk = wpk_create_by_rpacket(l_wpk);
-	lua_pushligthuserdata(L,wpk);
+	wpacket_t wpk = wpk_create_by_wpacket(l_wpk);
+	lua_pushlightuserdata(L,wpk);
 	return 1;
 }
 

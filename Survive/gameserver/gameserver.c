@@ -66,9 +66,16 @@ static void on_group_disconnected(kn_stream_conn_t conn,int err){
 		
 }
 
-static void on_group_connect(kn_stream_client_t c,kn_stream_conn_t conn,void *ud){
-	kn_stream_client_bind(c,conn,0,65536,on_group_packet,on_group_disconnected,
-						  30*1000,NULL,0,NULL);
+static void on_group_connect(kn_stream_client_t _,kn_stream_conn_t conn,void *ud){
+	(void)_;
+	if(0 == kn_stream_client_bind(c,conn,0,65536,on_group_packet,on_group_disconnected,
+						  30*1000,NULL,0,NULL)){
+	
+		togrp = conn;
+	}else{
+		
+		LOG_GAME(LOG_ERROR,"on_group_connect failed\n");
+	}
 }
 
 static int reg_cmd_handler(lua_State *L){
@@ -88,17 +95,17 @@ static int reg_cmd_handler(lua_State *L){
 
 
 void reg_game_c_function(lua_State *L){
-    lua_getglobal(g_L,"GameApp");
-	if(!lua_istable(g_L, -1))
+	lua_getglobal(L,"GameApp");
+	if(!lua_istable(L, -1))
 	{
-		lua_pop(g_L,1);
-		lua_newtable(g_L);
-		lua_pushvalue(g_L,-1);
-		lua_setglobal(g_L,"GameApp");
+		lua_pop(L,1);
+		lua_newtable(L);
+		lua_pushvalue(L,-1);
+		lua_setglobal(L,"GameApp");
 	}
 
 	lua_pushstring(L, "reg_cmd_handler");
-	lua_pushinteger(L, reg_cmd_handler);
+	lua_pushcfunction(L, &reg_cmd_handler);
 	lua_settable(L, -3);
 
 	lua_pop(L,1);
@@ -110,7 +117,7 @@ static lua_State *init(){
 	if (luaL_dofile(L,"script/handler.lua")) {
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
-		LOG_GROUP(LOG_INFO,"error on handler.lua:%s\n",error);
+		LOG_GAME(LOG_INFO,"error on handler.lua:%s\n",error);
 		lua_close(L); 
 		return NULL;
 	}
@@ -118,16 +125,21 @@ static lua_State *init(){
 	reg_common_c_function(L);
 
 	//注册group特有的函数
-	reg_game_c_function(L));
+	reg_game_c_function(L);
 
 	//注册lua消息处理器
 	if(CALL_LUA_FUNC(L,"reghandler",0)){
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
-		LOG_GROUP(LOG_INFO,"error on reghandler:%s\n",error);
+		LOG_GAME(LOG_INFO,"error on reghandler:%s\n",error);
 		lua_close(L); 
 	}
 	return L;
+}
+
+static volatile int stop = 0;
+static void sig_int(int sig){
+	stop = 1;
 }
 
 

@@ -2,7 +2,6 @@
 #define _TOGRPGAME_H
 
 #include "kn_stream_conn_client.h"
-#include "kn_proactor.h"
 #include "kn_thread.h"
 #include "kendynet.h"
 
@@ -18,8 +17,8 @@ typedef struct togrpgame{
 }togrpgame;
 
 
-togrpgame *start_togrpgame();
-void       stop_togrpgame(togrpgame*);
+int     start_togrpgame();
+void    stop_togrpgame();
 
 extern togrpgame * g_togrpgame;
 

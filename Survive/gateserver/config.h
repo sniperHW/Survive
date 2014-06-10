@@ -3,10 +3,10 @@
 
 #include "kn_string.h"
 
-enum{
+typedef enum{
 	GROUPSERVER = 1,
 	GAMESERVER = 2,
-}remoteServerType,
+}remoteServerType;
 
 typedef struct config{
 	kn_string_t groupip;

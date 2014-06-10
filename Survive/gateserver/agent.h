@@ -18,7 +18,7 @@ typedef struct agent{
 	kn_stream_server_t server;
 	volatile uint8_t   stop;
 	agentplayer_t      players[4096];
-};
+}agent;
 
 agent *start_agent(uint8_t idx);
 void   stop_agent(agent*);

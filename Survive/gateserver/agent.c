@@ -4,12 +4,13 @@
 #include "gateplayer.h"
 #include "chanmsg.h"
 #include "togrpgame.h"
+#include "kn_thread.h"
 
-static const uint16_t MAXCMD = 65536;
+#define MAXCMD 65535
 
-static cmd_handler_t handler[MAXCMD] = {NULL}
+static cmd_handler_t handler[MAXCMD];
 
-static __thread agent  t_agent = NULL;
+static __thread agent* t_agent = NULL;
 
 static void forward_game(kn_stream_conn_t con,rpacket_t rpk){
 	agentplayer_t ply = (agentplayer_t)kn_stream_conn_getud(con);
@@ -98,10 +99,10 @@ agent *start_agent(uint8_t idx){
 	agent *agent = calloc(1,sizeof(*agent));
 	agent->idx = idx;
 	agent->p = kn_new_proactor();
-	agent->t = kn_create_thread(JOINABLE);
+	agent->t = kn_create_thread(THREAD_JOINABLE);
 	kn_new_stream_server(agent->p,NULL,NULL);
 	agent->chan = kn_new_channel(kn_thread_getid(agent->t));
-	kn_channel_bind(agent->p,agent->chan,on_channel_msg);
+	kn_channel_bind(agent->p,agent->chan,on_channel_msg,NULL);
 	kn_thread_start_run(agent->t,service_main,agent);
 	return agent;
 }

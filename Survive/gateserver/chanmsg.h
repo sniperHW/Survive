@@ -14,9 +14,9 @@ struct chanmsg{
 };
 
 struct chanmsg_newclient{
-	chanmsg   chanmsg;
+	struct chanmsg   chanmsg;
 	kn_stream_conn_t conn;
-}
+};
 
 static inline void chanmsg_newclient_destroy(void *msg){
 	struct chanmsg_newclient *_msg = (struct chanmsg_newclient*)msg;
@@ -27,7 +27,7 @@ static inline void chanmsg_newclient_destroy(void *msg){
 }
 
 struct chanmsg_forward_game{
-	chanmsg   chanmsg;
+	struct chanmsg   chanmsg;
 	wpacket_t wpk;
 	ident     game;
 };
@@ -41,7 +41,7 @@ static inline void chanmsg_forward_game_destroy(void *msg){
 }
 
 struct chanmsg_forward_group{
-	chanmsg chanmsg;
+	struct chanmsg chanmsg;
 	wpacket_t wpk;
 };
 

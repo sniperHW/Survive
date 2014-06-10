@@ -2,42 +2,46 @@ CFLAGS = -g -Wall -fno-strict-aliasing -std=gnu99
 LDFLAGS = -lpthread -lrt -lm -ltcmalloc
 SHARED = -fPIC --shared
 CC = gcc
-INCLUDE = -I../KendyNet -I../KendyNet/core -I.. -I. -Igateserver -Igameserver\
-		  -I../KendyNet/deps/luajit-2.0/src -I../KendyNet/deps/hiredis
-DEFINE = -D_DEBUG -D_LINUX -DMQ_HEART_BEAT
+INCLUDE =  -I../KendyNet/include -I./Survive -I./Survive/gateserver -I../KendyNet
 
-gateservice.a:\
-		gateserver/agentservice/agentservice.c\
-		gateserver/agentservice/agentservice.h\
-		gateserver/verifyservice/verifyservice.c\
-		gateserver/verifyservice/verifyservice.h\
-		gateserver/togame/togame.c\
-		gateserver/togame/togame.h
+kendynet.a: \
+		   ../KendyNet/src/kn_connector.c \
+		   ../KendyNet/src/kn_epoll.c \
+		   ../KendyNet/src/kn_except.c \
+		   ../KendyNet/src/kn_proactor.c \
+		   ../KendyNet/src/kn_ref.c \
+		   ../KendyNet/src/kn_acceptor.c \
+		   ../KendyNet/src/kn_fd.c \
+		   ../KendyNet/src/kn_datasocket.c \
+		   ../KendyNet/src/kendynet.c \
+		   ../KendyNet/src/kn_time.c \
+		   ../KendyNet/src/kn_thread.c\
+		   ../KendyNet/src/buffer.c\
+		   ../KendyNet/src/kn_string.c\
+		   ../KendyNet/src/wpacket.c\
+		   ../KendyNet/src/rpacket.c\
+		   ../KendyNet/src/kn_timer.c\
+		   ../KendyNet/src/kn_stream_conn.c\
+		   ../KendyNet/src/kn_stream_conn_server.c\
+		   ../KendyNet/src/kn_stream_conn_client.c\
+		   ../KendyNet/src/minheap.c\
+		   ../KendyNet/src/hash_map.c\
+		   ../KendyNet/src/rbtree.c\
+		   ../KendyNet/src/spinlock.c\
+		   ../KendyNet/src/obj_allocator.c\
+		   ../KendyNet/src/log.c\
+		   ../KendyNet/src/redisconn.c\
+		   ../KendyNet/src/tls.c\
+		   ../KendyNet/src/lua_util.c\
+		   ../KendyNet/src/kn_channel.c
 		$(CC) $(CFLAGS) -c $^ $(INCLUDE) $(DEFINE)
-		ar -rc gateservice.a *.o
+		ar -rc kendynet.a *.o
 		rm -f *.o
-		
-gameservice.a:\
-		gameserver/avatar.c\
-		gameserver/avatar.h\
-		gameserver/superservice/superservice.c\
-		gameserver/superservice/superservice.h\
-		gameserver/superservice/cmdhandler.c\
-		gameserver/superservice/clua.c\
-		gameserver/superservice/gamedb.c\
-		gameserver/superservice/gamedb.h\
-		gameserver/battleservice/battleservice.h\
-		gameserver/battleservice/battleservice.c\
-		gameserver/battleservice/map.c\
-		gameserver/battleservice/map.h		
-		$(CC) $(CFLAGS) -c $^ $(INCLUDE) $(DEFINE)
-		ar -rc gameservice.a *.o
-		rm -f *.o
-		
-client:testclient.c kendynet.a
-	$(CC) $(CFLAGS) -o client testclient.c kendynet.a ../KendyNet/deps/luajit-2.0/src/libluajit.a  $(INCLUDE) $(LDFLAGS) $(DEFINE)	-rdynamic -ldl			
-		
-gate:gateserver/gateserver.c kendynet.a gateservice.a
-	$(CC) $(CFLAGS) -o gate gateserver/gateserver.c gateservice.a kendynet.a\
-	 ../KendyNet/deps/hiredis/libhiredis.a ../KendyNet/deps/luajit-2.0/src/libluajit.a  $(INCLUDE) $(LDFLAGS) $(DEFINE)	-rdynamic -ldl	
+
+gateserverd:\
+	Survive/gateserver/agent.c\
+	Survive/gateserver/gateserver.c\
+	Survive/gateserver/togrpgame.c\
+	kendynet.a
+	$(CC) $(CFLAGS) -o gateserverd $^ $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
 

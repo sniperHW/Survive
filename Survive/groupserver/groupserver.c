@@ -87,6 +87,23 @@ static int reg_cmd_handler(lua_State *L){
 	return 1;
 }
 
+void reg_group_c_function(lua_State *L){
+    lua_getglobal(g_L,"GroupApp");
+	if(!lua_istable(g_L, -1))
+	{
+		lua_pop(g_L,1);
+		lua_newtable(g_L);
+		lua_pushvalue(g_L,-1);
+		lua_setglobal(g_L,"GroupApp");
+	}
+
+	lua_pushstring(L, "reg_cmd_handler");
+	lua_pushinteger(L, reg_cmd_handler);
+	lua_settable(L, -3);
+
+	lua_pop(L,1);
+}
+
 static lua_State *init(){
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
@@ -97,10 +114,11 @@ static lua_State *init(){
 		lua_close(L); 
 		return NULL;
 	}
-
 	//注册C函数，常量到lua
 	reg_common_c_function(L);
 
+	//注册group特有的函数
+	reg_group_c_function(L));
 
 	//注册lua消息处理器
 	if(CALL_LUA_FUNC(L,"reghandler",0)){

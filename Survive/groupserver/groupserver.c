@@ -1,7 +1,10 @@
+#include "kendynet.h"
 #include "groupserver.h"
 #include "config.h"
 #include "lua/lua_util.h"
 #include "kn_stream_conn_server.h"
+#include "common/netcmd.h"
+#include "common/cmdhandler.h"
 
 IMP_LOG(grouplog);
 
@@ -11,10 +14,11 @@ static cmd_handler_t handler[MAXCMD] = {NULL};
 static int on_game_packet(kn_stream_conn_t con,rpacket_t rpk){
 	uint16_t cmd = rpk_read_uint16(rpk);
 	if(handler[cmd]){
-		if(CALL_OBJ_FUNC1(handler[cmd]->obj,"handle",lua_pushlightuserdata(rpk),0)){
+		lua_State *L = handler[cmd]->obj->L;
+		if(CALL_OBJ_FUNC1(handler[cmd]->obj,"handle",0,lua_pushlightuserdata(L,rpk))){
 			const char * error = lua_tostring(L, -1);
 			lua_pop(L,1);
-			LOG_GATE(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
+			LOG_GROUP(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
 		}
 	}
 	return 1;
@@ -25,17 +29,23 @@ static void on_game_disconnected(kn_stream_conn_t conn,int err){
 }
 
 
-static void on_new_game(kn_stream_server_t _,kn_stream_conn_t conn){
-	(void)_;
+static void on_new_game(kn_stream_server_t server,kn_stream_conn_t conn){
+	if(0 == kn_stream_server_bind(server,conn,0,65536,
+				      on_game_packet,on_game_disconnected,
+				      30*1000,NULL,0,NULL)){
+	}else{
+		kn_stream_conn_close(conn);
+	}
 }
 
 static int on_gate_packet(kn_stream_conn_t con,rpacket_t rpk){
 	uint16_t cmd = rpk_read_uint16(rpk);
 	if(handler[cmd]){
-		if(CALL_OBJ_FUNC1(handler[cmd]->obj,"handle",lua_pushlightuserdata(rpk),0)){
+		lua_State *L = handler[cmd]->obj->L;
+		if(CALL_OBJ_FUNC1(handler[cmd]->obj,"handle",0,lua_pushlightuserdata(L,rpk))){
 			const char * error = lua_tostring(L, -1);
 			lua_pop(L,1);
-			LOG_GATE(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
+			LOG_GROUP(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
 		}
 	}
 	return 1;
@@ -45,8 +55,14 @@ static void on_gate_disconnected(kn_stream_conn_t conn,int err){
 
 }
 
-static void on_new_gate(kn_stream_server_t _,kn_stream_conn_t conn){
-	(void)_;
+static void on_new_gate(kn_stream_server_t server,kn_stream_conn_t conn){
+	if(0 == kn_stream_server_bind(server,conn,0,65536,
+				      on_gate_packet,on_gate_disconnected,
+				      30*1000,NULL,0,NULL)){
+	}else{
+		kn_stream_conn_close(conn);
+	}
+
 }
 
 
@@ -76,7 +92,7 @@ static lua_State *init(){
 	if (luaL_dofile(L,"script/handler.lua")) {
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
-		LOG_GATE(LOG_INFO,"error on load gatecfg.lua:%s\n",error);
+		LOG_GROUP(LOG_INFO,"error on load gatecfg.lua:%s\n",error);
 		lua_close(L); 
 		return NULL;
 	}
@@ -88,7 +104,7 @@ static lua_State *init(){
 	if(CALL_LUA_FUNC(L,"reghandler",0)){
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
-		LOG_GATE(LOG_INFO,"error on reghandler:%s\n",error);
+		LOG_GROUP(LOG_INFO,"error on reghandler:%s\n",error);
 		lua_close(L); 
 	}
 	return L;
@@ -103,6 +119,7 @@ int main(int argc,char **argv){
 	if(!init())
 		return 0;
 
+	signal(SIGINT,sig_int);
 	kn_proactor_t p = kn_new_proactor();
 	//Æô¶¯¼àÌý
 	kn_sockaddr lgameserver;

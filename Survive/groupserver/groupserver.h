@@ -5,7 +5,7 @@
 
 DEF_LOG(grouplog,"groupserver");
 
-#define LOG_GATE(LOGLEV,...) LOG(GET_LOGFILE(grouplog),LOGLEV,__VA_ARGS__)
+#define LOG_GROUP(LOGLEV,...) LOG(GET_LOGFILE(grouplog),LOGLEV,__VA_ARGS__)
 
 
 #endif

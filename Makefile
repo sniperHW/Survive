@@ -46,3 +46,9 @@ gateserverd:\
 	kendynet.a
 	$(CC) $(CFLAGS) -o gateserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
 
+groupserverd:\
+	Survive/groupserver/groupserver.c\
+	Survive/groupserver/config.c\
+	kendynet.a
+	$(CC) $(CFLAGS) -o groupserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
+

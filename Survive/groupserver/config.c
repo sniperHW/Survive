@@ -1,6 +1,6 @@
 #include "config.h"
 #include "lua/lua_util.h"
-#include "gateserver.h"
+#include "groupserver.h"
 
 config* g_config = NULL;
 
@@ -11,7 +11,7 @@ int loadconfig(){
 	if (luaL_dofile(L,"groupcfg.lua")) {
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
-		LOG_GATE(LOG_INFO,"error on load gatecfg.lua:%s\n",error);
+		LOG_GROUP(LOG_INFO,"error on load gatecfg.lua:%s\n",error);
 		lua_close(L);
 		return -1;
 	}

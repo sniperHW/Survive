@@ -12,6 +12,7 @@ int loadconfig(){
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
 		LOG_GATE(LOG_INFO,"error on load gatecfg.lua:%s\n",error);
+		lua_close(L);
 		return -1;
 	}
 
@@ -30,6 +31,6 @@ int loadconfig(){
 	g_config->toclientport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
 	release_luaObj(obj);
 	g_config->agentcount = GETGLOBAL_NUMBER(L,"agentcount");*/
-
+	lua_close(L);
 	return 0;
 }

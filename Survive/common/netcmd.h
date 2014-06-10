@@ -24,6 +24,21 @@ enum{
 	CMD_GC_BEGIN = CMD_CG_END + 1,
 	CMD_GC_END,
 
+	//gate <-> group
+	CMD_AG_BEGIN = CMD_GC_END + 1,
+	CMD_AG_END,
+
+	CMD_GA_BEGIN = CMD_AG_END + 1,
+	CMD_GA_END,
+
+	//game <-> group
+
+	CMD_GAMEG_BEGIN = CMD_GA_END + 1,
+	CMD_GAMEG_END,
+
+	CMD_GGAME_BEGIB = CMD_GAMEG_END + 1,
+	CMD_GGAME_END,
+
 };
 
 

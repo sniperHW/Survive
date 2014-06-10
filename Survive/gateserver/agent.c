@@ -14,6 +14,31 @@ static cmd_handler_t handler[MAXCMD] = {NULL};
 
 static __thread agent* t_agent = NULL;
 
+
+void release_agent_player(agentplayer_t player){
+	t_agent->players[player->agentsession.sessionid] = NULL;
+	release_id(t_agent->idmgr,player->agentsession.sessionid);
+	if(player->actname){
+		kn_release_string(player->actname);
+	}
+	free(player);
+}
+
+agentplayer_t new_agent_player(kn_stream_conn_t conn){
+	int id = get_id(t_agent->idmgr);
+	if(id <= 0) return NULL;
+	else{
+		agentplayer_t player = calloc(1,sizeof(*player));
+		player->toclient = conn;
+		kn_ref_init(player->ref,(void (*)(void*))release_agent_player);
+		player->agentsession.data = player->ref.identity;
+		player->agentsession.aid = t_agent->idx;
+		player->agentsession.sessionid = id;
+		t_agent->players[id] = player;
+		return player;
+	}
+}
+
 static void forward_game(kn_stream_conn_t con,rpacket_t rpk){
 	agentplayer_t ply = (agentplayer_t)kn_stream_conn_getud(con);
 	wpacket_t wpk = wpk_create_by_rpacket(rpk);
@@ -53,6 +78,18 @@ static int on_packet(kn_stream_conn_t con,rpacket_t rpk){
 }
 
 static void on_disconnected(kn_stream_conn_t conn,int err){
+	agentplayer_t player = kn_stream_conn_getud(conn);
+	if(player){
+		if(player->groupid){
+			//通知groupserver player的连接断开
+		
+		}
+		if(player->gameid){
+			//通知gameserver player的连接断开
+		
+		}
+		kn_ref_release((kn_ref*)player);
+	}
 }
 
 //处理来自channel的消息
@@ -61,9 +98,16 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 	(void)_;
 	if(((struct chanmsg*)msg)->msgtype == NEWCLIENT){
 		struct chanmsg_newclient *_msg = (struct chanmsg_newclient*)msg;
-		kn_stream_server_bind(t_agent->server,_msg->conn,1,4096,on_packet,on_disconnected,
-							  10*1000,NULL,0,NULL);
-		_msg->conn = NULL;
+		agentplayer_t player = new_agent_player(_msg->conn);
+		if(player){
+			if(0 == kn_stream_server_bind(t_agent->server,_msg->conn,1,4096,on_packet,on_disconnected,
+								  10*1000,NULL,0,NULL)){
+				kn_stream_conn_setud(_msg->conn,player);
+				_msg->conn = NULL;
+			}else{
+				kn_ref_release((kn_ref*)player);
+			}
+		}
 	}
 }
 
@@ -117,6 +161,7 @@ agent *start_agent(uint8_t idx){
 	agent->idx = idx;
 	agent->p = kn_new_proactor();
 	agent->t = kn_create_thread(THREAD_JOINABLE);
+	agent->idmgr = new_idmgr(1,4095);
 	kn_new_stream_server(agent->p,NULL,NULL);
 	agent->chan = kn_new_channel(kn_thread_getid(agent->t));
 	kn_channel_bind(agent->p,agent->chan,on_channel_msg,NULL);

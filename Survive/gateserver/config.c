@@ -1,5 +1,6 @@
 #include "config.h"
 #include "lua/lua_util.h"
+#include "gateserver.h"
 
 config* g_config = NULL;
 
@@ -10,7 +11,7 @@ int loadconfig(){
 	if (luaL_dofile(L,"gatecfg.lua")) {
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
-		(void)error;
+		LOG_GATE(LOG_INFO,"error on load gatecfg.lua:%s\n",error);
 		return -1;
 	}
 

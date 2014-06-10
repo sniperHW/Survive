@@ -1,6 +1,7 @@
 #include "agent.h"
 #include "config.h"
 #include "chanmsg.h"
+#include "gateserver.h"
 
 /*
 *  °ËºËÐÄ·þÎñÆ÷
@@ -44,6 +45,9 @@ int main(int argc,char **argv){
 	kn_addr_init_in(&local,kn_to_cstr(g_config->toclientip),g_config->toclientport);
 	kn_new_stream_server(p,&local,on_new_client);
 	
+	LOG_GATE(LOG_INFO,"gateserver start success\n");
+
+
 	while(!stop)
 		kn_proactor_run(p,50);
 		

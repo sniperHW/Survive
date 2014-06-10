@@ -6,6 +6,7 @@
 #include "togrpgame.h"
 #include "kn_thread.h"
 #include "config.h"
+#include "gateserver.h"
 
 #define MAXCMD 65535
 
@@ -88,6 +89,7 @@ static void *service_main(void *ud){
 	printf("agent service运行\n");	
 	t_agent = (agent*)ud;
 	if(0 != connect_redis()){
+		LOG_GATE(LOG_ERROR,"connect to redis failed,agent thread exit,agentid[%u]\n",t_agent->idx);	
 		return NULL;
 	}
 	while(!t_agent->stop){
@@ -103,6 +105,7 @@ int    connect_redis(){
 				on_redis_disconnected,
 				NULL)){
 		//记录日志
+		LOG_GATE(LOG_ERROR,"kn_redisAsynConnect return not 0\n");				
 		return -1;
 	}
 	return 0;

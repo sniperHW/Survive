@@ -20,7 +20,9 @@ static int on_gate_packet(kn_stream_conn_t con,rpacket_t rpk){
 	uint16_t cmd = rpk_read_uint16(rpk);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
-		if(CALL_OBJ_FUNC1(handler[cmd]->obj,"handle",0,lua_pushlightuserdata(L,rpk))){
+		if(CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
+						  lua_pushlightuserdata(L,rpk),
+						  lua_pushlightuserdata(L,con))){
 			const char * error = lua_tostring(L, -1);
 			lua_pop(L,1);
 			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
@@ -47,7 +49,9 @@ static int on_group_packet(kn_stream_conn_t con,rpacket_t rpk){
 	uint16_t cmd = rpk_read_uint16(rpk);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
-		if(CALL_OBJ_FUNC1(handler[cmd]->obj,"handle",0,lua_pushlightuserdata(L,rpk))){
+		if(CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
+						  lua_pushlightuserdata(L,rpk),
+						  lua_pushlightuserdata(L,con))){
 			const char * error = lua_tostring(L, -1);
 			lua_pop(L,1);
 			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
@@ -93,6 +97,16 @@ static int reg_cmd_handler(lua_State *L){
 	return 1;
 }
 
+static int lua_send2grp(lua_State *L){
+	wpacket_t wpk = lua_touserdata(L,1);
+	if(!togrp){
+		wpk_destroy(wpk);
+	}else{
+		kn_stream_conn_send(togrp,wpk);
+	}
+	return 0;
+}
+
 
 void reg_game_c_function(lua_State *L){
 	lua_getglobal(L,"GameApp");
@@ -106,6 +120,10 @@ void reg_game_c_function(lua_State *L){
 
 	lua_pushstring(L, "reg_cmd_handler");
 	lua_pushcfunction(L, &reg_cmd_handler);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "send2grp");
+	lua_pushcfunction(L, &lua_send2grp);
 	lua_settable(L, -3);
 
 	lua_pop(L,1);

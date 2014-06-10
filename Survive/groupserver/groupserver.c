@@ -16,7 +16,9 @@ static int on_game_packet(kn_stream_conn_t con,rpacket_t rpk){
 	uint16_t cmd = rpk_read_uint16(rpk);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
-		if(CALL_OBJ_FUNC1(handler[cmd]->obj,"handle",0,lua_pushlightuserdata(L,rpk))){
+		if(CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
+						  lua_pushlightuserdata(L,rpk),
+						  lua_pushlightuserdata(L,con))){
 			const char * error = lua_tostring(L, -1);
 			lua_pop(L,1);
 			LOG_GROUP(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
@@ -43,7 +45,9 @@ static int on_gate_packet(kn_stream_conn_t con,rpacket_t rpk){
 	uint16_t cmd = rpk_read_uint16(rpk);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
-		if(CALL_OBJ_FUNC1(handler[cmd]->obj,"handle",0,lua_pushlightuserdata(L,rpk))){
+		if(CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
+						  lua_pushlightuserdata(L,rpk),
+						  lua_pushlightuserdata(L,con))){
 			const char * error = lua_tostring(L, -1);
 			lua_pop(L,1);
 			LOG_GROUP(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);

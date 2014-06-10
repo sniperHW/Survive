@@ -4,7 +4,7 @@
 
 enum{
 	//client <-> agent
-	CMD_CA_BEGIN = 0,
+	CMD_CA_BEGIN = 1,
 	CMD_CA_END,
 
 	CMD_AC_BEGIN = CMD_CA_BEGIN + 1,
@@ -26,6 +26,7 @@ enum{
 
 	//gate <-> group
 	CMD_AG_BEGIN = CMD_GC_END + 1,
+	CMD_AG_LOGIN,   //gateserver进程登陆到group 
 	CMD_AG_END,
 
 	CMD_GA_BEGIN = CMD_AG_END + 1,
@@ -34,11 +35,24 @@ enum{
 	//game <-> group
 
 	CMD_GAMEG_BEGIN = CMD_GA_END + 1,
+	CMD_GAMEG_LOGIN, //gameserver进程登陆到group 
 	CMD_GAMEG_END,
 
 	CMD_GGAME_BEGIB = CMD_GAMEG_END + 1,
 	CMD_GGAME_END,
 
+	//game <-> gate
+
+	CMD_AGAME_BEGIN = CMD_GAMEG_END + 1,
+	CMD_AGAME_LOGIN, //gateserver进程登陆到game 
+	CMD_AGAME_END,
+
+	CMD_GAMEA_BEGIN = CMD_AGAME_END + 1,
+	CMD_GAMEA_END,
+
+	//dummy cmd
+	DUMMY_ON_GATE_DISCONNECTED = CMD_GAMEA_END + 1,
+	DUMMY_ON_GAME_DISCONNECTED,
 };
 
 

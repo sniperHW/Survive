@@ -8,6 +8,7 @@
 #include "rpacket.h"
 #include "wpacket.h"
 #include "log.h"
+#include "kn_stream_conn.h"
 
 //for rpacket
 int lua_rpk_read_uint8(lua_State *L){
@@ -47,6 +48,32 @@ int lua_rpk_read_string(lua_State *L){
 }
 
 //for wpacket
+
+int lua_new_wpk(lua_State *L){
+	wpacket_t wpk = wpk_create(128,0);
+	lua_pushligthuserdata(L,wpk);
+	return 1;
+}
+
+int lua_new_wpk_by_rpk(lua_State *L){
+	rpacket_t rpk = lua_touserdata(L,1);
+	wpacket_t wpk = wpk_create_by_rpacket(rpk);
+	lua_pushligthuserdata(L,wpk);
+	return 1;
+}
+
+int lua_new_wpk_by_wpk(lua_State *L){
+	wpacket_t l_wpk = lua_touserdata(L,1);
+	wpacket_t wpk = wpk_create_by_rpacket(l_wpk);
+	lua_pushligthuserdata(L,wpk);
+	return 1;
+}
+
+int lua_destroy_wpk(lua_State *L){
+	wpacket_t wpk = lua_touserdata(L,1);
+	wpk_destroy(wpk);
+	return 0;
+}
 
 int lua_wpk_write_uint8(lua_State *L){
 	wpacket_t wpk = lua_touserdata(L,1);
@@ -104,6 +131,12 @@ int lua_syslog(lua_State *L){
 	return 0;
 }
 
+int lua_send(lua_State *L){
+	kn_stream_conn_t conn = lua_touserdata(L,1);
+	wpacket_t wpk = lua_touserdata(L,2);
+	kn_stream_conn_send(conn,wpk);
+	return 0;
+}
 
 void reg_common_c_function(lua_State *L){
 	
@@ -151,6 +184,23 @@ void reg_common_c_function(lua_State *L){
 	lua_pushcfunction(L,&lua_rpk_read_string);
 	lua_settable(L, -3);
 
+	
+	lua_pushstring(L,"new_wpk");
+	lua_pushcfunction(L,&lua_new_wpk);
+	lua_settable(L, -3);
+
+	lua_pushstring(L,"new_wpk_by_rpk");
+	lua_pushcfunction(L,&lua_new_wpk_by_rpk);
+	lua_settable(L, -3);
+
+	lua_pushstring(L,"new_wpk_by_wpk");
+	lua_pushcfunction(L,&lua_new_wpk_by_wpk);
+	lua_settable(L, -3);
+
+	lua_pushstring(L,"destroy_wpk");
+	lua_pushcfunction(L,&lua_destroy_wpk);
+	lua_settable(L, -3);
+
 	lua_pushstring(L,"wpk_write_uint8");
 	lua_pushcfunction(L,&lua_wpk_write_uint8);
 	lua_settable(L, -3);
@@ -181,6 +231,10 @@ void reg_common_c_function(lua_State *L){
 
 	lua_pushstring(L,"syslog");
 	lua_pushcfunction(L,&lua_syslog);
+	lua_settable(L, -3);
+
+	lua_pushstring(L,"send");
+	lua_pushcfunction(L,&lua_send);
 	lua_settable(L, -3);
 	
 	lua_setglobal(L,"C");

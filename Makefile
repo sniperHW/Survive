@@ -41,7 +41,8 @@ kendynet.a: \
 gateserverd:\
 	Survive/gateserver/agent.c\
 	Survive/gateserver/gateserver.c\
+	Survive/gateserver/config.c\
 	Survive/gateserver/togrpgame.c\
 	kendynet.a
-	$(CC) $(CFLAGS) -o gateserverd $^ $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
+	$(CC) $(CFLAGS) -o gateserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
 

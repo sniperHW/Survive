@@ -66,51 +66,46 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 	}
 }
 
-void on_redis_disconnected(redisconn_t conn,void *_);
+
+int    connect_redis();
+
 static void on_redis_connect(redisconn_t conn,int err,void *_){
 	(void)_;
 	if(conn)
 		t_agent->redis = conn;
 	else{
-		//重连
-		if(0 != kn_redisAsynConnect(t_agent->p,
-			kn_to_cstr(g_config->redisip),g_config->redisport,
-			on_redis_connect,
-			on_redis_disconnected,
-			NULL)){
-			//记录日志
-		}
+		connect_redis();	
 	}
 }
 
 static	void on_redis_disconnected(redisconn_t conn,void *_){
 	(void)_;
 	t_agent->redis = NULL;
-	//重连
-	if(0 != kn_redisAsynConnect(t_agent->p,
-		kn_to_cstr(g_config->redisip),g_config->redisport,
-		on_redis_connect,
-		on_redis_disconnected,
-		NULL)){
-		//记录日志
-	}
+	connect_redis();	
 }
 
 static void *service_main(void *ud){
 	printf("agent service运行\n");	
 	t_agent = (agent*)ud;
-	if(0 != kn_redisAsynConnect(t_agent->p,
-		kn_to_cstr(g_config->redisip),g_config->redisport,
-		on_redis_connect,
-		on_redis_disconnected,
-		NULL)){
-		//记录日志
+	if(0 != connect_redis()){
 		return NULL;
 	}
 	while(!t_agent->stop){
 		kn_proactor_run(t_agent->p,50);
 	}
 	return NULL;
+}
+
+int    connect_redis(){
+	if(0 != kn_redisAsynConnect(t_agent->p,
+				kn_to_cstr(g_config->redisip),g_config->redisport,
+				on_redis_connect,
+				on_redis_disconnected,
+				NULL)){
+		//记录日志
+		return -1;
+	}
+	return 0;
 }
 
 

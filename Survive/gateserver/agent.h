@@ -15,6 +15,7 @@ typedef struct agent{
 	kn_thread_t        t;
 	kn_channel_t       chan;
 	redisconn_t        redis;
+	kn_stream_server_t server;
 	volatile uint8_t   stop;
 	agentplayer_t      players[4096];
 };

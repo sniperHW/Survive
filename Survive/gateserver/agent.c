@@ -1,6 +1,6 @@
 #include "agent.h"
 #include "common/cmdhandler.h"
-#include "netcmd.h"
+#include "common/netcmd.h"
 #include "gateplayer.h"
 #include "chanmsg.h"
 #include "togrpgame.h"
@@ -49,11 +49,19 @@ static int on_packet(kn_stream_conn_t con,rpacket_t rpk){
 	return 1;
 }
 
+static void on_disconnected(kn_stream_conn_t conn,int err){
+}
+
 //处理来自channel的消息
 static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *_)
 {
 	(void)_;
-
+	if(((struct chanmsg*)msg)->msgtype == NEWCLIENT){
+		struct chanmsg_newclient *_msg = (struct chanmsg_newclient*)msg;
+		kn_stream_server_bind(t_agent->server,_msg->conn,1,4096,on_packet,on_disconnected,
+							  10*1000,NULL,0,NULL);
+		_msg->conn = NULL;
+	}
 }
 
 static void on_redis_connect(redisconn_t conn,int err,void *ud){

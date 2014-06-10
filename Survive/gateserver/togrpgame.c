@@ -1,6 +1,7 @@
 #include "togrpgame.h"
 #include "chanmsg.h"
 #include "kn_stream_conn.h"
+#include "config.h"
 
 static __thread togrpgame  t_togrpgame = NULL;
 
@@ -10,6 +11,33 @@ static int on_packet(kn_stream_conn_t con,rpacket_t rpk){
 		//from group
 	}else{
 		//from game
+	}
+}
+
+static void on_connect_failed(kn_stream_client_t c,kn_sockaddr *addr,int err,void *ud)
+{	
+	if((remoteServerType)ud == GROUPSERVER){
+		//记录日志
+	}else if((remoteServerType)ud == GAMESERVER){
+		//记录日志	
+	}
+	//重连
+	kn_stream_connect(c,NULL,addr,ud);
+}
+
+static void on_connect(kn_stream_client_t c,kn_stream_conn_t conn,void *ud){
+	if((remoteServerType)ud == GROUPSERVER){
+		t_togrpgame->togroup = conn;
+	}else if((remoteServerType)ud == GAMESERVER){
+		
+	}
+}
+
+static void on_disconnected(kn_stream_conn_t conn,int err){
+	if(conn == t_togrpgame->togroup){
+		t_togrpgame->togroup = NULL;
+	}else{
+	
 	}
 }
 

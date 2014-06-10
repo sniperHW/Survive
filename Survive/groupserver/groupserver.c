@@ -110,7 +110,7 @@ static lua_State *init(){
 	if (luaL_dofile(L,"script/handler.lua")) {
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
-		LOG_GROUP(LOG_INFO,"error on load gatecfg.lua:%s\n",error);
+		LOG_GROUP(LOG_INFO,"error on handler.lua:%s\n",error);
 		lua_close(L); 
 		return NULL;
 	}

@@ -5,10 +5,11 @@
 #include "chanmsg.h"
 #include "togrpgame.h"
 #include "kn_thread.h"
+#include "config.h"
 
 #define MAXCMD 65535
 
-static cmd_handler_t handler[MAXCMD];
+static cmd_handler_t handler[MAXCMD] = {NULL};
 
 static __thread agent* t_agent = NULL;
 
@@ -65,26 +66,44 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 	}
 }
 
-static void on_redis_connect(redisconn_t conn,int err,void *ud){
-	if(conn) ((agent*)ud)->redis = conn;
+void on_redis_disconnected(redisconn_t conn,void *_);
+static void on_redis_connect(redisconn_t conn,int err,void *_){
+	(void)_;
+	if(conn)
+		t_agent->redis = conn;
 	else{
 		//重连
+		if(0 != kn_redisAsynConnect(t_agent->p,
+			kn_to_cstr(g_config->redisip),g_config->redisport,
+			on_redis_connect,
+			on_redis_disconnected,
+			NULL)){
+			//记录日志
+		}
 	}
 }
 
-static	void on_redis_disconnected(redisconn_t conn,void *ud){
-	((agent*)ud)->redis = NULL;
+static	void on_redis_disconnected(redisconn_t conn,void *_){
+	(void)_;
+	t_agent->redis = NULL;
 	//重连
+	if(0 != kn_redisAsynConnect(t_agent->p,
+		kn_to_cstr(g_config->redisip),g_config->redisport,
+		on_redis_connect,
+		on_redis_disconnected,
+		NULL)){
+		//记录日志
+	}
 }
 
 static void *service_main(void *ud){
 	printf("agent service运行\n");	
 	t_agent = (agent*)ud;
 	if(0 != kn_redisAsynConnect(t_agent->p,
-		"127.0.0.1",8010,
+		kn_to_cstr(g_config->redisip),g_config->redisport,
 		on_redis_connect,
 		on_redis_disconnected,
-		t_agent)){
+		NULL)){
 		//记录日志
 		return NULL;
 	}

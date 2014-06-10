@@ -14,6 +14,8 @@ typedef struct config{
 	uint8_t     agentcount;
 	kn_string_t toclientip;
 	uint16_t    toclientport;
+	kn_string_t redisip;
+	uint16_t    redisport;
 }config;
 
 extern config* g_config;

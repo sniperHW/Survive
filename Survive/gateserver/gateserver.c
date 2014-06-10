@@ -10,7 +10,7 @@
 */
 
 #define MAX_AGENT 8
-static agent *agents[MAX_AGENT];
+static agent *agents[MAX_AGENT]= {NULL};
 
 static void on_new_client(kn_stream_server_t _,kn_stream_conn_t conn){
 	(void)_;

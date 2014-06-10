@@ -5,6 +5,7 @@
 #include "kn_stream_conn_server.h"
 #include "common/netcmd.h"
 #include "common/cmdhandler.h"
+#include "common/common_c_function.h"
 
 IMP_LOG(grouplog);
 
@@ -98,6 +99,7 @@ static lua_State *init(){
 	}
 
 	//注册C函数，常量到lua
+	reg_common_c_function(L);
 
 
 	//注册lua消息处理器

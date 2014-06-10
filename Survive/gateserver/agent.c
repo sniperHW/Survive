@@ -100,7 +100,7 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 		struct chanmsg_newclient *_msg = (struct chanmsg_newclient*)msg;
 		agentplayer_t player = new_agent_player(_msg->conn);
 		if(player){
-			if(0 == kn_stream_server_bind(t_agent->server,_msg->conn,1,4096,on_packet,on_disconnected,
+			if(0 == kn_stream_server_bind(t_agent->server,_msg->conn,0,4096,on_packet,on_disconnected,
 								  10*1000,NULL,0,NULL)){
 				kn_stream_conn_setud(_msg->conn,player);
 				_msg->conn = NULL;

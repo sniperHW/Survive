@@ -91,6 +91,13 @@ static int reg_cmd_handler(lua_State *L){
 	return 1;
 }
 
+static int lua_grouplog(lua_State *L){
+	int lev = lua_tonumber(L,1);
+	const char *msg = lua_tostring(L,2);
+	LOG_GROUP(lev,"%s",msg);
+	return 0;
+}
+
 void reg_group_c_function(lua_State *L){
     lua_getglobal(g_L,"GroupApp");
 	if(!lua_istable(g_L, -1))
@@ -103,6 +110,10 @@ void reg_group_c_function(lua_State *L){
 
 	lua_pushstring(L, "reg_cmd_handler");
 	lua_pushinteger(L, reg_cmd_handler);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "grouplog");
+	lua_pushinteger(L, lua_grouplog);
 	lua_settable(L, -3);
 
 	lua_pop(L,1);

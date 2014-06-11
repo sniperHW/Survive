@@ -5,6 +5,7 @@
 enum{
 	//client <-> agent
 	CMD_CA_BEGIN = 1,
+	CMD_CA_LOGIN,
 	CMD_CA_END,
 
 	CMD_AC_BEGIN = CMD_CA_BEGIN + 1,
@@ -19,17 +20,22 @@ enum{
 
 	//client <-> group
 	CMD_CG_BEGIN = CMD_SC_END + 1,
+	CMD_CG_CREATE,
 	CMD_CG_END,
 
 	CMD_GC_BEGIN = CMD_CG_END + 1,
+	CMD_GC_CREATE,
+	CMD_GC_BEGINPLY,
 	CMD_GC_END,
 
 	//gate <-> group
 	CMD_AG_BEGIN = CMD_GC_END + 1,
-	CMD_AG_LOGIN,   //gateserver进程登陆到group 
+	CMD_AG_LOGIN,   //gateserver进程登陆到group
+	CMD_AG_PLYLOGIN,
 	CMD_AG_END,
 
 	CMD_GA_BEGIN = CMD_AG_END + 1,
+	CMD_GA_BUSY,
 	CMD_GA_END,
 
 	//game <-> group

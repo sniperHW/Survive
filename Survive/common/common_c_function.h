@@ -29,12 +29,6 @@ int lua_rpk_read_uint32(lua_State *L){
 	return 1;
 }
 
-int lua_rpk_read_uint64(lua_State *L){
-	rpacket_t rpk = lua_touserdata(L,1);
-	lua_pushnumber(L,rpk_read_uint64(rpk));
-	return 1;
-}
-
 int lua_rpk_read_double(lua_State *L){
 	rpacket_t rpk = lua_touserdata(L,1);
 	lua_pushnumber(L,rpk_read_double(rpk));
@@ -45,6 +39,37 @@ int lua_rpk_read_string(lua_State *L){
 	rpacket_t rpk = lua_touserdata(L,1);
 	lua_pushstring(L,rpk_read_string(rpk));
 	return 1;	
+}
+
+
+int lua_rpk_reverse_read_uint8(lua_State *L){
+	rpacket_t rpk = lua_touserdata(L,1);
+	lua_pushnumber(L,reverse_read_uint8(rpk));
+	return 1;
+}
+
+int lua_rpk_reverse_read_uint16(lua_State *L){
+	rpacket_t rpk = lua_touserdata(L,1);
+	lua_pushnumber(L,reverse_read_uint16(rpk));
+	return 1;
+}
+
+int lua_rpk_reverse_read_uint32(lua_State *L){
+	rpacket_t rpk = lua_touserdata(L,1);
+	lua_pushnumber(L,reverse_read_uint32(rpk));
+	return 1;
+}
+
+int lua_rpk_reverse_read_double(lua_State *L){
+	rpacket_t rpk = lua_touserdata(L,1);
+	lua_pushnumber(L,reverse_read_double(rpk));
+	return 1;
+}
+
+int lua_rpk_dropback(lua_State *L){
+	rpacket_t rpk = lua_touserdata(L,1);
+	rpk_dropback(rpk);
+	return 0;
 }
 
 //for wpacket
@@ -93,13 +118,6 @@ int lua_wpk_write_uint32(lua_State *L){
 	wpacket_t wpk = lua_touserdata(L,1);
 	uint32_t v = (uint32_t)lua_tonumber(L,2);
 	wpk_write_uint32(wpk,v);
-	return 0;
-}
-
-int lua_wpk_write_uint64(lua_State *L){
-	wpacket_t wpk = lua_touserdata(L,1);
-	uint64_t v = (uint64_t)lua_tonumber(L,2);
-	wpk_write_uint64(wpk,v);
 	return 0;
 }
 
@@ -184,6 +202,25 @@ void reg_common_c_function(lua_State *L){
 	lua_pushcfunction(L,&lua_rpk_read_string);
 	lua_settable(L, -3);
 
+	lua_pushstring(L,"rpk_reverse_read_uint8");
+	lua_pushcfunction(L,&lua_rpk_reverse_read_uint8);
+	lua_settable(L, -3);
+
+	lua_pushstring(L,"rpk_reverse_read_uint16");
+	lua_pushcfunction(L,&lua_rpk_reverse_read_uint16);
+	lua_settable(L, -3);
+
+	lua_pushstring(L,"rpk_reverse_read_uint32");
+	lua_pushcfunction(L,&lua_rpk_reverse_read_uint32);
+	lua_settable(L, -3);
+
+	lua_pushstring(L,"rpk_reverse_read_double");
+	lua_pushcfunction(L,&lua_rpk_reverse_read_double);
+	lua_settable(L, -3);
+
+	lua_pushstring(L,"rpk_dropback");
+	lua_pushcfunction(L,&lua_rpk_dropback);
+	lua_settable(L, -3);
 	
 	lua_pushstring(L,"new_wpk");
 	lua_pushcfunction(L,&lua_new_wpk);

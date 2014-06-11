@@ -107,6 +107,14 @@ static int lua_send2grp(lua_State *L){
 	return 0;
 }
 
+static int lua_gamelog(lua_State *L){
+	int lev = lua_tonumber(L,1);
+	const char *msg = lua_tostring(L,2);
+	LOG_GAME(lev,"%s",msg);
+	return 0;
+}
+
+
 
 void reg_game_c_function(lua_State *L){
 	lua_getglobal(L,"GameApp");
@@ -124,6 +132,10 @@ void reg_game_c_function(lua_State *L){
 
 	lua_pushstring(L, "send2grp");
 	lua_pushcfunction(L, &lua_send2grp);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "gamelog");
+	lua_pushinteger(L, lua_gamelog);
 	lua_settable(L, -3);
 
 	lua_pop(L,1);

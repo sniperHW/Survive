@@ -21,6 +21,7 @@ enum{
 	//client <-> group
 	CMD_CG_BEGIN = CMD_SC_END + 1,
 	CMD_CG_CREATE,
+	CMD_CG_ENTERMAP,  //请求进入地图
 	CMD_CG_END,
 
 	CMD_GC_BEGIN = CMD_CG_END + 1,
@@ -41,10 +42,11 @@ enum{
 	//game <-> group
 
 	CMD_GAMEG_BEGIN = CMD_GA_END + 1,
-	CMD_GAMEG_LOGIN, //gameserver进程登陆到group 
+	CMD_GAMEG_LOGIN,     //gameserver进程登陆到group 
 	CMD_GAMEG_END,
 
 	CMD_GGAME_BEGIB = CMD_GAMEG_END + 1,
+	CMD_GGAME_ENTERMAP,
 	CMD_GGAME_END,
 
 	//game <-> gate

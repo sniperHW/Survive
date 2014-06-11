@@ -1,8 +1,8 @@
-local gate = require "gate"
-local game = require "game"
+local Gate = require "gate"
+local Game = require "game"
 
 --注册各模块的消息处理函数
 function reghandler()
-	gate.RegHandler()
-	game.RegHandler()
+	Gate.RegHandler()
+	Game.RegHandler()
 end

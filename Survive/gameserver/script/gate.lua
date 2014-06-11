@@ -23,7 +23,7 @@ local function gate_disconnected(rpk,conn)
 end
 
 local function reg_cmd_handler()
-	GroupApp.reg_cmd_handler(CMD_AG_LOGIN,{handle=gate_login})
+	GroupApp.reg_cmd_handler(CMD_AGAME_LOGIN,{handle=gate_login})
 	GroupApp.reg_cmd_handler(DUMMY_ON_GATE_DISCONNECTED,{handle=gate_disconnected})
 end
 

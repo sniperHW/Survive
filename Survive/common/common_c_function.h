@@ -68,7 +68,9 @@ int lua_rpk_reverse_read_double(lua_State *L){
 
 int lua_rpk_dropback(lua_State *L){
 	rpacket_t rpk = lua_touserdata(L,1);
-	rpk_dropback(rpk);
+	uint32_t  dropsize = (uint32_t)lua_tonumber(L,2);
+	rpk_dropback(rpk,dropsize);
+
 	return 0;
 }
 
@@ -157,12 +159,13 @@ int lua_send(lua_State *L){
 }
 
 //redis
+kn_proactor_t get_thd_proacter();
 
-static inline lua_on_redis_connected(redisconn_t conn,int err,void *ud){
+static inline void lua_on_redis_connected(redisconn_t conn,int err,void *ud){
 	luaObject_t obj = (luaObject_t)ud;
-	if(CALL_OBJ_FUNC2(obj,"on_connect",
-				   (conn?lua_pushlightuserdata(obj->L,conn):lua_pushnil(L)),
-				   lua_pushnumber(L,err))){
+	if(CALL_OBJ_FUNC2(obj,"on_connect",0,
+				   (conn?lua_pushlightuserdata(obj->L,conn):lua_pushnil(obj->L)),
+				   lua_pushnumber(obj->L,err))){
 		const char * error = lua_tostring(obj->L, -1);
 		SYS_LOG(LOG_ERROR,"on_redis_connected:%s\n",error);
 		lua_pop(obj->L,1);
@@ -170,11 +173,10 @@ static inline lua_on_redis_connected(redisconn_t conn,int err,void *ud){
 	}
 }
 
-static inline lua_on_redis_disconnected(redisconn_t conn,int err,void *ud){
+static inline void lua_on_redis_disconnected(redisconn_t conn,void *ud){
 	luaObject_t obj = (luaObject_t)ud;
-	if(CALL_OBJ_FUNC2(obj,"on_disconnect",
-					  lua_pushlightuserdata(obj->L,conn),
-					  lua_pushnumber(L,err))){
+	if(CALL_OBJ_FUNC1(obj,"on_disconnect",0,
+			  lua_pushlightuserdata(obj->L,conn))){
 		const char * error = lua_tostring(obj->L, -1);
 		SYS_LOG(LOG_ERROR,"on_redis_disconnected:%s\n",error);
 		lua_pop(obj->L,1);
@@ -186,8 +188,8 @@ int lua_redis_connect(lua_State *L){
 	const char *ip = lua_tostring(L,1);
 	unsigned short port = (unsigned short)lua_tonumber(L,2);
 	luaObject_t    obj = create_luaObj(L,3);
-	if(0 != kn_redisAsynConnect(ip,port,lua_on_redis_connected,
-								lua_on_redis_disconnected,(void*)obj))
+	if(0 != kn_redisAsynConnect(get_thd_proacter(),ip,port,lua_on_redis_connected,
+				   lua_on_redis_disconnected,(void*)obj))
 	{
 		release_luaObj(obj);
 		lua_pushboolean(L,0);
@@ -246,9 +248,6 @@ void reg_common_c_function(lua_State *L){
 	lua_pushcfunction(L,&lua_rpk_read_uint32);
 	lua_settable(L, -3);
 
-	lua_pushstring(L,"rpk_read_uint64");
-	lua_pushcfunction(L,&lua_rpk_read_uint64);
-	lua_settable(L, -3);
 
 	lua_pushstring(L,"rpk_read_double");
 	lua_pushcfunction(L,&lua_rpk_read_double);
@@ -306,9 +305,6 @@ void reg_common_c_function(lua_State *L){
 	lua_pushcfunction(L,&lua_wpk_write_uint32);
 	lua_settable(L, -3);
 
-	lua_pushstring(L,"wpk_write_uint64");
-	lua_pushcfunction(L,&lua_wpk_write_uint64);
-	lua_settable(L, -3);
 
 	lua_pushstring(L,"wpk_write_double");
 	lua_pushcfunction(L,&lua_wpk_write_double);

@@ -113,7 +113,7 @@ void reg_group_c_function(lua_State *L){
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "grouplog");
-	lua_pushinteger(L, lua_grouplog);
+	lua_pushcfunction(L, lua_grouplog);
 	lua_settable(L, -3);
 
 	lua_pop(L,1);

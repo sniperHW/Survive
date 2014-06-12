@@ -16,6 +16,8 @@ static cmd_handler_t handler[MAXCMD] = {NULL};
 static kn_stream_client_t c;
 static kn_stream_conn_t   togrp;
 
+__thread kn_proactor_t t_proactor = NULL;
+
 static int on_gate_packet(kn_stream_conn_t con,rpacket_t rpk){
 	uint16_t cmd = rpk_read_uint16(rpk);
 	if(handler[cmd]){
@@ -135,7 +137,7 @@ void reg_game_c_function(lua_State *L){
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "gamelog");
-	lua_pushinteger(L, lua_gamelog);
+	lua_pushcfunction(L, lua_gamelog);
 	lua_settable(L, -3);
 
 	lua_pop(L,1);

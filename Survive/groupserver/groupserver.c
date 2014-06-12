@@ -11,6 +11,7 @@ IMP_LOG(grouplog);
 
 #define MAXCMD 65535
 static cmd_handler_t handler[MAXCMD] = {NULL};
+__thread kn_proactor_t t_proactor = NULL;
 
 static int on_game_packet(kn_stream_conn_t con,rpacket_t rpk){
 	uint16_t cmd = rpk_read_uint16(rpk);

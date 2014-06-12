@@ -159,7 +159,7 @@ int lua_send(lua_State *L){
 }
 
 //redis
-kn_proactor_t get_thd_proacter();
+extern __thread kn_proactor_t t_proactor;
 
 static inline void lua_on_redis_connected(redisconn_t conn,int err,void *ud){
 	luaObject_t obj = (luaObject_t)ud;
@@ -188,7 +188,7 @@ int lua_redis_connect(lua_State *L){
 	const char *ip = lua_tostring(L,1);
 	unsigned short port = (unsigned short)lua_tonumber(L,2);
 	luaObject_t    obj = create_luaObj(L,3);
-	if(0 != kn_redisAsynConnect(get_thd_proacter(),ip,port,lua_on_redis_connected,
+	if(0 != kn_redisAsynConnect(t_proactor,ip,port,lua_on_redis_connected,
 				   lua_on_redis_disconnected,(void*)obj))
 	{
 		release_luaObj(obj);

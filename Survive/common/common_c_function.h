@@ -156,6 +156,62 @@ int lua_send(lua_State *L){
 	return 0;
 }
 
+//redis
+
+static inline lua_on_redis_connected(redisconn_t conn,int err,void *ud){
+	luaObject_t obj = (luaObject_t)ud;
+	if(CALL_OBJ_FUNC2(obj,"on_connect",
+				   (conn?lua_pushlightuserdata(obj->L,conn):lua_pushnil(L)),
+				   lua_pushnumber(L,err))){
+		const char * error = lua_tostring(obj->L, -1);
+		SYS_LOG(LOG_ERROR,"on_redis_connected:%s\n",error);
+		lua_pop(obj->L,1);
+		release_luaObj(obj);
+	}
+}
+
+static inline lua_on_redis_disconnected(redisconn_t conn,int err,void *ud){
+	luaObject_t obj = (luaObject_t)ud;
+	if(CALL_OBJ_FUNC2(obj,"on_disconnect",
+					  lua_pushlightuserdata(obj->L,conn),
+					  lua_pushnumber(L,err))){
+		const char * error = lua_tostring(obj->L, -1);
+		SYS_LOG(LOG_ERROR,"on_redis_disconnected:%s\n",error);
+		lua_pop(obj->L,1);
+	}	
+	release_luaObj(obj);
+}
+
+int lua_redis_connect(lua_State *L){
+	const char *ip = lua_tostring(L,1);
+	unsigned short port = (unsigned short)lua_tonumber(L,2);
+	luaObject_t    obj = create_luaObj(L,3);
+	if(0 != kn_redisAsynConnect(ip,port,lua_on_redis_connected,
+								lua_on_redis_disconnected,(void*)obj))
+	{
+		release_luaObj(obj);
+		lua_pushboolean(L,0);
+	}else
+		lua_pushboolean(L,1);
+	return 1;
+}
+
+int lua_redis_close(lua_State *L){
+	redisconn_t conn = lua_touserdata(L,1);
+	kn_redisDisconnect(conn);
+	return 0;
+}
+
+/*
+struct redisReply;						
+int kn_redisCommand(redisconn_t,const char *cmd,
+					void (*cb)(redisconn_t,struct redisReply*,void *pridata),void *pridata);					
+*/
+int lua_redisCommand(lua_State *L){
+	
+	return 1;
+}
+
 void reg_common_c_function(lua_State *L){
 	
 	lua_getglobal(L,"_G");
@@ -272,6 +328,19 @@ void reg_common_c_function(lua_State *L){
 
 	lua_pushstring(L,"send");
 	lua_pushcfunction(L,&lua_send);
+	lua_settable(L, -3);
+
+	//redis
+	lua_pushstring(L,"redis_connect");
+	lua_pushcfunction(L,&lua_redis_connect);
+	lua_settable(L, -3);
+
+	lua_pushstring(L,"redis_close");
+	lua_pushcfunction(L,&lua_redis_close);
+	lua_settable(L, -3);
+
+	lua_pushstring(L,"redisCommand");
+	lua_pushcfunction(L,&lua_redisCommand);
 	lua_settable(L, -3);
 	
 	lua_setglobal(L,"C");

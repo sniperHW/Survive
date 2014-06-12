@@ -16,10 +16,8 @@ local function player:new(o)
   setmetatable(o, self)
   self.__index = self
   self.groupid = 0
-  self.gameid = 0
-  self.gateid = nil
-  self.gateconn = nil
-  self.gameconn = nil
+  self.game = nil
+  self.gate = nil
   self.actname = nil
   self.chaname = nil
   self.attr = {}
@@ -100,8 +98,7 @@ local function AG_PLYLOGIN(rpk,conn)
 		wpk_write_uint32(wpk,gateid.low)
 		C.send(conn,wpk)
 	else
-		ply.gateid = gateid
-		ply.gateconn = conn
+		ply.gate = {id=gateid,conn = conn}
 		--从数据库导入玩家数据
 	end
 end

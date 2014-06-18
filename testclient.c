@@ -37,7 +37,7 @@ int main(int argc,char **argv)
 	kn_proactor_t p = kn_new_proactor();
 	kn_addr_init_in(&remote,argv[1],atoi(argv[2]));		
 	c = kn_new_stream_client(p,on_connected,on_connect_failed);
-	kn_stream_connect(c,NULL,&remote,NULL,30*1000);
+	kn_stream_connect(c,NULL,&remote,NULL);
 	
 	while(1){
 		kn_proactor_run(p,50);

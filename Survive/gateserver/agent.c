@@ -34,6 +34,7 @@ agentplayer_t new_agent_player(kn_stream_conn_t conn){
 	else{
 		agentplayer_t player = calloc(1,sizeof(*player));
 		player->toclient = conn;
+		player->state = ply_init;
 		kn_ref_init(&player->ref,(fn_ref_destroy)release_agent_player);
 		player->agentsession.data = player->ref.identity;
 		player->agentsession.aid = t_agent->idx;
@@ -150,6 +151,7 @@ int    connect_redis(){
 
 static void redis_login_cb(redisconn_t _,struct redisReply* reply,void *pridata)
 {
+	printf("redis cb\n");
 	(void)_;
 	kn_stream_conn_t conn = (kn_stream_conn_t)pridata;
 	agentplayer_t player = (agentplayer_t)kn_stream_conn_getud(conn);
@@ -182,7 +184,10 @@ static void login(rpacket_t rpk,void *ptr){
 			return;
 	}
 	
-	if(player->state != ply_init) return;
+	if(player->state != ply_init){
+		printf("error state\n"); 
+		return;
+	}
 	
 	player->state = ply_wait_verify;
 	player->actname = kn_new_string(name);
@@ -192,6 +197,9 @@ static void login(rpacket_t rpk,void *ptr){
 	if(REDIS_OK!= kn_redisCommand(t_agent->redis,cmd,redis_login_cb,conn)){
 		player->state = ply_init;
 		kn_release_string(player->actname);
+		printf("kn_redisCommand error\n");
+	}else{
+		printf("send cmd\n");
 	}
 }
 
@@ -219,7 +227,7 @@ agent *start_agent(uint8_t idx){
 	agent->p = kn_new_proactor();
 	agent->t = kn_create_thread(THREAD_JOINABLE);
 	agent->idmgr = new_idmgr(1,4095);
-	kn_new_stream_server(agent->p,NULL,NULL);
+	agent->server=kn_new_stream_server(agent->p,NULL,NULL);
 	agent->chan = kn_new_channel(kn_thread_getid(agent->t));
 	kn_channel_bind(agent->p,agent->chan,on_channel_msg,NULL);
 	kn_thread_start_run(agent->t,service_main,agent);

@@ -20,4 +20,12 @@ typedef struct cmd_handler{
 }*cmd_handler_t;
 
 
+#define REG_C_HANDLER(CMD,HANDLER) do{\
+				cmd_handler_t h = calloc(1,sizeof(*h));\
+				h->_type = FN_C;\
+				h->_fn = HANDLER;\
+				handler[CMD] = h;\
+				}while(0)
+
+
 #endif

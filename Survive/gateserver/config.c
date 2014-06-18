@@ -15,17 +15,20 @@ int loadconfig(){
 		lua_close(L);
 		return -1;
 	}
-
+	
+	//连接group
 	luaObject_t obj = GETGLOBAL_OBJECT(L,"togrp");
 	g_config->groupip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
 	g_config->groupport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
 	release_luaObj(obj);
 
+	//连接redis
 	obj = GETGLOBAL_OBJECT(L,"toredis");
 	g_config->redisip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
 	g_config->redisport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
 	release_luaObj(obj);
 
+	//监听客户端
 	obj = GETGLOBAL_OBJECT(L,"toclient");
 	g_config->toclientip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
 	g_config->toclientport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);

@@ -1,24 +1,14 @@
---local Gate = require "gate"
---local Game = require "game"
+local Gate = require "gate"
+local Game = require "game"
 
 --注册各模块的消息处理函数
 function reghandler()
-	--Gate.RegHandler()
-	--Game.RegHandler()
+	Gate.RegHandler()
+	Game.RegHandler()
 end
 
-
-local redis_cb = {}
-
-function redis_cb:new(o)
-  o = o or {}   
-  setmetatable(o, self)
-  self.__index = self
-  return o
-end
-
-
-function redis_cb:callback(error,result)
+--[[
+function callback(_,error,result)
 	print(result[1])	
 	print(result[2])	
 end
@@ -26,7 +16,7 @@ end
 function on_redis_connect(_,conn,err)
 	if conn then 
 		print("connect to redis ok")
-		C.redisCommand(conn,"hmget huangwei age location",redis_cb:new())
+		C.redisCommand(conn,"hmget huangwei age location",{callback = callback})
 	end
 end
 
@@ -41,3 +31,4 @@ function test()
 		print("connect to redis error")	
 	end
 end
+]]--

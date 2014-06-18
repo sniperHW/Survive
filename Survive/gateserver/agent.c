@@ -10,7 +10,7 @@
 
 #define MAXCMD 65535
 
-static cmd_handler_t handler[MAXCMD] = {NULL};
+static __thread cmd_handler_t handler[MAXCMD] = {NULL};
 
 static __thread agent* t_agent = NULL;
 
@@ -129,19 +129,6 @@ static	void on_redis_disconnected(redisconn_t conn,void *_){
 	connect_redis();	
 }
 
-static void *service_main(void *ud){
-	printf("agent service运行\n");	
-	t_agent = (agent*)ud;
-	if(0 != connect_redis()){
-		LOG_GATE(LOG_ERROR,"connect to redis failed,agent thread exit,agentid[%u]\n",t_agent->idx);	
-		return NULL;
-	}
-	while(!t_agent->stop){
-		kn_proactor_run(t_agent->p,50);
-	}
-	return NULL;
-}
-
 int    connect_redis(){
 	if(0 != kn_redisAsynConnect(t_agent->p,
 				kn_to_cstr(g_config->redisip),g_config->redisport,
@@ -155,6 +142,70 @@ int    connect_redis(){
 	return 0;
 }
 
+static void redis_login_cb(redisconn_t _,struct redisReply* reply,void *pridata)
+{
+	(void)_;
+	kn_stream_conn_t *conn = (kn_stream_conn_t*)pridata;
+	agentplayer_t player = kn_stream_conn_getud(conn);
+	if(!player){
+		kn_stream_conn_close(conn);
+		return;
+	} 
+	if(reply && reply->status != REDIS_REPLY_ERROR && reply->status != REDIS_REPLY_ERROR){
+		kn_stream_conn_close(conn);
+		return;	
+	}else{
+		if(reply->status == REDIS_REPLY_NIL){
+			//输出提示
+			kn_stream_conn_close(conn);
+			return;		
+		}
+		//just for test
+		printf("client login success\n");
+		kn_stream_conn_close(conn);
+	}	
+}
+
+static void login(rpacket_t rpk,void *ptr){
+	kn_stream_conn_t *conn = (kn_stream_conn_t)(ptr);
+	uint8_t      type = rpk_read_uint8(rpk);//1:设备号,2:帐号
+	const char  *name = rpk_read_string(rpk);
+	agentplayer_t player = kn_stream_conn_getud(conn);
+	if(!player){
+			kn_stream_conn_close(conn);
+			return;
+	}
+	
+	if(player->state != ply_init) return;
+	
+	player->state = ply_wait_verify;
+	player->actname = kn_new_string(name);
+		
+	char cmd[1024];
+	snprintf(cmd,1024,"get %s",name);
+	if(REDIS_OK!= kn_redisCommand(t_agent->redis,cmd,redis_login_cb,conn)){
+		player->state = ply_init;
+		kn_release_string(player->actname);
+	}
+}
+
+static void reg_handler(){
+	REG_C_HANDLER(CMD_CA_LOGIN,login);
+}
+
+static void *service_main(void *ud){
+	printf("agent service运行\n");	
+	t_agent = (agent*)ud;
+	reg_handler();
+	if(0 != connect_redis()){
+		LOG_GATE(LOG_ERROR,"connect to redis failed,agent thread exit,agentid[%u]\n",t_agent->idx);	
+		return NULL;
+	}
+	while(!t_agent->stop){
+		kn_proactor_run(t_agent->p,50);
+	}
+	return NULL;
+}
 
 agent *start_agent(uint8_t idx){
 	agent *agent = calloc(1,sizeof(*agent));
@@ -174,3 +225,6 @@ void   stop_agent(agent *agent){
 	kn_thread_join(agent->t);
 	//stop_agent应该在进程结束时调用，不做任何收尾工作了
 }
+
+
+

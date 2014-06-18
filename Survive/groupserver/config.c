@@ -17,22 +17,17 @@ int loadconfig(){
 		return -1;
 	}
 	
-
-	/*luaObject_t obj = GETGLOBAL_OBJECT(L,"togrp");
-	g_config->groupip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
-	g_config->groupport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
+	//监听game
+	luaObject_t obj = GETGLOBAL_OBJECT(L,"game");
+	g_config->lgameip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
+	g_config->lgameport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
 	release_luaObj(obj);
-
-	obj = GETGLOBAL_OBJECT(L,"toredis");
-	g_config->redisip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
-	g_config->redisport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
+	
+	//监听gate
+	obj = GETGLOBAL_OBJECT(L,"gate");
+	g_config->lgateip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
+	g_config->lgateport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
 	release_luaObj(obj);
-
-	obj = GETGLOBAL_OBJECT(L,"toclient");
-	g_config->toclientip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
-	g_config->toclientport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
-	release_luaObj(obj);
-	g_config->agentcount = GETGLOBAL_NUMBER(L,"agentcount");*/
 	lua_close(L);
 	return 0;
 }

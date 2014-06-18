@@ -15,9 +15,6 @@ typedef struct config{
 	//groupserver·şÎñÆ÷
 	kn_string_t groupip;
 	uint16_t    groupport;
-	/////
-	kn_string_t redisip;
-	uint16_t    redisport;
 }config;
 
 extern config* g_config;

@@ -158,13 +158,20 @@ int main(int argc,char **argv){
 	signal(SIGINT,sig_int);
 	kn_proactor_t p = kn_new_proactor();
 	//Æô¶¯¼àÌý
-	kn_sockaddr lgameserver;
+	/*kn_sockaddr lgameserver;
 	kn_addr_init_in(&lgameserver,kn_to_cstr(g_config->lgameip),g_config->lgameport);
 	kn_new_stream_server(p,&lgameserver,on_new_game);
 
 	kn_sockaddr lgateserver;
 	kn_addr_init_in(&lgateserver,kn_to_cstr(g_config->lgateip),g_config->lgateport);
-	kn_new_stream_server(p,&lgateserver,on_new_gate);
+	kn_new_stream_server(p,&lgateserver,on_new_gate);*/
+	
+	if(CALL_LUA_FUNC(L,"test",0)){
+		const char * error = lua_tostring(L, -1);
+		lua_pop(L,1);
+		LOG_GROUP(LOG_INFO,"error on reghandler:%s\n",error);
+		lua_close(L); 
+	}	
 
 	while(!stop)
 		kn_proactor_run(p,50);

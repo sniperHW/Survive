@@ -5,6 +5,7 @@
 config* g_config = NULL;
 
 int loadconfig(){
+	return 0;
 	g_config = calloc(1,sizeof(*g_config));
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
@@ -15,6 +16,7 @@ int loadconfig(){
 		lua_close(L);
 		return -1;
 	}
+	
 
 	/*luaObject_t obj = GETGLOBAL_OBJECT(L,"togrp");
 	g_config->groupip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));

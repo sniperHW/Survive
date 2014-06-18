@@ -60,3 +60,8 @@ gameserverd:\
 	Survive/gameserver/config.c\
 	kendynet.a
 	$(CC) $(CFLAGS) -o gameserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
+	
+testclient:\
+	testclient.c\
+	kendynet.a
+	$(CC) $(CFLAGS) -o testclient $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm	

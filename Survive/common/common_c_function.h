@@ -164,7 +164,7 @@ extern __thread kn_proactor_t t_proactor;
 static inline void lua_on_redis_connected(redisconn_t conn,int err,void *ud){
 	luaObject_t obj = (luaObject_t)ud;
 	if(CALL_OBJ_FUNC2(obj,"on_connect",0,
-				   (conn?lua_pushlightuserdata(obj->L,conn):lua_pushnil(obj->L)),
+				   lua_pushlightuserdata(obj->L,conn),
 				   lua_pushnumber(obj->L,err))){
 		const char * error = lua_tostring(obj->L, -1);
 		SYS_LOG(LOG_ERROR,"on_redis_connected:%s\n",error);
@@ -206,19 +206,15 @@ int lua_redis_close(lua_State *L){
 
 
 static void build_resultset(struct redisReply* reply,lua_State *L){
-	lua_newtable(L);
 	if(reply->type == REDIS_REPLY_INTEGER){
-		lua_pushinterger(L,1);
-		lua_pushinterger(L,(int32_t)reply->integer);
-		lua_settable(L, -3);
+		lua_pushinteger(L,(int32_t)reply->integer);
 	}else if(reply->type == REDIS_REPLY_STRING){
-		lua_pushinterger(L,1);
 		lua_pushstring(L,reply->str);
-		lua_settable(L, -3);		
 	}else if(reply->type == REDIS_REPLY_ARRAY){
+		lua_newtable(L);
 		int i = 0;
 		for(; i < reply->elements; ++i){
-			lua_pushinterger(L,i+1);
+			lua_pushinteger(L,i+1);
 			build_resultset(reply->element[i],L);
 			lua_settable(L, -3);
 		}
@@ -236,7 +232,7 @@ void redis_command_cb(redisconn_t conn,struct redisReply* reply,void *pridata)
 			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
 			lua_pop(obj->L,1);
 		}				
-	}else if(reply->type == REDIS_REPLY_ERROR)
+	}else if(reply->type == REDIS_REPLY_ERROR){
 		if(CALL_OBJ_FUNC2(obj,"callback",0,lua_pushstring(obj->L,reply->str),lua_pushnil(obj->L))){
 			const char * error = lua_tostring(obj->L, -1);
 			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
@@ -253,7 +249,7 @@ void redis_command_cb(redisconn_t conn,struct redisReply* reply,void *pridata)
 }
 
 int lua_redisCommand(lua_State *L){
-	redisconn_t conn = (redisconn_t)lua_touserdata(L,2);
+	redisconn_t conn = (redisconn_t)lua_touserdata(L,1);
 	const char *cmd = lua_tostring(L,2);
 	luaObject_t obj = create_luaObj(L,3);
 	do{
@@ -261,7 +257,7 @@ int lua_redisCommand(lua_State *L){
 			lua_pushboolean(L,0);
 			break;
 		}
-		if(cmd || strcmp(cmd,"") == 0){
+		if(!cmd || strcmp(cmd,"") == 0){
 			lua_pushboolean(L,0);
 			break;
 		}

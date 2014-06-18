@@ -51,6 +51,7 @@ groupserverd:\
 	Survive/groupserver/config.c\
 	kendynet.a
 	$(CC) $(CFLAGS) -o groupserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
+	mv groupserverd Survive/groupserver
 
 gameserverd:\
 	Survive/gameserver/gameserver.c\

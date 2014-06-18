@@ -151,12 +151,12 @@ int main(int argc,char **argv){
 	if(loadconfig() != 0){
 		return 0;
 	}
-
-	if(!init())
+	lua_State *L;
+	if(!(L=init()))
 		return 0;
 
 	signal(SIGINT,sig_int);
-	kn_proactor_t p = kn_new_proactor();
+	t_proactor = kn_new_proactor();
 	//Æô¶¯¼àÌý
 	/*kn_sockaddr lgameserver;
 	kn_addr_init_in(&lgameserver,kn_to_cstr(g_config->lgameip),g_config->lgameport);
@@ -174,7 +174,7 @@ int main(int argc,char **argv){
 	}	
 
 	while(!stop)
-		kn_proactor_run(p,50);
+		kn_proactor_run(t_proactor,50);
 
 	return 0;	
 }

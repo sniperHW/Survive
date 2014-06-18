@@ -7,6 +7,7 @@
 #include "kn_thread.h"
 #include "config.h"
 #include "gateserver.h"
+#include "kendynet.h"
 
 #define MAXCMD 65535
 
@@ -24,13 +25,16 @@ void release_agent_player(agentplayer_t player){
 	free(player);
 }
 
+
+typedef void (*fn_ref_destroy)(void*);
+
 agentplayer_t new_agent_player(kn_stream_conn_t conn){
 	int id = get_id(t_agent->idmgr);
 	if(id <= 0) return NULL;
 	else{
 		agentplayer_t player = calloc(1,sizeof(*player));
 		player->toclient = conn;
-		kn_ref_init(player->ref,(void (*)(void*))release_agent_player);
+		kn_ref_init(&player->ref,(fn_ref_destroy)release_agent_player);
 		player->agentsession.data = player->ref.identity;
 		player->agentsession.aid = t_agent->idx;
 		player->agentsession.sessionid = id;
@@ -116,8 +120,10 @@ int    connect_redis();
 
 static void on_redis_connect(redisconn_t conn,int err,void *_){
 	(void)_;
-	if(conn)
+	if(conn){
 		t_agent->redis = conn;
+		printf("connect to redis success\n");
+	}
 	else{
 		connect_redis();	
 	}
@@ -145,17 +151,17 @@ int    connect_redis(){
 static void redis_login_cb(redisconn_t _,struct redisReply* reply,void *pridata)
 {
 	(void)_;
-	kn_stream_conn_t *conn = (kn_stream_conn_t*)pridata;
-	agentplayer_t player = kn_stream_conn_getud(conn);
+	kn_stream_conn_t conn = (kn_stream_conn_t)pridata;
+	agentplayer_t player = (agentplayer_t)kn_stream_conn_getud(conn);
 	if(!player){
 		kn_stream_conn_close(conn);
 		return;
 	} 
-	if(reply && reply->status != REDIS_REPLY_ERROR && reply->status != REDIS_REPLY_ERROR){
+	if(reply && reply->type != REDIS_REPLY_ERROR && reply->type != REDIS_REPLY_ERROR){
 		kn_stream_conn_close(conn);
 		return;	
 	}else{
-		if(reply->status == REDIS_REPLY_NIL){
+		if(reply->type == REDIS_REPLY_NIL){
 			//输出提示
 			kn_stream_conn_close(conn);
 			return;		
@@ -167,7 +173,7 @@ static void redis_login_cb(redisconn_t _,struct redisReply* reply,void *pridata)
 }
 
 static void login(rpacket_t rpk,void *ptr){
-	kn_stream_conn_t *conn = (kn_stream_conn_t)(ptr);
+	kn_stream_conn_t conn = (kn_stream_conn_t)(ptr);
 	uint8_t      type = rpk_read_uint8(rpk);//1:设备号,2:帐号
 	const char  *name = rpk_read_string(rpk);
 	agentplayer_t player = kn_stream_conn_getud(conn);

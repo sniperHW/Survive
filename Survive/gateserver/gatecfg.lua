@@ -5,7 +5,7 @@ togrp={
 
 toredis={
 	ip = "127.0.0.1",
-	port = 6479
+	port = 6379
 }
 
 toclient={

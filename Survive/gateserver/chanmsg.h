@@ -20,7 +20,6 @@ struct chanmsg_newclient{
 
 static inline void chanmsg_newclient_destroy(void *msg){
 	struct chanmsg_newclient *_msg = (struct chanmsg_newclient*)msg;
-	printf("chanmsg_destroy:%d\n",msg);
 	if(_msg->conn){
 		kn_stream_conn_close(_msg->conn);
 	}

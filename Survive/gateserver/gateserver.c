@@ -19,7 +19,6 @@ static void on_new_client(kn_stream_server_t _,kn_stream_conn_t conn){
 	//随机选择一个agent将conn交给他处理
 	uint8_t idx = rand()%g_config->agentcount;
 	struct chanmsg_newclient *msg = calloc(1,sizeof(msg));
-	printf("on new client:%d\n",msg);
 	msg->chanmsg.msgtype = NEWCLIENT;
 	msg->conn = conn;
 	kn_channel_putmsg(agents[idx]->chan,NULL,msg,chanmsg_newclient_destroy);

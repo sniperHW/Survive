@@ -134,6 +134,7 @@ static	void on_redis_disconnected(redisconn_t conn,void *_){
 	(void)_;
 	t_agent->redis = NULL;
 	connect_redis();	
+	printf("on_redis_disconnected\n");
 }
 
 int    connect_redis(){
@@ -159,7 +160,7 @@ static void redis_login_cb(redisconn_t _,struct redisReply* reply,void *pridata)
 		kn_stream_conn_close(conn);
 		return;
 	} 
-	if(reply && reply->type != REDIS_REPLY_ERROR && reply->type != REDIS_REPLY_ERROR){
+	if(!reply || reply->type == REDIS_REPLY_ERROR){
 		kn_stream_conn_close(conn);
 		return;	
 	}else{
@@ -190,15 +191,14 @@ static void login(rpacket_t rpk,void *ptr){
 	}
 	
 	player->state = ply_wait_verify;
-	player->actname = kn_new_string(name);
 		
 	char cmd[1024];
 	snprintf(cmd,1024,"get %s",name);
 	if(REDIS_OK!= kn_redisCommand(t_agent->redis,cmd,redis_login_cb,conn)){
 		player->state = ply_init;
-		kn_release_string(player->actname);
 		printf("kn_redisCommand error\n");
 	}else{
+		player->actname = kn_new_string(name);
 		printf("send cmd\n");
 	}
 }

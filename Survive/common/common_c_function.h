@@ -204,13 +204,72 @@ int lua_redis_close(lua_State *L){
 	return 0;
 }
 
-/*
-struct redisReply;						
-int kn_redisCommand(redisconn_t,const char *cmd,
-					void (*cb)(redisconn_t,struct redisReply*,void *pridata),void *pridata);					
-*/
+
+static void build_resultset(struct redisReply* reply,lua_State *L){
+	lua_newtable(L);
+	if(reply->type == REDIS_REPLY_INTEGER){
+		lua_pushinterger(L,1);
+		lua_pushinterger(L,(int32_t)reply->integer);
+		lua_settable(L, -3);
+	}else if(reply->type == REDIS_REPLY_STRING){
+		lua_pushinterger(L,1);
+		lua_pushstring(L,reply->str);
+		lua_settable(L, -3);		
+	}else if(reply->type == REDIS_REPLY_ARRAY){
+		int i = 0;
+		for(; i < reply->elements; ++i){
+			lua_pushinterger(L,i+1);
+			build_resultset(reply->element[i],L);
+			lua_settable(L, -3);
+		}
+	}else{
+		lua_pushnil(L);
+	}
+}
+
+void redis_command_cb(redisconn_t conn,struct redisReply* reply,void *pridata)
+{
+	luaObject_t obj = (luaObject_t)pridata;
+	if(!reply || reply->type == REDIS_REPLY_NIL){
+		if(CALL_OBJ_FUNC2(obj,"callback",0,lua_pushnil(obj->L),lua_pushnil(obj->L))){
+			const char * error = lua_tostring(obj->L, -1);
+			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
+			lua_pop(obj->L,1);
+		}				
+	}else if(reply->type == REDIS_REPLY_ERROR)
+		if(CALL_OBJ_FUNC2(obj,"callback",0,lua_pushstring(obj->L,reply->str),lua_pushnil(obj->L))){
+			const char * error = lua_tostring(obj->L, -1);
+			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
+			lua_pop(obj->L,1);
+		}			
+	}else{
+		if(CALL_OBJ_FUNC2(obj,"callback",0,lua_pushnil(obj->L),build_resultset(reply,obj->L))){
+		const char * error = lua_tostring(obj->L, -1);
+			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
+			lua_pop(obj->L,1);
+		}			
+	} 	
+	release_luaObj(obj);
+}
+
 int lua_redisCommand(lua_State *L){
-	
+	redisconn_t conn = (redisconn_t)lua_touserdata(L,2);
+	const char *cmd = lua_tostring(L,2);
+	luaObject_t obj = create_luaObj(L,3);
+	do{
+		if(!obj){
+			lua_pushboolean(L,0);
+			break;
+		}
+		if(cmd || strcmp(cmd,"") == 0){
+			lua_pushboolean(L,0);
+			break;
+		}
+		if(REDIS_OK!= kn_redisCommand(conn,cmd,redis_command_cb,obj))
+			lua_pushboolean(L,0);
+		else
+			lua_pushboolean(L,1);
+	}while(0);
 	return 1;
 }
 

@@ -9,6 +9,7 @@
 #include "wpacket.h"
 #include "log.h"
 #include "kn_stream_conn.h"
+#include "common/wordfilter.h"
 
 //for rpacket
 int lua_rpk_read_uint8(lua_State *L){
@@ -271,6 +272,37 @@ int lua_redisCommand(lua_State *L){
 
 extern int on_db_initfinish(lua_State *L); 
 
+static __thread wordfilter_t filter = NULL; 
+
+int lua_initwordfilter(lua_State *L){
+	int len = lua_rawlen(L,1);
+	char **words = calloc(len+1,sizeof(char*));
+	int c = 0;
+	luaObject_t obj = create_luaObj(L,1);
+	LUAOBJECT_ENUM(obj){
+		const char *tmp = lua_tostring(L,2);
+		char *word = calloc(1,strlen(tmp)+1);
+		strcpy(word,tmp);
+		words[c++] = word;
+	}
+	words[c] = NULL;
+	filter = wordfilter_new(words);
+	int i = 0;
+	for(; i < c; ++i)
+		if(words[i]) free(words[i]);
+	free(words);
+	return 0;
+}
+
+int lua_isvaildword(lua_State *L){
+	const char *word = lua_tostring(L,1);
+	if(isvaildword(filter,word))
+		lua_pushboolean(L,1);
+	else
+		lua_pushboolean(L,0);
+	return 1;
+}
+
 void reg_common_c_function(lua_State *L){
 	
 	lua_getglobal(L,"_G");
@@ -292,6 +324,14 @@ void reg_common_c_function(lua_State *L){
 	lua_pop(L,1);
     
 	lua_newtable(L);
+		
+	lua_pushstring(L,"initwordfilter");
+	lua_pushcfunction(L,&lua_initwordfilter);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L,"isvaildword");
+	lua_pushcfunction(L,&lua_isvaildword);
+	lua_settable(L, -3);		
 	
 	lua_pushstring(L,"rpk_read_uint8");
 	lua_pushcfunction(L,&lua_rpk_read_uint8);

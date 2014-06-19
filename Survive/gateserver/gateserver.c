@@ -14,6 +14,19 @@
 static agent *agents[MAX_AGENT]= {NULL};
 IMP_LOG(gatelog);
 
+
+void forward_agent(rpacket_t rpk){
+	struct chanmsg_rpacket *msg = calloc(1,sizeof(*msg));
+	msg->chanmsg.msgtype = RPACKET;
+	msg->rpk = rpk_create_by_other(rpk);
+	int i = 0; 
+	for(; i < MAX_AGENT; ++i){
+		if(agents[i]){
+			kn_channel_putmsg(agents[i]->chan,NULL,msg,chanmsg_rpacket_destroy);
+		}
+	}
+}
+
 static void on_new_client(kn_stream_server_t _,kn_stream_conn_t conn){
 	(void)_;
 	//随机选择一个agent将conn交给他处理

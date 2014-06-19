@@ -151,13 +151,28 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 		struct chanmsg_rpacket *_msg = (struct chanmsg_rpacket*)msg;
 		uint16_t cmd = rpk_peek_uint16(rpk);
 		if((cmd >= CMD_GA_BEGIN && cmd < CMD_GA_END) ||
-		   (cmd >= CMD_GAMEA_BEGIN && cmd < CMD_GAMEA_END)
-		   || cmd == CMD_GC_CREATE)
+		   (cmd >= CMD_GAMEA_BEGIN && cmd < CMD_GAMEA_END))
 		{
 			rpk_read_uint16(rpk);
 			if(handler[cmd]->_fn) handler[cmd]->_fn(_msg->rpk,NULL);
 		}else{
-				//转发到客户端
+			//转发到客户端
+			int size = reverse_read_uint32(rpk);
+			int dropsize = size*sizeof(uint64_t);
+			//尾部玩家id被创建成一个单独的rpacket
+			rpacket_t tmp = rpk_create_skip(_msg->rpk,rpk_len(rpk)-dropsize);
+			//丢弃尾部附加的数据
+			rpk_dropback(_msg->rpk,dropsize);
+			while(size){
+				agentsession session;
+				rpk_read_agentsession(tmp,&session);
+				if(session.aid != t_agent->idx) break;
+				agentplayer_t ply = get_agent_player_bysession(&session);
+				if(ply){
+					kn_stream_conn_send(ply->toclient,wpk_create_by_rpacket(_msg->rpk));
+				}
+			}
+			rpk_destroy(tmp);
 		}
 	}
 }
@@ -299,7 +314,7 @@ static void reg_handler(){
 	REG_C_HANDLER(CMD_CA_LOGIN,login);
 	REG_C_HANDLER(CMD_GA_BUSY,login);
 	REG_C_HANDLER(CMD_GA_PLY_INVAILD,login);
-	REG_C_HANDLER(CMD_GC_CREATE,create_character);	
+	REG_C_HANDLER(CMD_GA_CREATE,create_character);	
 }
 
 static void *service_main(void *ud){

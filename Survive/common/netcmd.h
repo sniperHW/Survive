@@ -27,6 +27,7 @@ enum{
 	CMD_GC_BEGIN = CMD_CG_END + 1,
 	CMD_GC_CREATE,
 	CMD_GC_BEGINPLY,
+	CMD_GC_ERROR,
 	CMD_GC_END,
 
 	//gate <-> group

@@ -160,7 +160,7 @@ local function AG_PLYLOGIN(rpk,conn)
 		if chaname == "" then
 			--通知客户端创建用户
 			local wpk = new_wpk()
-			wpk_write_uint16(wpk,CMD_GC_CREATE)
+			wpk_write_uint16(wpk,CMD_GA_CREATE)
 			ply:send2gate(wpk)
 		else
 			ply.chaname = chaname
@@ -190,7 +190,14 @@ local function CG_CREATE(rpk,conn)
 		wpk_write_uint32(wpk,gateid.low)
 		C.send(conn,wpk)		
 	else
-		--检查角色名是否非法
+		if not isvaildword(chaname) then
+			--角色名含有非法字
+			local wpk = new_wpk()
+			wpk_write_uint16(wpk,CMD_GC_ERROR)
+			wpk_write_string(wpk,"角色名含有非法字符")
+			ply:send2gate(wpk)
+			return
+		end
 		ply:create_character(chaname);
 	end
 end

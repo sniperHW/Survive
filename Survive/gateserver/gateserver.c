@@ -18,7 +18,7 @@ IMP_LOG(gatelog);
 void forward_agent(rpacket_t rpk){
 	struct chanmsg_rpacket *msg = calloc(1,sizeof(*msg));
 	msg->chanmsg.msgtype = RPACKET;
-	msg->rpk = rpk_create_by_other(rpk);
+	msg->rpk = rpk_create_by_other((struct packet*)rpk);
 	int i = 0; 
 	for(; i < MAX_AGENT; ++i){
 		if(agents[i]){

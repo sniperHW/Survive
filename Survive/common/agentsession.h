@@ -21,8 +21,8 @@ typedef struct agentsession{
 }agentsession;
 
 static inline void wpk_write_agentsession(wpacket_t wpk,agentsession *session){
-	wpk_write_uint32(session->high);
-	wpk_write_uint32(session->low);
+	wpk_write_uint32(wpk,session->high);
+	wpk_write_uint32(wpk,session->low);
 }
 
 static inline void rpk_read_agentsession(rpacket_t rpk,agentsession *session){

@@ -40,6 +40,7 @@ enum{
 	CMD_GA_BEGIN = CMD_AG_END + 1,
 	CMD_GA_BUSY,
 	CMD_GA_PLY_INVAILD,
+	CMD_GA_CREATE,
 	CMD_GA_END,
 
 	//game <-> group

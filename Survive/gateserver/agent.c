@@ -114,14 +114,14 @@ static void on_disconnected(kn_stream_conn_t conn,int err){
 			//通知groupserver player的连接断开
 			wpacket_t wpk = NEW_WPK(64);
 			wpk_write_uint16(wpk,CMD_AG_CLIENT_DISCONN);
-			wpk_write_uint32(player->groupid);
+			wpk_write_uint32(wpk,player->groupid);
 			send2_group(wpk);
 		}
 		if(player->gameid){
 			//通知gameserver player的连接断开
 			wpacket_t wpk = NEW_WPK(64);
 			wpk_write_uint16(wpk,CMD_AGAME_CLIENT_DISCONN);
-			wpk_write_uint32(player->gameid);
+			wpk_write_uint32(wpk,player->gameid);
 			send2_game(player->togame,wpk);	
 		}
 		player->groupid = player->gameid = 0;
@@ -149,18 +149,18 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 		}
 	}else if(((struct chanmsg*)msg)->msgtype == RPACKET){
 		struct chanmsg_rpacket *_msg = (struct chanmsg_rpacket*)msg;
-		uint16_t cmd = rpk_peek_uint16(rpk);
+		uint16_t cmd = rpk_peek_uint16(_msg->rpk);
 		if((cmd >= CMD_GA_BEGIN && cmd < CMD_GA_END) ||
 		   (cmd >= CMD_GAMEA_BEGIN && cmd < CMD_GAMEA_END))
 		{
-			rpk_read_uint16(rpk);
+			rpk_read_uint16(_msg->rpk);
 			if(handler[cmd]->_fn) handler[cmd]->_fn(_msg->rpk,NULL);
 		}else{
 			//转发到客户端
-			int size = reverse_read_uint32(rpk);
+			int size = reverse_read_uint32(_msg->rpk);
 			int dropsize = size*sizeof(uint64_t);
 			//尾部玩家id被创建成一个单独的rpacket
-			rpacket_t tmp = rpk_create_skip(_msg->rpk,rpk_len(rpk)-dropsize);
+			rpacket_t tmp = rpk_create_skip(_msg->rpk,rpk_len(_msg->rpk)-dropsize);
 			//丢弃尾部附加的数据
 			rpk_dropback(_msg->rpk,dropsize);
 			while(size){
@@ -231,10 +231,10 @@ static void redis_login_cb(redisconn_t _,struct redisReply* reply,void *pridata)
 			//新用户,无角色
 		}else
 			chaname = reply->str;
-		player->state == ply_wait_group_confirm;
+		player->state = ply_wait_group_confirm;
 		wpacket_t wpk = NEW_WPK(128);
 		wpk_write_uint16(wpk,CMD_AG_PLYLOGIN);
-		wpk_write_string(wpk,to_cstr(player->actname));
+		wpk_write_string(wpk,kn_to_cstr(player->actname));
 		if(chaname)
 			wpk_write_string(wpk,chaname);
 		else
@@ -247,6 +247,7 @@ static void redis_login_cb(redisconn_t _,struct redisReply* reply,void *pridata)
 static void login(rpacket_t rpk,void *ptr){
 	kn_stream_conn_t conn = (kn_stream_conn_t)(ptr);
 	uint8_t      type = rpk_read_uint8(rpk);//1:设备号,2:帐号
+	(void)type;
 	const char  *name = rpk_read_string(rpk);
 	agentplayer_t player = kn_stream_conn_getud(conn);
 	if(!player){
@@ -305,15 +306,15 @@ static void create_character(rpacket_t rpk,void *_){
 		//通知客户端进入创建角色界面
 		ply->state = ply_create;
 		wpacket_t wpk = NEW_WPK(64);
-		wpk_write_uint16(CMD_GC_CREATE);
+		wpk_write_uint16(wpk,CMD_GC_CREATE);
 		kn_stream_conn_send(ply->toclient,wpk);
 	}	
 }
 
 static void reg_handler(){
 	REG_C_HANDLER(CMD_CA_LOGIN,login);
-	REG_C_HANDLER(CMD_GA_BUSY,login);
-	REG_C_HANDLER(CMD_GA_PLY_INVAILD,login);
+	REG_C_HANDLER(CMD_GA_BUSY,group_busy);
+	REG_C_HANDLER(CMD_GA_PLY_INVAILD,invaild_ply);
 	REG_C_HANDLER(CMD_GA_CREATE,create_character);	
 }
 

@@ -1,9 +1,7 @@
-local Que = require "queue"
-
 local rediscon = {
 	ip,
 	port,
-	conns,
+	conn,
 }
 
 local dbmgr={
@@ -12,10 +10,10 @@ local dbmgr={
 
 local function on_redis_connect(self,conn,err)
 	if conn then 
-		self.conns:push(conn)
+		self.conn = conn
 		local initfinish = true		
 		for k,v in pairs(dbmgr.hash) do
-			if v.conns:len() ~= 10 then
+			if not v.conn then
 				initfinish = false
 				break
 			end
@@ -30,31 +28,21 @@ local function on_redis_connect(self,conn,err)
 end
 
 local function on_redis_disconnect(self,conn)
-	local que = self.conns
-	self.conns = Que:Queue()
-	local tmp = que:pop()
-	while tmp do
-		if tmp ~= conn then
-			self.conns:push(tmp)
-		end
-		tmp = que:pop()
-	end
+	self.conn = nil
 	C.redis_connect(self.ip,self.port,self)		
 end
 
 
 local function init()
 	dbmgr.hash = {}
-	dbmgr.hash[1] = {ip="127.0.0.1",6379,conns=Que:Queue()}
-	--dbmgr.hash[2] = {ip="127.0.0.1",6378,conns=Que:Queue()}
-	--dbmgr.hash[3] = {ip="127.0.0.1",6377,conns=Que:Queue()}
-	--dbmgr.hash[4] = {ip="127.0.0.1",6376,conns=Que:Queue()}	
+	dbmgr.hash[1] = {ip="127.0.0.1",port=6379}
+	--dbmgr.hash[2] = {ip="127.0.0.1",port=6378}
+	--dbmgr.hash[3] = {ip="127.0.0.1",port=6377}
+	--dbmgr.hash[4] = {ip="127.0.0.1",port=6376}	
 	for k,v in pairs(dbmgr.hash) do
-		for 1,10 do
-			if not C.redis_connect(v.ip,v.port,{v=v,on_connect = on_redis_connect,
-							on_disconnect = on_redis_disconnect}) then
-				return false
-			end
+		if not C.redis_connect(v.ip,v.port,{v=v,on_connect = on_redis_connect,
+						on_disconnect = on_redis_disconnect}) then
+			return false
 		end
 	end	
 	return true
@@ -67,13 +55,12 @@ local function dbcmd(hashkey,cmd,callback)
 		return "invaild hashkey"
 	end
 		
-	local conn = dbmgr.hash[key].conns:pop()
-	while conn do
+	local conn = dbmgr.hash[key].conn
+	if conn then
 		if C.redisCommand(conn,cmd,callback) then
-			dbmgr.hash[key].conns:push(conn)
 			return nil
 		else
-			conn = dbmgr.hash[key].conns:pop()
+			redis_close(conn)
 		end
 	end
 	

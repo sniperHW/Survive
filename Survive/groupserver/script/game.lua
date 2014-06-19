@@ -11,6 +11,7 @@ local function game_login(rpk,conn)
 		local game = {conn=conn,name=name}
 		gamemgr.con2game[conn] = game
 		gamemgr.name2game[name] = game
+		--通知所有gate新的game加入系统
 	end
 end
 

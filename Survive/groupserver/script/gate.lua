@@ -11,6 +11,7 @@ local function gate_login(rpk,conn)
 		local gate = {conn=conn,name=name}
 		gatemgr.con2gate[conn] = gate
 		gatemgr.name2gate[name] = gate
+		--向gate发送game信息		
 	end
 end
 

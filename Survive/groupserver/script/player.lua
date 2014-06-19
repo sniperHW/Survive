@@ -1,117 +1,9 @@
 local Que = require "queue"
 local Cjson = require "cjson"
 local Dbmgr = require "dbmgr"
-
-local attr = {
-	attr,
-}
-
-local function attr:new(o)
-  o = o or {}   
-  setmetatable(o, self)
-  self.__index = self
-  return o
-end
-
-local function attr:init(attr)
-	self.attr = {}	
-	for k,v in pairs(attr) do
-		self.attr[k] = {v=v,dirty=false}
-	end	
-end
-
-local function attr:pack(wpk)
-	wpk_write_uint16(#self.attr)
-	for k,v in pairs(self.attr) do
-		wpk_write_uint16(k)
-		wpk_write_uint32(v.v)
-	end		
-end
-
-local function attr:updata2client(ply)
-	local tmp
-	local c
-	for k,v in pairs(self.attr) do
-		if v.dirty then
-			c = c + 1
-			tmp[k] = v.v
-			v.dirty = false
-		end
-	end		
-	if c > 0 then
-		local wpk = new_wpk()
-		wpk_write_uint16(wpk,CMD_GC_UPDATEATTR)	
-		wpk_write_uint16(#tmp)
-		for k,v in pairs(tmp) do
-			wpk_write_uint16(k)
-			wpk_write_uint32(v)
-		end
-		ply:send2gate(wpk)			
-	end	
-end
-
-local function attr::save2db(ply)
-	
-end
-
-local function attr:get(idx)
-	return self.attr[idx]
-end
-
-local function attr:set(idx,v)
-	local attr = self.attr[idx]
-	if attr and attr.v ~= v then
-		attr.dirty = true
-		attr.v = v
-	end
-end
-
-
-local skillmgr = {
-	skills,
-}
-
-local function skillmgr:new(o)
-  o = o or {}   
-  setmetatable(o, self)
-  self.__index = self
-  return o
-end
-
-local function skillmgr:init(skills)
-	
-end
-
-local function skillmgr:pack(wpk)
-
-end
-
-local function skillmgr::save2db(ply)
-	
-end
-
-local bag = {
-	bag,
-}
-
-local function bag:new(o)
-  o = o or {}   
-  setmetatable(o, self)
-  self.__index = self
-  return o
-end
-
-local function bag:init(bag)
-	
-end
-
-local function bag:pack(wpk)
-
-end
-
-local function bag::save2db(ply)
-	
-end
+local Attr = require "attr"
+local Bag = require "bag"
+local Skill = require "skill"
 
 
 local player = {
@@ -134,9 +26,9 @@ local function player:new(o)
   self.gate = nil
   self.actname = nil
   self.chaname = nil
-  self.attr = attr:new()
-  self.skill = skillmgr:new()
-  self.bag = bag:new()
+  self.attr = Attr.NewAttr()
+  self.skill = Skill.NewSkillmgr()
+  self.bag = Bag.NewBag()
   return o
 end
 
@@ -151,6 +43,22 @@ local function player:send2gate(wpk)
 	wpk_write_uint32(wpk,self.gate.low)
 	wpk_write_uint32(1)
 	C.send(ply.gate.conn,wpk)	
+end
+
+
+local function db_create_callback(self,error,result)
+	
+end
+
+local function player:create_character(chaname)
+	--初始化attr,bag,skill等
+	local cmd = "hmset" .. chaname .. " attr " .. Cjson.encode(self.attr.attr)
+	local err = Dbmgr.DBCmd(chaname,cmd,{callback = db_create_callback,ply=ply})
+	if err then
+		local wpk = new_wpk()
+		wpk_write_uint16(wpk,CMD_GA_BUSY)
+		self:send2gate(wpk)
+	end	
 end
 
 
@@ -282,13 +190,8 @@ local function CG_CREATE(rpk,conn)
 		wpk_write_uint32(wpk,gateid.low)
 		C.send(conn,wpk)		
 	else
-	
-		--执行创建流程
-		--local wpk = new_wpk()
-		--wpk_write_uint16(wpk,CMD_GC_BEGINPLY)
-		--wpk_write_uint32(wpk,gateid.high)
-		--wpk_write_uint32(wpk,gateid.low)
-		--C.send(conn,wpk)
+		--检查角色名是否非法
+		ply:create_character(chaname);
 	end
 end
 

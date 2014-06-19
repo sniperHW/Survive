@@ -153,7 +153,7 @@ uint8_t isvaildword(wordfilter_t filter,const char *str)
 	return ret;
 }
 
-string_t wordfiltrate(wordfilter_t filter,const char *str,char replace){
+kn_string_t wordfiltrate(wordfilter_t filter,const char *str,char replace){
 	int size = strlen(str);
 	int i,j;	
 	char *tmp = calloc(1,size+1);
@@ -167,7 +167,7 @@ string_t wordfiltrate(wordfilter_t filter,const char *str,char replace){
 		}
     }
     
-    string_t ret = new_string(tmp);
+    kn_string_t ret = kn_new_string(tmp);
     //将连续的replace符号合成1个
     int flag = 0;
     j = 0;
@@ -178,12 +178,12 @@ string_t wordfiltrate(wordfilter_t filter,const char *str,char replace){
 				++j;
 			}
 		}else{
-			((char*)to_cstr(ret))[j++] = tmp[i];
+			((char*)kn_to_cstr(ret))[j++] = tmp[i];
 			if(flag) flag = 0;
 		}
 	}
 	free(tmp);
-	((char*)to_cstr(ret))[j] = 0; 
+	((char*)kn_to_cstr(ret))[j] = 0; 
     return ret;
        
 }  

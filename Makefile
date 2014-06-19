@@ -51,6 +51,7 @@ gateserverd:\
 groupserverd:\
 	Survive/groupserver/groupserver.c\
 	Survive/groupserver/config.c\
+	Survive/common/wordfilter.c\
 	kendynet.a
 	$(CC) $(CFLAGS) -o groupserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
 	mv groupserverd Survive/groupserver

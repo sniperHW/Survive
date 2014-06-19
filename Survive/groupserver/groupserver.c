@@ -144,8 +144,8 @@ static lua_State *init(){
 		lua_close(L); 
 	}
 	
-	if(!lua_toboolean(L)){
-		LOG_GROUP(LOG_ERROR,"reghandler failed\n",error);
+	if(!lua_toboolean(L,1)){
+		LOG_GROUP(LOG_ERROR,"reghandler failed\n");
 		return NULL;
 	}
 	return L;
@@ -156,11 +156,11 @@ int on_db_initfinish(lua_State *_){
 	//Æô¶¯¼àÌı
 	kn_sockaddr lgameserver;
 	kn_addr_init_in(&lgameserver,kn_to_cstr(g_config->lgameip),g_config->lgameport);
-	kn_new_stream_server(p,&lgameserver,on_new_game);
+	kn_new_stream_server(t_proactor,&lgameserver,on_new_game);
 
 	kn_sockaddr lgateserver;
 	kn_addr_init_in(&lgateserver,kn_to_cstr(g_config->lgateip),g_config->lgateport);
-	kn_new_stream_server(p,&lgateserver,on_new_gate);
+	kn_new_stream_server(t_proactor,&lgateserver,on_new_gate);
 	
 	return 0;
 } 

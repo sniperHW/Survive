@@ -16,7 +16,7 @@ static __thread cmd_handler_t handler[MAXCMD] = {NULL};
 static __thread agent* t_agent = NULL;
 
 
-void release_agent_player(agentplayer_t player){
+static void release_agent_player(agentplayer_t player){
 	t_agent->players[player->agentsession.sessionid] = NULL;
 	release_id(t_agent->idmgr,player->agentsession.sessionid);
 	if(player->actname){
@@ -28,7 +28,7 @@ void release_agent_player(agentplayer_t player){
 
 typedef void (*fn_ref_destroy)(void*);
 
-agentplayer_t new_agent_player(kn_stream_conn_t conn){
+static agentplayer_t new_agent_player(kn_stream_conn_t conn){
 	int id = get_id(t_agent->idmgr);
 	if(id <= 0) return NULL;
 	else{
@@ -44,6 +44,15 @@ agentplayer_t new_agent_player(kn_stream_conn_t conn){
 	}
 }
 
+static agentplayer_t get_agent_player_bysession(agentsession *session){
+	if(session){
+		agentplayer_t ply = t_agent->players[session->sessionid];
+		if(ply && ply->agentsession.data == session->data)
+			return ply;
+	}
+	return NULL;
+}
+
 static void forward_game(kn_stream_conn_t con,rpacket_t rpk){
 	agentplayer_t ply = (agentplayer_t)kn_stream_conn_getud(con);
 	wpacket_t wpk = wpk_create_by_rpacket(rpk);
@@ -51,6 +60,15 @@ static void forward_game(kn_stream_conn_t con,rpacket_t rpk){
 	struct chanmsg_forward_game *msg = calloc(1,sizeof(*msg));
 	msg->chanmsg.msgtype = FORWARD_GAME;
 	msg->game = ply->togame;
+	msg->wpk = wpk;
+	kn_channel_putmsg(g_togrpgame->chan,NULL,msg,chanmsg_forward_game_destroy);
+}
+
+
+static void send2_game(ident game,wpacket_t wpk){
+	struct chanmsg_forward_game *msg = calloc(1,sizeof(*msg));
+	msg->chanmsg.msgtype = FORWARD_GAME;
+	msg->game = game;
 	msg->wpk = wpk;
 	kn_channel_putmsg(g_togrpgame->chan,NULL,msg,chanmsg_forward_game_destroy);
 }
@@ -63,6 +81,13 @@ static void forward_group(kn_stream_conn_t con,rpacket_t rpk){
 	msg->chanmsg.msgtype = FORWARD_GROUP;
 	msg->wpk = wpk;
 	kn_channel_putmsg(g_togrpgame->chan,NULL,msg,chanmsg_forward_group_destroy);
+}
+
+static void send2_group(wpacket_t wpk){
+	struct chanmsg_forward_group *msg = calloc(1,sizeof(*msg));
+	msg->chanmsg.msgtype = FORWARD_GROUP;
+	msg->wpk = wpk;
+	kn_channel_putmsg(g_togrpgame->chan,NULL,msg,chanmsg_forward_group_destroy);	
 }
 
 
@@ -84,15 +109,24 @@ static int on_packet(kn_stream_conn_t con,rpacket_t rpk){
 
 static void on_disconnected(kn_stream_conn_t conn,int err){
 	agentplayer_t player = kn_stream_conn_getud(conn);
-	if(player){
+	if(player && player->state != ply_destroy){
 		if(player->groupid){
 			//通知groupserver player的连接断开
-		
+			wpacket_t wpk = NEW_WPK(64);
+			wpk_write_uint16(wpk,CMD_AG_CLIENT_DISCONN);
+			wpk_write_uint32(player->groupid);
+			send2_group(wpk);
 		}
 		if(player->gameid){
 			//通知gameserver player的连接断开
-		
+			wpacket_t wpk = NEW_WPK(64);
+			wpk_write_uint16(wpk,CMD_AGAME_CLIENT_DISCONN);
+			wpk_write_uint32(player->gameid);
+			send2_game(player->togame,wpk);	
 		}
+		player->groupid = player->gameid = 0;
+		make_empty_ident(&player->togame); 
+		player->state = ply_destroy;
 		kn_ref_release((kn_ref*)player);
 	}
 }
@@ -112,6 +146,18 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 			}else{
 				kn_ref_release((kn_ref*)player);
 			}
+		}
+	}else if(((struct chanmsg*)msg)->msgtype == RPACKET){
+		struct chanmsg_rpacket *_msg = (struct chanmsg_rpacket*)msg;
+		uint16_t cmd = rpk_peek_uint16(rpk);
+		if((cmd >= CMD_GA_BEGIN && cmd < CMD_GA_END) ||
+		   (cmd >= CMD_GAMEA_BEGIN && cmd < CMD_GAMEA_END)
+		   || cmd == CMD_GC_CREATE)
+		{
+			rpk_read_uint16(rpk);
+			if(handler[cmd]->_fn) handler[cmd]->_fn(_msg->rpk,NULL);
+		}else{
+				//转发到客户端
 		}
 	}
 }
@@ -164,14 +210,22 @@ static void redis_login_cb(redisconn_t _,struct redisReply* reply,void *pridata)
 		kn_stream_conn_close(conn);
 		return;	
 	}else{
+		
+		const char *chaname = NULL;
 		if(reply->type == REDIS_REPLY_NIL){
-			//输出提示
-			kn_stream_conn_close(conn);
-			return;		
-		}
-		//just for test
-		printf("client login success\n");
-		kn_stream_conn_close(conn);
+			//新用户,无角色
+		}else
+			chaname = reply->str;
+		player->state == ply_wait_group_confirm;
+		wpacket_t wpk = NEW_WPK(128);
+		wpk_write_uint16(wpk,CMD_AG_PLYLOGIN);
+		wpk_write_string(wpk,to_cstr(player->actname));
+		if(chaname)
+			wpk_write_string(wpk,chaname);
+		else
+			wpk_write_string(wpk,"");
+		wpk_write_agentsession(wpk,&player->agentsession);
+		send2_group(wpk);
 	}	
 }
 
@@ -203,8 +257,49 @@ static void login(rpacket_t rpk,void *ptr){
 	}
 }
 
+
+static void group_busy(rpacket_t rpk,void *_){
+	(void)_;
+	agentsession session;
+	rpk_read_agentsession(rpk,&session);
+	agentplayer_t ply = get_agent_player_bysession(&session);
+	if(ply){
+		//通知玩家服务器繁忙
+		kn_stream_conn_close(ply->toclient);
+	}
+}
+
+static void invaild_ply(rpacket_t rpk,void *_){
+	(void)_;
+	agentsession session;
+	rpk_read_agentsession(rpk,&session);
+	agentplayer_t ply = get_agent_player_bysession(&session);
+	if(ply){
+		//通知玩家已经在线
+		kn_stream_conn_close(ply->toclient);
+	}	
+}
+
+static void create_character(rpacket_t rpk,void *_){
+	(void)_;
+	(void)rpk;
+	agentsession session;
+	rpk_read_agentsession(rpk,&session);
+	agentplayer_t ply = get_agent_player_bysession(&session);
+	if(ply){
+		//通知客户端进入创建角色界面
+		ply->state = ply_create;
+		wpacket_t wpk = NEW_WPK(64);
+		wpk_write_uint16(CMD_GC_CREATE);
+		kn_stream_conn_send(ply->toclient,wpk);
+	}	
+}
+
 static void reg_handler(){
 	REG_C_HANDLER(CMD_CA_LOGIN,login);
+	REG_C_HANDLER(CMD_GA_BUSY,login);
+	REG_C_HANDLER(CMD_GA_PLY_INVAILD,login);
+	REG_C_HANDLER(CMD_GC_CREATE,create_character);	
 }
 
 static void *service_main(void *ud){

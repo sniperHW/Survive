@@ -10,7 +10,8 @@ typedef enum{
 	ply_wait_verify,          //玩家已经输入用户名和密码等待验证完成
 	ply_wait_group_confirm,   //验证完毕等待group确认
 	ply_create,               //创建角色
-	ply_playing,              //玩家正常游戏中 
+	ply_playing,              //玩家正常游戏中
+	ply_destroy,              //正在销毁对象 
 }plystate;
 
 

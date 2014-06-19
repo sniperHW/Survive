@@ -137,26 +137,22 @@ static lua_State *init(){
 	reg_group_c_function(L);
 
 	//注册lua消息处理器
-	if(CALL_LUA_FUNC(L,"reghandler",0)){
+	if(CALL_LUA_FUNC(L,"reghandler",1)){
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
 		LOG_GROUP(LOG_INFO,"error on reghandler:%s\n",error);
 		lua_close(L); 
 	}
+	
+	if(!lua_toboolean(L)){
+		LOG_GROUP(LOG_ERROR,"reghandler failed\n",error);
+		return NULL;
+	}
 	return L;
 }
 
-int main(int argc,char **argv){
-
-	if(loadconfig() != 0){
-		return 0;
-	}
-	lua_State *L;
-	if(!(L=init()))
-		return 0;
-
-	signal(SIGINT,sig_int);
-	t_proactor = kn_new_proactor();
+int on_db_initfinish(lua_State *_){
+	(void)_;
 	//启动监听
 	kn_sockaddr lgameserver;
 	kn_addr_init_in(&lgameserver,kn_to_cstr(g_config->lgameip),g_config->lgameport);
@@ -166,16 +162,18 @@ int main(int argc,char **argv){
 	kn_addr_init_in(&lgateserver,kn_to_cstr(g_config->lgateip),g_config->lgateport);
 	kn_new_stream_server(p,&lgateserver,on_new_gate);
 	
-	/* for test
-	 * if(CALL_LUA_FUNC(L,"test",0)){
-		const char * error = lua_tostring(L, -1);
-		lua_pop(L,1);
-		LOG_GROUP(LOG_INFO,"error on reghandler:%s\n",error);
-		lua_close(L); 
-	}*/	
+	return 0;
+} 
 
+int main(int argc,char **argv){
+	if(loadconfig() != 0){
+		return 0;
+	}
+	signal(SIGINT,sig_int);
+	t_proactor = kn_new_proactor();	
+	if(!init())
+		return 0;
 	while(!stop)
 		kn_proactor_run(t_proactor,50);
-
 	return 0;	
 }

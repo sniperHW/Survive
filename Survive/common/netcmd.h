@@ -31,12 +31,14 @@ enum{
 
 	//gate <-> group
 	CMD_AG_BEGIN = CMD_GC_END + 1,
-	CMD_AG_LOGIN,   //gateserver进程登陆到group
+	CMD_AG_LOGIN,                     //gateserver进程登陆到group
 	CMD_AG_PLYLOGIN,
+	CMD_AG_CLIENT_DISCONN,            //客户端连接断开 
 	CMD_AG_END,
 
 	CMD_GA_BEGIN = CMD_AG_END + 1,
 	CMD_GA_BUSY,
+	CMD_GA_PLY_INVAILD,
 	CMD_GA_END,
 
 	//game <-> group
@@ -53,6 +55,7 @@ enum{
 
 	CMD_AGAME_BEGIN = CMD_GAMEG_END + 1,
 	CMD_AGAME_LOGIN, //gateserver进程登陆到game 
+	CMD_AGAME_CLIENT_DISCONN,        //客户端连接断开   
 	CMD_AGAME_END,
 
 	CMD_GAMEA_BEGIN = CMD_AGAME_END + 1,

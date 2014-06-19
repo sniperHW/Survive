@@ -269,6 +269,8 @@ int lua_redisCommand(lua_State *L){
 	return 1;
 }
 
+extern int on_db_initfinish(lua_State *L); 
+
 void reg_common_c_function(lua_State *L){
 	
 	lua_getglobal(L,"_G");
@@ -392,6 +394,10 @@ void reg_common_c_function(lua_State *L){
 
 	lua_pushstring(L,"redisCommand");
 	lua_pushcfunction(L,&lua_redisCommand);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L,"db_initfinish");
+	lua_pushcfunction(L,&on_db_initfinish);
 	lua_settable(L, -3);
 	
 	lua_setglobal(L,"C");

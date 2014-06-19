@@ -7,6 +7,7 @@ enum{
 	FORWARD_GAME,
 	FORWARD_GROUP,
 	NEWCLIENT,
+	RPACKET,
 };
 
 struct chanmsg{
@@ -49,6 +50,19 @@ static inline void chanmsg_forward_group_destroy(void *msg){
 	struct chanmsg_forward_group *_msg = (struct chanmsg_forward_group*)msg;
 	if(_msg->wpk){
 		wpk_destroy(_msg->wpk);
+	}
+	free(msg);	
+}
+
+struct chanmsg_rpacket{
+	struct chanmsg chanmsg;
+	rpacket_t rpk;
+};
+
+static inline void chanmsg_rpacket_destroy(void *msg){
+	struct chanmsg_rpacket *_msg = (struct chanmsg_rpacket*)msg;
+	if(_msg->rpk){
+		rpk_destroy(_msg->rpk);
 	}
 	free(msg);	
 }

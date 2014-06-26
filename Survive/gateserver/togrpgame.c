@@ -38,7 +38,11 @@ static void on_disconnected(kn_stream_conn_t conn,int err){
 static void on_connect(kn_stream_client_t c,kn_stream_conn_t conn,void *ud){
 	if((remoteServerType)ud == GROUPSERVER){
 		g_togrpgame->togroup = conn;
-		printf("connect to group success\n");
+		printf("connect to group success\n");		
+		wpacket_t wpk = NEW_WPK(64);
+		wpk_write_uint16(wpk,CMD_AG_LOGIN);
+		wpk_write_string(wpk,"gate1");
+		kn_stream_conn_send(conn,wpk);		
 	}else if((remoteServerType)ud == GAMESERVER){
 		
 	}

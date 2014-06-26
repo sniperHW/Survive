@@ -11,6 +11,7 @@ local function gate_login(rpk,conn)
 		local gate = {conn=conn,name=name}
 		gatemgr.con2gate[conn] = gate
 		gatemgr.name2gate[name] = gate
+		print("gateserver:" .. name .. "login success")
 		--向gate发送game信息		
 	end
 end
@@ -20,6 +21,7 @@ local function gate_disconnected(rpk,conn)
 		local gate = gatemgr.con2gate[conn]
 		gatemgr.con2gate[conn] = nil
 		gatemgr.name2gate[gate.name] = nil
+		print("gateserver:" .. gate.name .. "disconnected")
 	end
 end
 

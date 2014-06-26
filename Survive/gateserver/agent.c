@@ -226,19 +226,17 @@ static void redis_login_cb(redisconn_t _,struct redisReply* reply,void *pridata)
 		return;	
 	}else{
 		
-		const char *chaname = NULL;
+		//const char *chaname = NULL;
+		int chaid = 0;
 		if(reply->type == REDIS_REPLY_NIL){
 			//新用户,无角色
 		}else
-			chaname = reply->str;
+			chaid = reply->integer;
 		player->state = ply_wait_group_confirm;
 		wpacket_t wpk = NEW_WPK(128);
 		wpk_write_uint16(wpk,CMD_AG_PLYLOGIN);
 		wpk_write_string(wpk,kn_to_cstr(player->actname));
-		if(chaname)
-			wpk_write_string(wpk,chaname);
-		else
-			wpk_write_string(wpk,"");
+		wpk_write_uint32(wpk,chaid);
 		wpk_write_agentsession(wpk,&player->agentsession);
 		send2_group(wpk);
 	}	
@@ -248,7 +246,7 @@ static void login(rpacket_t rpk,void *ptr){
 	kn_stream_conn_t conn = (kn_stream_conn_t)(ptr);
 	uint8_t      type = rpk_read_uint8(rpk);//1:设备号,2:帐号
 	(void)type;
-	const char  *name = rpk_read_string(rpk);
+	const char  *actname = rpk_read_string(rpk);
 	agentplayer_t player = kn_stream_conn_getud(conn);
 	if(!player){
 			kn_stream_conn_close(conn);
@@ -263,12 +261,12 @@ static void login(rpacket_t rpk,void *ptr){
 	player->state = ply_wait_verify;
 		
 	char cmd[1024];
-	snprintf(cmd,1024,"get %s",name);
+	snprintf(cmd,1024,"get %s",actname);
 	if(REDIS_OK!= kn_redisCommand(t_agent->redis,cmd,redis_login_cb,conn)){
 		player->state = ply_init;
 		printf("kn_redisCommand error\n");
 	}else{
-		player->actname = kn_new_string(name);
+		player->actname = kn_new_string(actname);
 		printf("send cmd\n");
 	}
 }

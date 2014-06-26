@@ -10,8 +10,9 @@ local player = {
 	groupid,    --在group管理器中的player对象索引
 	gate,       --所在gateserver的网络连接
 	game,       --所在gameserver的网络连接(如果有)
+	chaid,      --角色唯一id
 	actname,    --帐号名
-	chaname,    --角色名
+	chaname,    --角色名(可重复)
 	attr,       --角色属性
 	skill,      --角色技能
 	bag,        --角色背包
@@ -45,22 +46,55 @@ local function player:send2gate(wpk)
 	C.send(ply.gate.conn,wpk)	
 end
 
+local function notifybusy(ply)
+	local wpk = new_wpk()
+	wpk_write_uint16(wpk,CMD_GA_BUSY)
+	ply:send2gate(wpk)
+end
+
 
 local function db_create_callback(self,error,result)
+	if error then
+		notifybusy(self.ply)
+	end
+end
+
+local function player::init_cha_data()
+	--初始化attr,bag,skill等
+	local cmd = "hmset" .. chaid .. " chaname" .. self.chaname .. " attr " .. Cjson.encode(self.attr.attr)
+	local err = Dbmgr.DBCmd(chaid,cmd,{callback = db_create_callback,ply=ply})
+	if err then
+		notifybusy(self.ply)
+	end		
 	
 end
 
-local function player:create_character(chaname)
-	--初始化attr,bag,skill等
-	local cmd = "hmset" .. chaname .. " attr " .. Cjson.encode(self.attr.attr)
-	local err = Dbmgr.DBCmd(chaname,cmd,{callback = db_create_callback,ply=ply})
-	if err then
-		local wpk = new_wpk()
-		wpk_write_uint16(wpk,CMD_GA_BUSY)
-		self:send2gate(wpk)
-	end	
+local function get_id_callback(self,error,result)
+	if error or not result then
+		notifybusy(self.ply)
+	end
+	local ply = self.ply
+	local chaid = result
+	ply.chaid = chaid
+	ply:init_cha_data()
+
 end
 
+
+local function player:create_character(chaname)
+	
+	if chaid ~= 0 then
+		--上次创建过程失败，已经有了chaid所以不需要再请求
+		ply:init_cha_data()		
+		return
+	end
+	--请求角色唯一id
+	local cmd = "incr chaid"
+	local err = Dbmgr.DBCmd("global",cmd,{callback = get_id_callback,ply=ply})
+	if err then
+		notifybusy(self.ply)
+	end			
+end
 
 local function initfreeidx()
 	local que = Que.Queue()
@@ -128,7 +162,7 @@ end
 
 local function AG_PLYLOGIN(rpk,conn)
 	local actname = rpk_read_string(rpk)
-	local chaname = rpk_read_string(rpk)
+	local chaid = rpk_read_string(rpk)
 	local gateid = {}
 	gateid.high = rpk_read_uint32(rpk)
 	gateid.low = rpk_read_uint32(rpk)
@@ -157,20 +191,18 @@ local function AG_PLYLOGIN(rpk,conn)
 		C.send(conn,wpk)
 	else
 		ply.gate = {id=gateid,conn = conn}
-		if chaname == "" then
+		if chaid == 0 then
 			--通知客户端创建用户
 			local wpk = new_wpk()
 			wpk_write_uint16(wpk,CMD_GA_CREATE)
 			ply:send2gate(wpk)
 		else
-			ply.chaname = chaname
+			ply.chaid = chaid
 			--从数据库载入角色数据
-			local cmd = "hmget" .. chaname .. " attr skill bag"
-			local err = Dbmgr.DBCmd(chaname,cmd,{callback = load_chainfo_callback,ply=ply})
+			local cmd = "hmget" .. chaid .. " attr skill bag"
+			local err = Dbmgr.DBCmd(chaid,cmd,{callback = load_chainfo_callback,ply=ply})
 			if err then
-				local wpk = new_wpk()
-				wpk_write_uint16(wpk,CMD_GA_BUSY)
-				ply:send2gate(wpk)
+				notifybusy(ply)
 			end
 		end
 	end

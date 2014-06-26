@@ -49,12 +49,12 @@ local function init()
 end
 
 local function dbcmd(hashkey,cmd,callback)
-	local key = math.mod(hashkey,#dbmgr.hash)+1
+	--local key = math.mod(hashkey,#dbmgr.hash)+1
 	
-	if not dbmgr.hash[key] then
-		return "invaild hashkey"
-	end
-		
+	--if not dbmgr.hash[key] then
+	--	return "invaild hashkey"
+	--end
+	local key = 1	
 	local conn = dbmgr.hash[key].conn
 	if conn then
 		if C.redisCommand(conn,cmd,callback) then

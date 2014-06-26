@@ -1,9 +1,9 @@
-local Que = require "queue"
+local Que = require "script/queue"
 local Cjson = require "cjson"
-local Dbmgr = require "dbmgr"
-local Attr = require "attr"
-local Bag = require "bag"
-local Skill = require "skill"
+local Dbmgr = require "script/dbmgr"
+local Attr = require "script/attr"
+local Bag = require "script/bag"
+local Skill = require "script/skill"
 
 
 local player = {

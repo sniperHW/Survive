@@ -2,6 +2,7 @@
 #include "config.h"
 #include "chanmsg.h"
 #include "gateserver.h"
+#include "togrpgame.h"
 
 /*
 *  °ËºËÐÄ·þÎñÆ÷
@@ -58,6 +59,9 @@ int main(int argc,char **argv){
 	kn_sockaddr local;
 	kn_addr_init_in(&local,kn_to_cstr(g_config->toclientip),g_config->toclientport);
 	kn_new_stream_server(p,&local,on_new_client);
+
+
+	start_togrpgame();
 	
 	LOG_GATE(LOG_INFO,"gateserver start success\n");
 

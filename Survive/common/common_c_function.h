@@ -276,11 +276,11 @@ static __thread wordfilter_t filter = NULL;
 
 int lua_initwordfilter(lua_State *L){
 	int len = lua_rawlen(L,1);
-	char **words = calloc(len+1,sizeof(char*));
+	const char **words = calloc(len+1,sizeof(char*));
 	int c = 0;
 	luaObject_t obj = create_luaObj(L,1);
 	LUAOBJECT_ENUM(obj){
-		const char *tmp = lua_tostring(L,2);
+		const char *tmp = lua_tostring(L,1);
 		char *word = calloc(1,strlen(tmp)+1);
 		strcpy(word,tmp);
 		words[c++] = word;
@@ -289,7 +289,7 @@ int lua_initwordfilter(lua_State *L){
 	filter = wordfilter_new(words);
 	int i = 0;
 	for(; i < c; ++i)
-		if(words[i]) free(words[i]);
+		if(words[i]) free((void*)words[i]);
 	free(words);
 	return 0;
 }

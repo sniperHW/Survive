@@ -65,6 +65,7 @@ static void on_new_gate(kn_stream_server_t server,kn_stream_conn_t conn){
 	if(0 == kn_stream_server_bind(server,conn,0,65536,
 				      on_gate_packet,on_gate_disconnected,
 				      30*1000,NULL,0,NULL)){
+		printf("on_new_gate\n");
 	}else{
 		kn_stream_conn_close(conn);
 	}
@@ -127,6 +128,7 @@ static lua_State *init(){
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
 		LOG_GROUP(LOG_INFO,"error on handler.lua:%s\n",error);
+		printf("error on handler.lua:%s\n",error);
 		lua_close(L); 
 		return NULL;
 	}
@@ -141,17 +143,20 @@ static lua_State *init(){
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
 		LOG_GROUP(LOG_INFO,"error on reghandler:%s\n",error);
+		printf("error on reghandler:%s\n",error);
 		lua_close(L); 
 	}
 	
 	if(!lua_toboolean(L,1)){
 		LOG_GROUP(LOG_ERROR,"reghandler failed\n");
+		printf("reghandler failed\n");
 		return NULL;
 	}
 	return L;
 }
 
 int on_db_initfinish(lua_State *_){
+	printf("on_db_initfinish\n");
 	(void)_;
 	//Æô¶¯¼àÌý
 	kn_sockaddr lgameserver;

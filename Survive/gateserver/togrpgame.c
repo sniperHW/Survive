@@ -4,7 +4,7 @@
 #include "config.h"
 
 togrpgame*  g_togrpgame = NULL;
-
+static kn_sockaddr groupaddr;
 void forward_agent(rpacket_t rpk);
 
 //处理来group和game的消息
@@ -15,19 +15,21 @@ static int on_packet(kn_stream_conn_t _,rpacket_t rpk){
 }
 
 static void on_connect_failed(kn_stream_client_t c,kn_sockaddr *addr,int err,void *ud)
-{	
+{
+	printf("on_connect_failed\n");	
 	if((remoteServerType)ud == GROUPSERVER){
 		//记录日志
 	}else if((remoteServerType)ud == GAMESERVER){
 		//记录日志	
 	}
 	//重连
-	kn_stream_connect(c,NULL,addr,ud);
+	kn_stream_connect(g_togrpgame->stream_client,NULL,&groupaddr,(void*)GROUPSERVER);
 }
 
 static void on_disconnected(kn_stream_conn_t conn,int err){
 	if(conn == g_togrpgame->togroup){
 		g_togrpgame->togroup = NULL;
+		kn_stream_connect(g_togrpgame->stream_client,NULL,&groupaddr,(void*)GROUPSERVER);
 	}else{
 	
 	}
@@ -36,6 +38,7 @@ static void on_disconnected(kn_stream_conn_t conn,int err){
 static void on_connect(kn_stream_client_t c,kn_stream_conn_t conn,void *ud){
 	if((remoteServerType)ud == GROUPSERVER){
 		g_togrpgame->togroup = conn;
+		printf("connect to group success\n");
 	}else if((remoteServerType)ud == GAMESERVER){
 		
 	}
@@ -65,6 +68,9 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 }
 
 static void *service_main(void *ud){
+	g_togrpgame->stream_client = kn_new_stream_client(g_togrpgame->p,on_connect,on_connect_failed);
+	kn_addr_init_in(&groupaddr,kn_to_cstr(g_config->groupip),g_config->groupport);	
+	kn_stream_connect(g_togrpgame->stream_client,NULL,&groupaddr,(void*)GROUPSERVER);
 	while(!g_togrpgame->stop){
 		kn_proactor_run(g_togrpgame->p,50);
 	}

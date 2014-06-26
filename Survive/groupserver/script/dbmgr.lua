@@ -10,7 +10,7 @@ local dbmgr={
 
 local function on_redis_connect(self,conn,err)
 	if conn then 
-		self.conn = conn
+		self.v.conn = conn
 		local initfinish = true		
 		for k,v in pairs(dbmgr.hash) do
 			if not v.conn then
@@ -18,6 +18,7 @@ local function on_redis_connect(self,conn,err)
 				break
 			end
 		end		
+		print("on_redis_connect")
 		if initfinish then
 			--回调C函数初始化完成
 			C.db_initfinish()
@@ -42,6 +43,7 @@ local function init()
 	for k,v in pairs(dbmgr.hash) do
 		if not C.redis_connect(v.ip,v.port,{v=v,on_connect = on_redis_connect,
 						on_disconnect = on_redis_disconnect}) then
+			print("db init failed")
 			return false
 		end
 	end	

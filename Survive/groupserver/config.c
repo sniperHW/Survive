@@ -5,7 +5,6 @@
 config* g_config = NULL;
 
 int loadconfig(){
-	return 0;
 	g_config = calloc(1,sizeof(*g_config));
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);

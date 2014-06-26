@@ -11,7 +11,7 @@ table.insert(forbidwords,"¹²²úµ³")
 function reghandler()
 	Gate.RegHandler()
 	Game.RegHandler()
-	initwordfilter(forbidwords)
+	--C.initwordfilter(forbidwords)
 	return Dbmgr.Init()
 end
 

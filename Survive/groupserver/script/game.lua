@@ -5,7 +5,7 @@ local gamemgr = {
 }
 
 
-local function game_login(rpk,conn)
+local function game_login(_,rpk,conn)
 	local name = rpk_read_string(rpk)
 	if gamemgr.con2game[conn] == nil and gamemgr.name2game[name] == nil then
 		local game = {conn=conn,name=name}
@@ -15,7 +15,7 @@ local function game_login(rpk,conn)
 	end
 end
 
-local function game_disconnected(rpk,conn)
+local function game_disconnected(_,rpk,conn)
 	if gamemgr.con2game[conn] then
 		local game = gamemgr.con2game[conn]
 		gamemgr.con2game[conn] = nil

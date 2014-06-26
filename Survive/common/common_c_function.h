@@ -9,6 +9,7 @@
 #include "wpacket.h"
 #include "log.h"
 #include "kn_stream_conn.h"
+#include "netcmd.h"
 #include "common/wordfilter.h"
 
 //for rpacket
@@ -313,6 +314,83 @@ void reg_common_c_function(lua_State *L){
 		lua_pushvalue(L,-1);
 		lua_setglobal(L,"_G");
 	}
+	
+	
+	lua_pushstring(L, "CMD_CA_LOGIN");
+	lua_pushinteger(L, CMD_CA_LOGIN);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "CMD_CG_CREATE");
+	lua_pushinteger(L, CMD_CG_CREATE);
+	lua_settable(L, -3);
+
+
+	lua_pushstring(L, "CMD_CG_ENTERMAP");
+	lua_pushinteger(L, CMD_CG_ENTERMAP);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "CMD_GC_CREATE");
+	lua_pushinteger(L, CMD_GC_CREATE);
+	lua_settable(L, -3);
+	
+
+	lua_pushstring(L, "CMD_GC_BEGINPLY");
+	lua_pushinteger(L, CMD_GC_BEGINPLY);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_GC_ERROR");
+	lua_pushinteger(L, CMD_GC_ERROR);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "CMD_AG_LOGIN");
+	lua_pushinteger(L, CMD_AG_LOGIN);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_AG_PLYLOGIN");
+	lua_pushinteger(L, CMD_AG_PLYLOGIN);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_AG_CLIENT_DISCONN");
+	lua_pushinteger(L, CMD_AG_CLIENT_DISCONN);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "CMD_GA_BUSY");
+	lua_pushinteger(L, CMD_GA_BUSY);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_GA_PLY_INVAILD");
+	lua_pushinteger(L, CMD_GA_PLY_INVAILD);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_GA_CREATE");
+	lua_pushinteger(L, CMD_GA_CREATE);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "CMD_GAMEG_LOGIN");
+	lua_pushinteger(L, CMD_GAMEG_LOGIN);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "CMD_GGAME_ENTERMAP");
+	lua_pushinteger(L, CMD_GGAME_ENTERMAP);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "CMD_AGAME_LOGIN");
+	lua_pushinteger(L, CMD_AGAME_LOGIN);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_AGAME_CLIENT_DISCONN");
+	lua_pushinteger(L, CMD_AGAME_CLIENT_DISCONN);
+	lua_settable(L, -3);
+
+
+	lua_pushstring(L, "DUMMY_ON_GATE_DISCONNECTED");
+	lua_pushinteger(L,DUMMY_ON_GATE_DISCONNECTED);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "DUMMY_ON_GAME_DISCONNECTED");
+	lua_pushinteger(L,DUMMY_ON_GAME_DISCONNECTED);
+	lua_settable(L, -3);
+
 	lua_pushstring(L, "LOG_INFO");
 	lua_pushinteger(L, LOG_INFO);
 	lua_settable(L, -3);
@@ -320,18 +398,6 @@ void reg_common_c_function(lua_State *L){
 	lua_pushstring(L, "LOG_ERROR");
 	lua_pushinteger(L, LOG_ERROR);
 	lua_settable(L, -3);
-
-	lua_pop(L,1);
-    
-	lua_newtable(L);
-		
-	lua_pushstring(L,"initwordfilter");
-	lua_pushcfunction(L,&lua_initwordfilter);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L,"isvaildword");
-	lua_pushcfunction(L,&lua_isvaildword);
-	lua_settable(L, -3);		
 	
 	lua_pushstring(L,"rpk_read_uint8");
 	lua_pushcfunction(L,&lua_rpk_read_uint8);
@@ -411,6 +477,18 @@ void reg_common_c_function(lua_State *L){
 	lua_pushcfunction(L,&lua_wpk_write_string);
 	lua_settable(L, -3);
 
+	lua_pop(L,1);
+    
+	lua_newtable(L);
+		
+	lua_pushstring(L,"initwordfilter");
+	lua_pushcfunction(L,&lua_initwordfilter);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L,"isvaildword");
+	lua_pushcfunction(L,&lua_isvaildword);
+	lua_settable(L, -3);		
+	
 	lua_pushstring(L,"systemms");
 	lua_pushcfunction(L,&lua_systemms);
 	lua_settable(L, -3);

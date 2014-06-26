@@ -13,23 +13,27 @@ IMP_LOG(grouplog);
 static cmd_handler_t handler[MAXCMD] = {NULL};
 __thread kn_proactor_t t_proactor = NULL;
 
-static int on_game_packet(kn_stream_conn_t con,rpacket_t rpk){
-	uint16_t cmd = rpk_read_uint16(rpk);
+
+static void process_cmd(uint16_t cmd,kn_stream_conn_t con,rpacket_t rpk){
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
-		if(CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
+		const char *error = NULL;
+		if((error = CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
 						  lua_pushlightuserdata(L,rpk),
-						  lua_pushlightuserdata(L,con))){
-			const char * error = lua_tostring(L, -1);
-			lua_pop(L,1);
+						  lua_pushlightuserdata(L,con)))){
 			LOG_GROUP(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
 		}
 	}
+}
+
+static int on_game_packet(kn_stream_conn_t conn,rpacket_t rpk){
+	uint16_t cmd = rpk_read_uint16(rpk);
+	process_cmd(cmd,conn,rpk);
 	return 1;
 }
 
 static void on_game_disconnected(kn_stream_conn_t conn,int err){
-
+	process_cmd(DUMMY_ON_GAME_DISCONNECTED,conn,NULL);
 }
 
 
@@ -42,23 +46,14 @@ static void on_new_game(kn_stream_server_t server,kn_stream_conn_t conn){
 	}
 }
 
-static int on_gate_packet(kn_stream_conn_t con,rpacket_t rpk){
+static int on_gate_packet(kn_stream_conn_t conn,rpacket_t rpk){
 	uint16_t cmd = rpk_read_uint16(rpk);
-	if(handler[cmd]){
-		lua_State *L = handler[cmd]->obj->L;
-		if(CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
-						  lua_pushlightuserdata(L,rpk),
-						  lua_pushlightuserdata(L,con))){
-			const char * error = lua_tostring(L, -1);
-			lua_pop(L,1);
-			LOG_GROUP(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
-		}
-	}
+	process_cmd(cmd,conn,rpk);
 	return 1;
 }
 
 static void on_gate_disconnected(kn_stream_conn_t conn,int err){
-
+	process_cmd(DUMMY_ON_GATE_DISCONNECTED,conn,NULL);
 }
 
 static void on_new_gate(kn_stream_server_t server,kn_stream_conn_t conn){

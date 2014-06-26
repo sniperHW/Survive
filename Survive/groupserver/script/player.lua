@@ -160,7 +160,7 @@ function load_chainfo_callback(self,error,result)
 end
 
 
-local function AG_PLYLOGIN(rpk,conn)
+local function AG_PLYLOGIN(_,rpk,conn)
 	local actname = rpk_read_string(rpk)
 	local chaid = rpk_read_string(rpk)
 	local gateid = {}
@@ -208,7 +208,7 @@ local function AG_PLYLOGIN(rpk,conn)
 	end
 end
 
-local function CG_CREATE(rpk,conn)
+local function CG_CREATE(_,rpk,conn)
 	local chaname = rpk_read_string(rpk)
 	local groupid = rpk_read_uint32(rpk)
 	local gateid = {}

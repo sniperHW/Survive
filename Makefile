@@ -39,6 +39,7 @@ kendynet.a: \
 		rm -f *.o
 
 gateserverd:\
+	Survive/common/netcmd.h\
 	Survive/gateserver/agent.c\
 	Survive/gateserver/gateserver.c\
 	Survive/gateserver/config.c\
@@ -49,6 +50,8 @@ gateserverd:\
 
 
 groupserverd:\
+	Survive/common/netcmd.h\
+	Survive/common/common_c_function.h\
 	Survive/groupserver/groupserver.c\
 	Survive/groupserver/config.c\
 	Survive/common/wordfilter.c\

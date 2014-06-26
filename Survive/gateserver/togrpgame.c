@@ -2,6 +2,7 @@
 #include "chanmsg.h"
 #include "kn_stream_conn.h"
 #include "config.h"
+#include "common/netcmd.h"
 
 togrpgame*  g_togrpgame = NULL;
 static kn_sockaddr groupaddr;
@@ -36,6 +37,12 @@ static void on_disconnected(kn_stream_conn_t conn,int err){
 }
 
 static void on_connect(kn_stream_client_t c,kn_stream_conn_t conn,void *ud){
+	if(0 != kn_stream_client_bind(g_togrpgame->stream_client,conn,0,65536,on_packet,on_disconnected,
+			10*1000,NULL,0,NULL)){
+
+		kn_stream_conn_close(conn);
+		return;
+	}
 	if((remoteServerType)ud == GROUPSERVER){
 		g_togrpgame->togroup = conn;
 		printf("connect to group success\n");		
@@ -46,8 +53,6 @@ static void on_connect(kn_stream_client_t c,kn_stream_conn_t conn,void *ud){
 	}else if((remoteServerType)ud == GAMESERVER){
 		
 	}
-	kn_stream_client_bind(g_togrpgame->stream_client,conn,0,65536,on_packet,on_disconnected,
-			10*1000,NULL,0,NULL);
 	
 }
 

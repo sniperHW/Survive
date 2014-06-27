@@ -255,15 +255,14 @@ int lua_redisCommand(lua_State *L){
 	const char *cmd = lua_tostring(L,2);
 	luaObject_t obj = create_luaObj(L,3);
 	do{
-		if(!obj){
-			lua_pushboolean(L,0);
-			break;
-		}
 		if(!cmd || strcmp(cmd,"") == 0){
 			lua_pushboolean(L,0);
 			break;
 		}
-		if(REDIS_OK!= kn_redisCommand(conn,cmd,redis_command_cb,obj))
+		
+		void (*cb)(redisconn_t,struct redisReply*,void *) = NULL; 
+		if(obj) cb = redis_command_cb;
+		if(REDIS_OK!= kn_redisCommand(conn,cmd,cb,obj))
 			lua_pushboolean(L,0);
 		else
 			lua_pushboolean(L,1);

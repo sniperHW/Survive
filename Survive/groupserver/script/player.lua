@@ -53,24 +53,18 @@ local function notifybusy(ply)
 	ply:send2gate(wpk)
 end
 
-
+--[[
 local function db_create_callback(self,error,result)
+	local ply = self.ply
 	if error then
-		notifybusy(self.ply)
+		notifybusy(ply)
 	else
-	        local cmd = "hmset " .. self.actname .. " chaid " .. self.chaid
-	        local err = Dbmgr.DBCmd(self.chaid,cmd,{callback = function (_,err,res)
-				if err then
-				end
-			    end
-		})
-	        if err then
-		    notifybusy(self)
-	        end		
+		
 	end
 	print("db_create_callback")
-end
+end]]--
 
+--[[
 function player:init_cha_data()
 	--初始化attr,bag,skill等
 	print("init_cha_data")
@@ -78,8 +72,17 @@ function player:init_cha_data()
 	local err = Dbmgr.DBCmd(self.chaid,cmd,{callback = db_create_callback,ply=self})
 	if err then
 		notifybusy(self)
-	end		
-	
+	end			
+end--]]
+
+
+--[[
+local function cb_bindchaid(self,error,result)
+	if error then
+		--记录日志	
+		return
+	end
+
 end
 
 local function get_id_callback(self,error,result)
@@ -91,8 +94,12 @@ local function get_id_callback(self,error,result)
 	local chaid = result
 	ply.chaid = chaid
 	print("get_id_callback chaid:" .. chaid)
-	ply:init_cha_data()
-
+	--向帐号数据库插入chaid
+	error = Dbmgr.DBCmd(chaid,cmd,{callback = cb_bindchaid,ply=self})
+	if error then
+			--记录日志
+	end
+	--ply:init_cha_data()
 end
 
 
@@ -101,7 +108,7 @@ function player:create_character(chaname)
 	self.chaname = chaname
 	if self.chaid ~= 0 then
 		--上次创建过程失败，已经有了chaid所以不需要再请求
-		self:init_cha_data()		
+		--self:init_cha_data()		
 		return
 	end
 	--请求角色唯一id
@@ -111,7 +118,7 @@ function player:create_character(chaname)
 		notifybusy(self)
 	end			
 end
-
+]]--
 local function initfreeidx()
 	local que = Que.Queue()
 	for i=1,65536 do
@@ -165,6 +172,7 @@ function playermgr:getplybyactname(actname)
 end
 
 
+--[[
 function load_chainfo_callback(self,error,result)
 	local ply = self.ply	
 	ply.attr =  Cjson.decode(result[1])
@@ -175,7 +183,7 @@ function load_chainfo_callback(self,error,result)
 	ply:pack(wpk)
 	ply:send2gate(wpk)
 end
-
+]]--
 
 local function AG_PLYLOGIN(_,rpk,conn)
 	local actname = rpk_read_string(rpk)
@@ -221,7 +229,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 		else
 			ply.chaid = chaid
 			--从数据库载入角色数据
-			local cmd = "hmget" .. chaid .. " attr skill bag"
+			local cmd = "hmget chaid:" .. chaid .. " attr skill bag"
 			local err = Dbmgr.DBCmd(chaid,cmd,{callback = load_chainfo_callback,ply=ply})
 			if err then
 				notifybusy(ply)

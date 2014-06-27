@@ -57,10 +57,12 @@ local function db_create_callback(self,error,result)
 	if error then
 		notifybusy(self.ply)
 	end
+	print("db_create_callback")
 end
 
 function player:init_cha_data()
 	--初始化attr,bag,skill等
+	print("init_cha_data")
 	local cmd = "hmset" .. chaid .. " chaname" .. self.chaname .. " attr " .. Cjson.encode(self.attr.attr)
 	local err = Dbmgr.DBCmd(chaid,cmd,{callback = db_create_callback,ply=ply})
 	if err then
@@ -70,19 +72,21 @@ function player:init_cha_data()
 end
 
 local function get_id_callback(self,error,result)
+	print("get_id_callback")
 	if error or not result then
 		notifybusy(self.ply)
 	end
 	local ply = self.ply
 	local chaid = result
 	ply.chaid = chaid
+	print("get_id_callback chaid:" .. chaid)
 	ply:init_cha_data()
 
 end
 
 
 function player:create_character(chaname)
-	
+	printf("create_character");
 	if chaid ~= 0 then
 		--上次创建过程失败，已经有了chaid所以不需要再请求
 		ply:init_cha_data()		
@@ -213,6 +217,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 end
 
 local function CG_CREATE(_,rpk,conn)
+	print("CG_CREATE:" .. chaname)
 	local chaname = rpk_read_string(rpk)
 	local groupid = rpk_read_uint32(rpk)
 	local gateid = {}

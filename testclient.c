@@ -8,6 +8,16 @@ static kn_sockaddr remote;
 
 static int  on_packet(kn_stream_conn_t conn,rpacket_t rpk){
 	//kn_stream_conn_send(conn,wpk_create_by_rpacket(rpk));
+	
+	uint16_t cmd = rpk_read_uint16(rpk);
+	
+	if(cmd == CMD_GC_CREATE){
+			printf("notify create character\n");
+			wpacket_t wpk = NEW_WPK(64);
+			wpk_write_uint16(wpk,CMD_CG_CREATE);
+			wpk_write_string(wpk,"huangwei");
+			kn_stream_conn_send(conn,wpk);
+	}
 	return 1;
 }
 

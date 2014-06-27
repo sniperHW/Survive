@@ -11,6 +11,7 @@ void forward_agent(rpacket_t rpk);
 //处理来group和game的消息
 static int on_packet(kn_stream_conn_t _,rpacket_t rpk){
 	(void)_;
+	printf("togrpgame on_packet\n");
 	forward_agent(rpk);	
 	return 1;
 }

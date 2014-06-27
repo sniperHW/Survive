@@ -161,6 +161,7 @@ end
 
 
 local function AG_PLYLOGIN(_,rpk,conn)
+	print("AG_PLYLOGIN")
 	local actname = rpk_read_string(rpk)
 	local chaid = rpk_read_string(rpk)
 	local gateid = {}
@@ -193,6 +194,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 		ply.gate = {id=gateid,conn = conn}
 		if chaid == 0 then
 			--通知客户端创建用户
+			print("send CMD_GA_CREATE")	
 			local wpk = new_wpk()
 			wpk_write_uint16(wpk,CMD_GA_CREATE)
 			ply:send2gate(wpk)

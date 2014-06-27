@@ -232,6 +232,7 @@ static void redis_login_cb(redisconn_t _,struct redisReply* reply,void *pridata)
 			//新用户,无角色
 		}else
 			chaid = reply->integer;
+		printf("send CMD_AG_PLYLOGIN\n");	
 		player->state = ply_wait_group_confirm;
 		wpacket_t wpk = NEW_WPK(128);
 		wpk_write_uint16(wpk,CMD_AG_PLYLOGIN);
@@ -243,6 +244,7 @@ static void redis_login_cb(redisconn_t _,struct redisReply* reply,void *pridata)
 }
 
 static void login(rpacket_t rpk,void *ptr){
+	printf("login\n");
 	kn_stream_conn_t conn = (kn_stream_conn_t)(ptr);
 	uint8_t      type = rpk_read_uint8(rpk);//1:设备号,2:帐号
 	(void)type;
@@ -295,12 +297,14 @@ static void invaild_ply(rpacket_t rpk,void *_){
 }
 
 static void create_character(rpacket_t rpk,void *_){
+	printf("create_character\n");
 	(void)_;
 	(void)rpk;
 	agentsession session;
 	rpk_read_agentsession(rpk,&session);
 	agentplayer_t ply = get_agent_player_bysession(&session);
 	if(ply){
+		printf("CMD_GC_CREATE\n");
 		//通知客户端进入创建角色界面
 		ply->state = ply_create;
 		wpacket_t wpk = NEW_WPK(64);

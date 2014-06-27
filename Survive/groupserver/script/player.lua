@@ -18,7 +18,7 @@ local player = {
 	bag,        --角色背包
 }
 
-local function player:new(o)
+function player:new(o)
   o = o or {}   
   setmetatable(o, self)
   self.__index = self
@@ -33,17 +33,17 @@ local function player:new(o)
   return o
 end
 
-local function player:pack(wpk)
+function player:pack(wpk)
 	self.attr:pack(wpk)
 	self.skill:pack(wpk)
 	self.bag:pack(wpk)
 end
 
-local function player:send2gate(wpk)
+function player:send2gate(wpk)
 	wpk_write_uint32(wpk,self.gate.id.high)
-	wpk_write_uint32(wpk,self.gate.low)
-	wpk_write_uint32(1)
-	C.send(ply.gate.conn,wpk)	
+	wpk_write_uint32(wpk,self.gate.id.low)
+	wpk_write_uint32(wpk,1)
+	C.send(self.gate.conn,wpk)	
 end
 
 local function notifybusy(ply)
@@ -59,7 +59,7 @@ local function db_create_callback(self,error,result)
 	end
 end
 
-local function player::init_cha_data()
+function player:init_cha_data()
 	--初始化attr,bag,skill等
 	local cmd = "hmset" .. chaid .. " chaname" .. self.chaname .. " attr " .. Cjson.encode(self.attr.attr)
 	local err = Dbmgr.DBCmd(chaid,cmd,{callback = db_create_callback,ply=ply})
@@ -81,7 +81,7 @@ local function get_id_callback(self,error,result)
 end
 
 
-local function player:create_character(chaname)
+function player:create_character(chaname)
 	
 	if chaid ~= 0 then
 		--上次创建过程失败，已经有了chaid所以不需要再请求
@@ -111,8 +111,8 @@ local playermgr = {
 	actname2player ={},
 }
 
-local function playermgr:new_player(actname)
-	if not actname or actname = '' then
+function playermgr:new_player(actname)
+	if not actname or actname == '' then
 		return nil
 	end
 	if self.freeidx:is_empty() then
@@ -127,7 +127,7 @@ local function playermgr:new_player(actname)
 	end
 end
 
-local function playermgr:release_player(ply)
+function playermgr:release_player(ply)
 	if ply.groupid and ply.groupid >= 1 and ply.groupid <= 65536 then
 		self.freeidx:push({v=ply.groupid,__next=nil})
 		self.players[ply.groupid] = nil
@@ -136,12 +136,12 @@ local function playermgr:release_player(ply)
 	end
 end
 
-local function playermgr:getplybyid(groupid)
+function playermgr:getplybyid(groupid)
 	return self.players[groupid]
 end
 
-local function playermgr:getplybyactname(actname)
-	if not actname or actname = '' then
+function playermgr:getplybyactname(actname)
+	if not actname or actname == '' then
 		return nil
 	end
 	return self.actname2player[actname]
@@ -161,13 +161,14 @@ end
 
 
 local function AG_PLYLOGIN(_,rpk,conn)
-	print("AG_PLYLOGIN")
 	local actname = rpk_read_string(rpk)
-	local chaid = rpk_read_string(rpk)
+	local chaid = rpk_read_uint32(rpk)
 	local gateid = {}
 	gateid.high = rpk_read_uint32(rpk)
 	gateid.low = rpk_read_uint32(rpk)
-	
+
+	print(gateid.high)
+	print(gateid.low)	
 	local ply = playermgr:getplybyactname(actname)
 	if ply then
 		if ply.gate then
@@ -177,11 +178,12 @@ local function AG_PLYLOGIN(_,rpk,conn)
 			wpk_write_uint32(wpk,gateid.high)
 			wpk_write_uint32(wpk,gateid.low)
 			C.send(conn,wpk)	
-		else
 			--玩家没有下线还在游戏中,现在重新与服务器建立连接，处理重连逻辑
+		else
+			print("here");	
+		end
 		return
 	end
-	
 	ply = playermgr:new_player(actname)
 	if not ply then
 		--通知gate繁忙，请求gate断开客户端连接

@@ -6,7 +6,7 @@ local attr = {
 	attr,
 }
 
-local function attr:new(o)
+function attr:new(o)
   o = o or {}   
   setmetatable(o, self)
   self.__index = self
@@ -14,13 +14,13 @@ local function attr:new(o)
   return o
 end
 
-local function attr:init(attr)	
+function attr:init(attr)	
 	for k,v in pairs(attr) do
 		self.attr[k] = {v=v,dirty=false}
 	end	
 end
 
-local function attr:pack(wpk)
+function attr:pack(wpk)
 	wpk_write_uint16(#self.attr)
 	for k,v in pairs(self.attr) do
 		wpk_write_uint16(k)
@@ -28,7 +28,7 @@ local function attr:pack(wpk)
 	end		
 end
 
-local function attr:updata2client(ply)
+function attr:updata2client(ply)
 	local tmp
 	local c
 	for k,v in pairs(self.attr) do
@@ -50,15 +50,15 @@ local function attr:updata2client(ply)
 	end	
 end
 
-local function attr::save2db(ply)
+function attr:save2db(ply)
 	
 end
 
-local function attr:get(idx)
+function attr:get(idx)
 	return self.attr[idx]
 end
 
-local function attr:set(idx,v)
+function attr:set(idx,v)
 	local attr = self.attr[idx]
 	if attr and attr.v ~= v then
 		attr.dirty = true

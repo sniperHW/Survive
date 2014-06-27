@@ -17,6 +17,7 @@ static __thread agent* t_agent = NULL;
 
 
 static void release_agent_player(agentplayer_t player){
+	printf("release_agent_player\n");
 	t_agent->players[player->agentsession.sessionid] = NULL;
 	release_id(t_agent->idmgr,player->agentsession.sessionid);
 	if(player->actname){
@@ -40,6 +41,7 @@ static agentplayer_t new_agent_player(kn_stream_conn_t conn){
 		player->agentsession.aid = t_agent->idx;
 		player->agentsession.sessionid = id;
 		t_agent->players[id] = player;
+		printf("%u,%u\n",player->agentsession.high,player->agentsession.low);
 		return player;
 	}
 }
@@ -140,7 +142,7 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 		agentplayer_t player = new_agent_player(_msg->conn);
 		if(player){
 			if(0 == kn_stream_server_bind(t_agent->server,_msg->conn,0,4096,on_packet,on_disconnected,
-								  10*1000,NULL,0,NULL)){
+								  0,NULL,0,NULL)){
 				kn_stream_conn_setud(_msg->conn,player);
 				_msg->conn = NULL;
 			}else{
@@ -158,7 +160,7 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 		}else{
 			//转发到客户端
 			int size = reverse_read_uint32(_msg->rpk);
-			int dropsize = size*sizeof(uint64_t);
+			int dropsize = size*sizeof(uint64_t)+sizeof(uint32_t);
 			//尾部玩家id被创建成一个单独的rpacket
 			rpacket_t tmp = rpk_create_skip(_msg->rpk,rpk_len(_msg->rpk)-dropsize);
 			//丢弃尾部附加的数据
@@ -302,6 +304,7 @@ static void create_character(rpacket_t rpk,void *_){
 	(void)rpk;
 	agentsession session;
 	rpk_read_agentsession(rpk,&session);
+	printf("%u,%u\n",session.high,session.low);
 	agentplayer_t ply = get_agent_player_bysession(&session);
 	if(ply){
 		printf("CMD_GC_CREATE\n");

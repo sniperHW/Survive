@@ -2,7 +2,7 @@ local bag = {
 	bag,
 }
 
-local function bag:new(o)
+function bag:new(o)
   o = o or {}   
   setmetatable(o, self)
   self.__index = self
@@ -10,15 +10,15 @@ local function bag:new(o)
   return o
 end
 
-local function bag:init(bag)
+function bag:init(bag)
 	
 end
 
-local function bag:pack(wpk)
+function bag:pack(wpk)
 
 end
 
-local function bag::save2db(ply)
+function bag:save2db(ply)
 	
 end
 

@@ -15,6 +15,7 @@ __thread kn_proactor_t t_proactor = NULL;
 
 
 static void process_cmd(uint16_t cmd,kn_stream_conn_t con,rpacket_t rpk){
+	printf("process_cmd:%d\n",cmd);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
 		const char *error = NULL;

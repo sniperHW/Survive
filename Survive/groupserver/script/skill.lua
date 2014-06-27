@@ -24,5 +24,5 @@ end
 
 
 return {
-	NewSkillmgr = function () skillmgr:new() end,
+	NewSkillmgr = function () return skillmgr:new() end,
 }

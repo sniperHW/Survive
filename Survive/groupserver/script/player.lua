@@ -30,6 +30,7 @@ function player:new(o)
   self.attr = Attr.NewAttr()
   self.skill = Skill.NewSkillmgr()
   self.bag = Bag.NewBag()
+  self.chaid = 0
   return o
 end
 
@@ -56,6 +57,16 @@ end
 local function db_create_callback(self,error,result)
 	if error then
 		notifybusy(self.ply)
+	else
+	        local cmd = "hmset " .. self.actname .. " chaid " .. self.chaid
+	        local err = Dbmgr.DBCmd(self.chaid,cmd,{callback = function (_,err,res)
+				if err then
+				end
+			    end
+		})
+	        if err then
+		    notifybusy(self)
+	        end		
 	end
 	print("db_create_callback")
 end
@@ -63,10 +74,10 @@ end
 function player:init_cha_data()
 	--初始化attr,bag,skill等
 	print("init_cha_data")
-	local cmd = "hmset" .. chaid .. " chaname" .. self.chaname .. " attr " .. Cjson.encode(self.attr.attr)
-	local err = Dbmgr.DBCmd(chaid,cmd,{callback = db_create_callback,ply=ply})
+	local cmd = "hmset chaid:" .. self.chaid .. " chaname " .. self.chaname .. " attr " .. Cjson.encode(self.attr.attr)
+	local err = Dbmgr.DBCmd(self.chaid,cmd,{callback = db_create_callback,ply=self})
 	if err then
-		notifybusy(self.ply)
+		notifybusy(self)
 	end		
 	
 end
@@ -86,17 +97,18 @@ end
 
 
 function player:create_character(chaname)
-	printf("create_character");
-	if chaid ~= 0 then
+	print("create_character " .. self.chaid)
+	self.chaname = chaname
+	if self.chaid ~= 0 then
 		--上次创建过程失败，已经有了chaid所以不需要再请求
-		ply:init_cha_data()		
+		self:init_cha_data()		
 		return
 	end
 	--请求角色唯一id
 	local cmd = "incr chaid"
-	local err = Dbmgr.DBCmd("global",cmd,{callback = get_id_callback,ply=ply})
+	local err = Dbmgr.DBCmd("global",cmd,{callback = get_id_callback,ply=self})
 	if err then
-		notifybusy(self.ply)
+		notifybusy(self)
 	end			
 end
 
@@ -127,6 +139,7 @@ function playermgr:new_player(actname)
 		newply.groupid = self.freeidx:pop().v
 		self.players[newply.groupid] = newply
 		self.actname2player[actname] = newply
+		print("new_player groupid:" .. newply.groupid)
 		return newply
 	end
 end
@@ -203,6 +216,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 			print("send CMD_GA_CREATE")	
 			local wpk = new_wpk()
 			wpk_write_uint16(wpk,CMD_GA_CREATE)
+			wpk_write_uint32(wpk,ply.groupid)	
 			ply:send2gate(wpk)
 		else
 			ply.chaid = chaid
@@ -217,11 +231,13 @@ local function AG_PLYLOGIN(_,rpk,conn)
 end
 
 local function CG_CREATE(_,rpk,conn)
-	print("CG_CREATE:" .. chaname)
 	local chaname = rpk_read_string(rpk)
+	print("CG_CREATE:" .. chaname)
 	local groupid = rpk_read_uint32(rpk)
+	print("CG_CREATE1")
 	local gateid = {}
 	gateid.high = rpk_read_uint32(rpk)
+	print("CG_CREATE2")
 	gateid.low = rpk_read_uint32(rpk)	
 	local ply = playermgr:getplybyid(groupid)
 	if not ply then
@@ -231,16 +247,17 @@ local function CG_CREATE(_,rpk,conn)
 		wpk_write_uint32(wpk,gateid.low)
 		C.send(conn,wpk)		
 	else
-		if not isvaildword(chaname) then
+		--[[if not isvaildword(chaname) then
 			--角色名含有非法字
 			local wpk = new_wpk()
 			wpk_write_uint16(wpk,CMD_GC_ERROR)
 			wpk_write_string(wpk,"角色名含有非法字符")
 			ply:send2gate(wpk)
 			return
-		end
+		end]]--
 		ply:create_character(chaname);
 	end
+	print("CG_CREATE3")
 end
 
 

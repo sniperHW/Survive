@@ -23,5 +23,5 @@ function bag:save2db(ply)
 end
 
 return {
-	NewBag = function () bag:new() end,
+	NewBag = function () return bag:new() end,
 }

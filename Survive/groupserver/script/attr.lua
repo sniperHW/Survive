@@ -67,5 +67,5 @@ function attr:set(idx,v)
 end
 
 return {
-	NewAttr = function () attr:new() end,
+	NewAttr = function () return attr:new() end,
 }

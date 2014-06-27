@@ -71,6 +71,7 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 	}else if(((struct chanmsg*)msg)->msgtype == FORWARD_GROUP){
 		struct chanmsg_forward_group *_msg = (struct chanmsg_forward_group*)msg;
 		if(g_togrpgame->togroup){
+			printf("send 2 group\n");
 			kn_stream_conn_send(g_togrpgame->togroup,_msg->wpk);
 			_msg->wpk = NULL;
 		}

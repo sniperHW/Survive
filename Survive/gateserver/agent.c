@@ -59,6 +59,7 @@ static void forward_game(kn_stream_conn_t con,rpacket_t rpk){
 	agentplayer_t ply = (agentplayer_t)kn_stream_conn_getud(con);
 	wpacket_t wpk = wpk_create_by_rpacket(rpk);
 	wpk_write_uint32(wpk,ply->gameid);
+	wpk_write_agentsession(wpk,&ply->agentsession);
 	struct chanmsg_forward_game *msg = calloc(1,sizeof(*msg));
 	msg->chanmsg.msgtype = FORWARD_GAME;
 	msg->game = ply->togame;
@@ -79,10 +80,12 @@ static void forward_group(kn_stream_conn_t con,rpacket_t rpk){
 	agentplayer_t ply = (agentplayer_t)kn_stream_conn_getud(con);
 	wpacket_t wpk = wpk_create_by_rpacket(rpk);
 	wpk_write_uint32(wpk,ply->groupid);
+	wpk_write_agentsession(wpk,&ply->agentsession);
 	struct chanmsg_forward_group *msg = calloc(1,sizeof(*msg));
 	msg->chanmsg.msgtype = FORWARD_GROUP;
 	msg->wpk = wpk;
 	kn_channel_putmsg(g_togrpgame->chan,NULL,msg,chanmsg_forward_group_destroy);
+	printf("forward_group groupid:%d\n",ply->groupid);
 }
 
 static void send2_group(wpacket_t wpk){
@@ -302,6 +305,7 @@ static void create_character(rpacket_t rpk,void *_){
 	printf("create_character\n");
 	(void)_;
 	(void)rpk;
+	uint32_t groupid = rpk_read_uint32(rpk);
 	agentsession session;
 	rpk_read_agentsession(rpk,&session);
 	printf("%u,%u\n",session.high,session.low);
@@ -310,6 +314,7 @@ static void create_character(rpacket_t rpk,void *_){
 		printf("CMD_GC_CREATE\n");
 		//通知客户端进入创建角色界面
 		ply->state = ply_create;
+		ply->groupid = groupid;
 		wpacket_t wpk = NEW_WPK(64);
 		wpk_write_uint16(wpk,CMD_GC_CREATE);
 		kn_stream_conn_send(ply->toclient,wpk);

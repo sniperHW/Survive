@@ -15,9 +15,7 @@ __thread kn_proactor_t t_proactor = NULL;
 
 
 static void process_cmd(uint16_t cmd,kn_stream_conn_t con,rpacket_t rpk){
-	printf("process_cmd:%d\n",cmd);
-	if(cmd == 1200) 
-		printf("here\n");
+	//printf("process_cmd:%d\n",cmd);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
 		const char *error = NULL;
@@ -53,7 +51,6 @@ static void on_new_game(kn_stream_server_t server,kn_stream_conn_t conn){
 }
 
 static int on_gate_packet(kn_stream_conn_t conn,rpacket_t rpk){
-	printf("on_gate_packet\n");
 	uint16_t cmd = rpk_read_uint16(rpk);
 	process_cmd(cmd,conn,rpk);
 	return 1;
@@ -86,8 +83,6 @@ static int reg_cmd_handler(lua_State *L){
 	if(!handler[cmd]){
 		printf("reg cmd %d\n",cmd);
 		cmd_handler_t h = calloc(1,sizeof(*h));
-		if(cmd == 1200)
-			printf("here\n");
 		h->_type = FN_LUA;
 		h->obj = obj;
 		handler[cmd] = h;

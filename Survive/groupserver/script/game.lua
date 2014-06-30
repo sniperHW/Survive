@@ -8,7 +8,7 @@ local gamemgr = {
 local function game_login(_,rpk,conn)
 	local name = rpk_read_string(rpk)
 	if gamemgr.con2game[conn] == nil and gamemgr.name2game[name] == nil then
-		local game = {conn=conn,name=name}
+		local game = {conn=conn,name=name,gameplys={}}
 		gamemgr.con2game[conn] = game
 		gamemgr.name2game[name] = game
 		--通知所有gate新的game加入系统
@@ -37,7 +37,23 @@ local function BoradCast(wpk)
 	destroy_wpk(wpk)
 end
 
+local function insertGamePly(ply,game)
+	local t = gamemgr.con2game[game.conn]
+	if t then
+		t.gameplys[ply] = nil
+	end
+end
+
+local function removeGamePly(ply,game)
+	local t = gamemgr.con2game[game.conn]
+	if t then
+		t.gameplys[ply] = ply
+	end
+end
+
 return {
 	RegHandler = reg_cmd_handler,
 	BoradCast = BoradCast,
+	InsertGamePly = insertGamePly,
+	RemoveGamePly = removeGamePly,	
 }

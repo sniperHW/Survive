@@ -77,7 +77,6 @@ end
 
 local function notifycreate(ply)
 	ply.status = stat_normal --首先复位状态
-	print("send CMD_GA_CREATE")	
 	local wpk = new_wpk()
 	wpk_write_uint16(wpk,CMD_GA_CREATE)
 	wpk_write_uint32(wpk,ply.groupid)	
@@ -90,7 +89,6 @@ local function cb_updateacdb(self,err,result)
 		notifybusy(self.ply)	
 		return
 	end
-	print("update acdb success")
 	self.ply:create_character(self.ply.chaname)
 end
 
@@ -113,14 +111,11 @@ end
 local function db_create_callback(self,error,result)
 	local ply = self.ply
 	if error then
-		print("update cha db failed")
 		notifybusy(ply)
 	else
 		--通知玩家进入游戏
-		print("create cha success")
 		notifybegply(ply)
 	end
-	print("db_create_callback")
 end
 
 function player:create_character(chaname)
@@ -137,7 +132,6 @@ function player:create_character(chaname)
 		self.skill = Skill.NewSkillmgr()
 		self.bag   = Bag.NewBag()	
 		local cmd = "hmset chaid:" .. self.chaid .. " chaname " .. self.chaname .. " attr " .. Cjson.encode(self.attr.attr)
-		print(cmd)
 		local err = Dbmgr.DBCmd(self.chaid,cmd,{callback = db_create_callback,ply=self})
 		if err then
 			notifybusy(self)
@@ -201,22 +195,14 @@ end
 
 
 function load_chainfo_callback(self,error,result)
-	print("load chainfo callback")
 	if error then
 		notifybusy(self.ply)
-		print("load chainfo error")
 		return
 	end
 	
 	if not result then
 		--通知客户端创建用户
 		notifycreate(self.ply)
-		--self.ply.status = stat_normal
-		--[[print("send CMD_GA_CREATE")	
-		local wpk = new_wpk()
-		wpk_write_uint16(wpk,CMD_GA_CREATE)
-		wpk_write_uint32(wpk,ply.groupid)	
-		ply:send2gate(wpk)]]--	
 		return 
 	end
 	
@@ -246,13 +232,16 @@ local function AG_PLYLOGIN(_,rpk,conn)
 			wpk_write_uint32(wpk,gateid.low)
 			C.send(conn,wpk)	
 		else
-			--玩家没有下线还在游戏中,现在重新与服务器建立连接，处理重连逻辑
-			
+			--玩家没有下线还在游戏中,现在重新与服务器建立连接，处理重连逻辑			
 			print("already in game")
 			ply.gate = {id=gateid,conn = conn}
 			Gate.InsertGatePly(ply,ply.gate)			
 			if ply.status == stat_playing then
-				notifybegply(ply)
+				if ply.game then
+					--在gameserver中
+				else
+					notifybegply(ply)
+				end
 			elseif ply.status == stat_normal then
 				if not ply.bag and not ply.attr and not ply.skill then
 					notifycreate(self.ply)
@@ -270,12 +259,10 @@ local function AG_PLYLOGIN(_,rpk,conn)
 		wpk_write_uint32(wpk,gateid.low)
 		C.send(conn,wpk)
 	else
-		print("chaid : " .. chaid)
 		ply.gate = {id=gateid,conn = conn}
 		Gate.InsertGatePly(ply,ply.gate)
 		if chaid == 0 then
 			--通知客户端创建用户
-			print("send CMD_GA_CREATE")	
 			local wpk = new_wpk()
 			wpk_write_uint16(wpk,CMD_GA_CREATE)
 			wpk_write_uint32(wpk,ply.groupid)	

@@ -71,6 +71,7 @@ local function notifybegply(ply)
 	local wpk = new_wpk()
 	wpk_write_uint16(wpk,CMD_GC_BEGINPLY)
 	ply:pack(wpk)
+	wpk_write_uint16(wpk.ply.groupid)
 	ply:send2gate(wpk)	
 end
 

@@ -174,6 +174,11 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 				if(session.aid != t_agent->idx) break;
 				agentplayer_t ply = get_agent_player_bysession(&session);
 				if(ply){
+					if(cmd == CMD_GC_BEGINPLY){
+						uint16_t groupid = reverse_read_uint16(rpk);
+						ply->groupid = groupid;
+						rpk_dropback(_msg->rpk,sizeof(groupid));
+					}
 					kn_stream_conn_send(ply->toclient,wpk_create_by_rpacket(_msg->rpk));
 				}
 			}

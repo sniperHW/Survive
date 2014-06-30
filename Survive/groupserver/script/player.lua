@@ -20,10 +20,10 @@ local player = {
 	status,
 }
 
-local stat_new = 0
-local stat_loading = 1
-local stat_create = 2
-local stat_playing = 3
+local stat_normal   = 0
+local stat_loading  = 1
+local stat_creating = 2
+local stat_playing  = 3
 
 function player:new(o)
   o = o or {}   
@@ -34,11 +34,11 @@ function player:new(o)
   self.gate = nil
   self.actname = nil
   self.chaname = nil
-  self.attr = Attr.NewAttr()
-  self.skill = Skill.NewSkillmgr()
-  self.bag = Bag.NewBag()
+  self.attr = nil--Attr.NewAttr()
+  self.skill = nil--Skill.NewSkillmgr()
+  self.bag = nil--Bag.NewBag()
   self.chaid = 0
-  self.status = stat_new
+  self.status = stat_normal
   return o
 end
 
@@ -49,6 +49,10 @@ function player:pack(wpk)
 end
 
 function player:send2gate(wpk)
+	if not self.gate then
+		return
+	end
+	
 	wpk_write_uint32(wpk,self.gate.id.high)
 	wpk_write_uint32(wpk,self.gate.id.low)
 	wpk_write_uint32(wpk,1)
@@ -56,7 +60,7 @@ function player:send2gate(wpk)
 end
 
 local function notifybusy(ply)
-	ply.status = stat_new --首先复位状态
+	ply.status = stat_normal --首先复位状态
 	local wpk = new_wpk()
 	wpk_write_uint16(wpk,CMD_GA_BUSY)
 	ply:send2gate(wpk)
@@ -68,6 +72,15 @@ local function notifybegply(ply)
 	wpk_write_uint16(wpk,CMD_GC_BEGINPLY)
 	ply:pack(wpk)
 	ply:send2gate(wpk)	
+end
+
+local function notifycreate(ply)
+	ply.status = stat_normal --首先复位状态
+	print("send CMD_GA_CREATE")	
+	local wpk = new_wpk()
+	wpk_write_uint16(wpk,CMD_GA_CREATE)
+	wpk_write_uint32(wpk,ply.groupid)	
+	ply:send2gate(wpk)		
 end
 
 local function cb_updateacdb(self,err,result)
@@ -119,17 +132,18 @@ function player:create_character(chaname)
 			notifybusy(self)
 		end	
 	else
+		self.attr  = Attr.NewAttr()
+		self.skill = Skill.NewSkillmgr()
+		self.bag   = Bag.NewBag()	
 		local cmd = "hmset chaid:" .. self.chaid .. " chaname " .. self.chaname .. " attr " .. Cjson.encode(self.attr.attr)
 		print(cmd)
 		local err = Dbmgr.DBCmd(self.chaid,cmd,{callback = db_create_callback,ply=self})
 		if err then
 			notifybusy(self)
-		end		
+		end
+		self.status = stat_creating			
 	end
-	self.status = stat_create	
 end
-
-
 
 local function initfreeidx()
 	local que = Que.Queue()
@@ -195,11 +209,13 @@ function load_chainfo_callback(self,error,result)
 	
 	if not result then
 		--通知客户端创建用户
-		print("send CMD_GA_CREATE")	
+		notifycreate(self.ply)
+		--self.ply.status = stat_normal
+		--[[print("send CMD_GA_CREATE")	
 		local wpk = new_wpk()
 		wpk_write_uint16(wpk,CMD_GA_CREATE)
 		wpk_write_uint32(wpk,ply.groupid)	
-		ply:send2gate(wpk)	
+		ply:send2gate(wpk)]]--	
 		return 
 	end
 	
@@ -232,7 +248,13 @@ local function AG_PLYLOGIN(_,rpk,conn)
 			--玩家没有下线还在游戏中,现在重新与服务器建立连接，处理重连逻辑
 			ply.gate = {id=gateid,conn = conn}
 			Gate.InsertGatePly(ply,ply.gate)			
-			print("here");	
+			if ply.status == stat_playing then
+				notifybegply(ply)
+			else if ply.status == stat_normal then
+				if not ply.bag and not ply.attr and not ply.skill then
+					notifycreate(self.ply)
+				end
+			end	
 		end
 		return
 	end
@@ -283,7 +305,7 @@ local function CG_CREATE(_,rpk,conn)
 		wpk_write_uint32(wpk,gateid.low)
 		C.send(conn,wpk)		
 	else
-		if ply.status == stat_create then
+		if ply.status == stat_creating then
 			return
 		end	
 		--[[if not isvaildword(chaname) then
@@ -299,10 +321,22 @@ local function CG_CREATE(_,rpk,conn)
 	print("CG_CREATE3")
 end
 
+local function AG_CLIENT_DISCONN(_,rpk,conn)
+	local groupid = rpk_read_uint16(rpk)	
+	local ply = playermgr:getplybyid(groupid)
+	if ply then
+		print("ply " .. ply.actname .. " disconnect")
+		Gate.removeGatePly(ply.gate,ply)
+		ply.gate = nil
+	end
+end
+
 
 local function reg_cmd_handler()
 	GroupApp.reg_cmd_handler(CMD_AG_PLYLOGIN,{handle=AG_PLYLOGIN})
 	GroupApp.reg_cmd_handler(CMD_CG_CREATE,{handle=CG_CREATE})
+	GroupApp.reg_cmd_handler(CMD_AG_CLIENT_DISCONN,{handle=AG_CLIENT_DISCONN})
+	
 end
 
 return {

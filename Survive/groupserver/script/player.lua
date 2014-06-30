@@ -71,7 +71,7 @@ local function notifybegply(ply)
 	local wpk = new_wpk()
 	wpk_write_uint16(wpk,CMD_GC_BEGINPLY)
 	ply:pack(wpk)
-	wpk_write_uint16(wpk.ply.groupid)
+	wpk_write_uint16(wpk,ply.groupid)
 	ply:send2gate(wpk)	
 end
 
@@ -247,6 +247,8 @@ local function AG_PLYLOGIN(_,rpk,conn)
 			C.send(conn,wpk)	
 		else
 			--玩家没有下线还在游戏中,现在重新与服务器建立连接，处理重连逻辑
+			
+			print("already in game")
 			ply.gate = {id=gateid,conn = conn}
 			Gate.InsertGatePly(ply,ply.gate)			
 			if ply.status == stat_playing then
@@ -327,7 +329,7 @@ local function AG_CLIENT_DISCONN(_,rpk,conn)
 	local ply = playermgr:getplybyid(groupid)
 	if ply then
 		print("ply " .. ply.actname .. " disconnect")
-		Gate.removeGatePly(ply.gate,ply)
+		Gate.RemoveGatePly(ply.gate,ply)
 		ply.gate = nil
 	end
 end

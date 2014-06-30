@@ -175,7 +175,7 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 				agentplayer_t ply = get_agent_player_bysession(&session);
 				if(ply){
 					if(cmd == CMD_GC_BEGINPLY){
-						uint16_t groupid = reverse_read_uint16(rpk);
+						uint16_t groupid = reverse_read_uint16(_msg->rpk);
 						ply->groupid = groupid;
 						rpk_dropback(_msg->rpk,sizeof(groupid));
 					}

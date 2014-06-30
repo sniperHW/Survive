@@ -20,6 +20,10 @@ local function game_disconnected(_,rpk,conn)
 		local game = gamemgr.con2game[conn]
 		gamemgr.con2game[conn] = nil
 		gamemgr.name2game[game.name] = nil
+		print("gateserver: " .. gate.name .. " disconnected")		
+		for k,v in pairs(game.gameplys) do
+			v.game = nil
+		end		
 	end
 end
 

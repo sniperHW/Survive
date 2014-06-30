@@ -4,6 +4,7 @@ local Dbmgr = require "script/dbmgr"
 local Attr = require "script/attr"
 local Bag = require "script/bag"
 local Skill = require "script/skill"
+local Gate = require "script/gate"
 
 
 local player = {
@@ -16,7 +17,13 @@ local player = {
 	attr,       --角色属性
 	skill,      --角色技能
 	bag,        --角色背包
+	status,
 }
+
+local stat_new = 0
+local stat_loading = 1
+local stat_create = 2
+local stat_playing = 3
 
 function player:new(o)
   o = o or {}   
@@ -31,6 +38,7 @@ function player:new(o)
   self.skill = Skill.NewSkillmgr()
   self.bag = Bag.NewBag()
   self.chaid = 0
+  self.status = stat_new
   return o
 end
 
@@ -48,46 +56,31 @@ function player:send2gate(wpk)
 end
 
 local function notifybusy(ply)
+	ply.status = stat_new --首先复位状态
 	local wpk = new_wpk()
 	wpk_write_uint16(wpk,CMD_GA_BUSY)
 	ply:send2gate(wpk)
 end
 
---[[
-local function db_create_callback(self,error,result)
-	local ply = self.ply
-	if error then
-		notifybusy(ply)
-	else
-		
-	end
-	print("db_create_callback")
-end]]--
-
---[[
-function player:init_cha_data()
-	--初始化attr,bag,skill等
-	print("init_cha_data")
-	local cmd = "hmset chaid:" .. self.chaid .. " chaname " .. self.chaname .. " attr " .. Cjson.encode(self.attr.attr)
-	local err = Dbmgr.DBCmd(self.chaid,cmd,{callback = db_create_callback,ply=self})
-	if err then
-		notifybusy(self)
-	end			
-end--]]
-
-
---[[
-local function cb_bindchaid(self,error,result)
-	if error then
-		--记录日志	
-		return
-	end
-
+local function notifybegply(ply)
+	ply.status = stat_playing
+	local wpk = new_wpk()
+	wpk_write_uint16(wpk,CMD_GC_BEGINPLY)
+	ply:pack(wpk)
+	ply:send2gate(wpk)	
 end
 
-local function get_id_callback(self,error,result)
-	print("get_id_callback")
-	if error or not result then
+local function cb_updateacdb(self,err,result)
+	if err then
+		self.ply.chaid = 0
+		notifybusy(self.ply)	
+		return
+	end
+	self.ply:create_character(self.chaname)
+end
+
+local function get_id_callback(self,err,result)
+	if err or not result then
 		notifybusy(self.ply)
 	end
 	local ply = self.ply
@@ -95,30 +88,45 @@ local function get_id_callback(self,error,result)
 	ply.chaid = chaid
 	print("get_id_callback chaid:" .. chaid)
 	--向帐号数据库插入chaid
-	error = Dbmgr.DBCmd(chaid,cmd,{callback = cb_bindchaid,ply=self})
-	if error then
-			--记录日志
+	local cmd = "set " .. ply.actname .. " " .. chaid
+	err = Dbmgr.DBCmd(chaid,cmd,{callback = cb_updateacdb,ply=self})
+	if err then
+		notifybusy(self.ply)
 	end
-	--ply:init_cha_data()
 end
 
+local function db_create_callback(self,error,result)
+	local ply = self.ply
+	if error then
+		notifybusy(ply)
+	else
+		--通知玩家进入游戏
+		notifybegply(ply)
+	end
+	print("db_create_callback")
+end
 
 function player:create_character(chaname)
-	print("create_character " .. self.chaid)
 	self.chaname = chaname
-	if self.chaid ~= 0 then
-		--上次创建过程失败，已经有了chaid所以不需要再请求
-		--self:init_cha_data()		
-		return
+	if self.chaid == 0 then
+		--请求角色唯一id
+		local cmd = "incr chaid"
+		local err = Dbmgr.DBCmd("global",cmd,{callback = get_id_callback,ply=self})
+		if err then
+			notifybusy(self)
+		end	
+	else
+		local cmd = "hmset chaid:" .. self.chaid .. " chaname " .. self.chaname .. " attr " .. Cjson.encode(self.attr.attr)
+		local err = Dbmgr.DBCmd(self.chaid,cmd,{callback = db_create_callback,ply=self})
+		if err then
+			notifybusy(self)
+		end		
 	end
-	--请求角色唯一id
-	local cmd = "incr chaid"
-	local err = Dbmgr.DBCmd("global",cmd,{callback = get_id_callback,ply=self})
-	if err then
-		notifybusy(self)
-	end			
+	self.status = stat_create	
 end
-]]--
+
+
+
 local function initfreeidx()
 	local que = Que.Queue()
 	for i=1,65536 do
@@ -172,18 +180,29 @@ function playermgr:getplybyactname(actname)
 end
 
 
---[[
+
 function load_chainfo_callback(self,error,result)
+	if error then
+		notifybusy(self.ply)
+		return
+	end
+	
+	if not result then
+		--通知客户端创建用户
+		print("send CMD_GA_CREATE")	
+		local wpk = new_wpk()
+		wpk_write_uint16(wpk,CMD_GA_CREATE)
+		wpk_write_uint32(wpk,ply.groupid)	
+		ply:send2gate(wpk)	
+		return 
+	end
+	
 	local ply = self.ply	
 	ply.attr =  Cjson.decode(result[1])
 	ply.skill = Cjson.decode(result[2])
-	local wpk = new_wpk()
-	local gateid = ply.gate.id
-	wpk_write_uint16(wpk,CMD_GC_BEGINPLY)
-	ply:pack(wpk)
-	ply:send2gate(wpk)
+	notifybegply(ply)
 end
-]]--
+
 
 local function AG_PLYLOGIN(_,rpk,conn)
 	local actname = rpk_read_string(rpk)
@@ -203,8 +222,10 @@ local function AG_PLYLOGIN(_,rpk,conn)
 			wpk_write_uint32(wpk,gateid.high)
 			wpk_write_uint32(wpk,gateid.low)
 			C.send(conn,wpk)	
-			--玩家没有下线还在游戏中,现在重新与服务器建立连接，处理重连逻辑
 		else
+			--玩家没有下线还在游戏中,现在重新与服务器建立连接，处理重连逻辑
+			ply.gate = {id=gateid,conn = conn}
+			Gate.InsertGatePly(ply,ply.gate)			
 			print("here");	
 		end
 		return
@@ -219,6 +240,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 		C.send(conn,wpk)
 	else
 		ply.gate = {id=gateid,conn = conn}
+		Gate.InsertGatePly(ply,ply.gate)
 		if chaid == 0 then
 			--通知客户端创建用户
 			print("send CMD_GA_CREATE")	
@@ -234,6 +256,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 			if err then
 				notifybusy(ply)
 			end
+			ply.status = stat_loading
 		end
 	end
 end
@@ -242,10 +265,8 @@ local function CG_CREATE(_,rpk,conn)
 	local chaname = rpk_read_string(rpk)
 	print("CG_CREATE:" .. chaname)
 	local groupid = rpk_read_uint32(rpk)
-	print("CG_CREATE1")
 	local gateid = {}
 	gateid.high = rpk_read_uint32(rpk)
-	print("CG_CREATE2")
 	gateid.low = rpk_read_uint32(rpk)	
 	local ply = playermgr:getplybyid(groupid)
 	if not ply then
@@ -255,6 +276,9 @@ local function CG_CREATE(_,rpk,conn)
 		wpk_write_uint32(wpk,gateid.low)
 		C.send(conn,wpk)		
 	else
+		if ply.status == stat_create then
+			return
+		end	
 		--[[if not isvaildword(chaname) then
 			--角色名含有非法字
 			local wpk = new_wpk()

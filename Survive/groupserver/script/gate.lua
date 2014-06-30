@@ -8,7 +8,7 @@ local gatemgr = {
 local function gate_login(_,rpk,conn)
 	local name = rpk_read_string(rpk)
 	if gatemgr.con2gate[conn] == nil and gatemgr.name2gate[name] == nil then
-		local gate = {conn=conn,name=name}
+		local gate = {conn=conn,name=name,gateplys={}}
 		gatemgr.con2gate[conn] = gate
 		gatemgr.name2gate[name] = gate
 		print("gateserver: " .. name .. " login success")
@@ -23,6 +23,10 @@ local function gate_disconnected(_,rpk,conn)
 		gatemgr.con2gate[conn] = nil
 		gatemgr.name2gate[gate.name] = nil
 		print("gateserver: " .. gate.name .. " disconnected")
+		
+		for k,v in pairs(gate.gateplys) do
+			v.gate = nil
+		end
 	end
 end
 
@@ -41,7 +45,23 @@ local function BoradCast(wpk)
 	destroy_wpk(wpk)
 end
 
+local function insertGatePly(ply,gate)
+	local t = gatemgr.con2gate[gate.conn]
+	if t then
+		t.gateplys[ply] = nil
+	end
+end
+
+local function removeGatePly(ply,gate)
+	local t = gatemgr.con2gate[gate.conn]
+	if t then
+		t.gateplys[ply] = ply
+	end
+end
+
 return {
 	RegHandler = reg_cmd_handler,
 	BoradCast = BoradCast,
+	InsertGatePly = insertGatePly,
+	RemoveGatePly = removeGatePly,
 }

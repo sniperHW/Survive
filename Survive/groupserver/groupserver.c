@@ -19,6 +19,7 @@ static void process_cmd(uint16_t cmd,kn_stream_conn_t con,rpacket_t rpk){
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
 		const char *error = NULL;
+		ident _ident = kn_stream_conn_makeident(con);
 		if((error = CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
 						  lua_pushlightuserdata(L,rpk),
 						  lua_pushlightuserdata(L,con)))){

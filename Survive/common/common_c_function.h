@@ -154,6 +154,38 @@ int lua_syslog(lua_State *L){
 }
 
 int lua_send(lua_State *L){
+/*
+	luaObject_t o = create_luaObj(L,1);
+	ident  _ident;
+	lua_rawgeti(o->L,LUA_REGISTRYINDEX,o->rindex);
+	
+	lua_pushnumber(o->L,1);
+	lua_gettable(o->L,-2);
+	_ident._data[0] =  (uint32_t)lua_pop(L,-1);
+	
+	lua_pushnumber(o->L,2);
+	lua_gettable(o->L,-2);
+	_ident._data[1] =  (uint32_t)lua_pop(L,-1);	
+	
+	lua_pushnumber(o->L,3);
+	lua_gettable(o->L,-2);
+	_ident._data[2] =  (uint32_t)lua_pop(L,-1);	
+	
+	
+	lua_pushnumber(o->L,4);
+	lua_gettable(o->L,-2);
+	_ident._data[3] =  (uint32_t)lua_pop(L,-1);	
+	
+	kn_stream_conn_t conn = cast2_kn_stream_conn(_ident);
+	if(!conn){
+		lua_pushboolean(L,0);
+	}else{
+		wpacket_t wpk = lua_touserdata(L,2);
+		kn_stream_conn_send(conn,wpk);	
+		lua_pushboolean(L,1);	
+	}
+	return 1;	 
+*/	
 	kn_stream_conn_t conn = lua_touserdata(L,1);
 	wpacket_t wpk = lua_touserdata(L,2);
 	kn_stream_conn_send(conn,wpk);

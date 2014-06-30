@@ -236,7 +236,7 @@ static void redis_login_cb(redisconn_t _,struct redisReply* reply,void *pridata)
 		if(reply->type == REDIS_REPLY_NIL){
 			//新用户,无角色
 		}else
-			chaid = reply->integer;
+			chaid = atol(reply->str);
 		printf("send CMD_AG_PLYLOGIN\n");	
 		player->state = ply_wait_group_confirm;
 		wpacket_t wpk = NEW_WPK(128);

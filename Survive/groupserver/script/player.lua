@@ -43,9 +43,9 @@ function player:new(o)
 end
 
 function player:pack(wpk)
-	self.attr:pack(wpk)
-	self.skill:pack(wpk)
-	self.bag:pack(wpk)
+	--self.attr:pack(wpk)
+	--self.skill:pack(wpk)
+	--self.bag:pack(wpk)
 end
 
 function player:send2gate(wpk)
@@ -76,7 +76,8 @@ local function cb_updateacdb(self,err,result)
 		notifybusy(self.ply)	
 		return
 	end
-	self.ply:create_character(self.chaname)
+	print("update acdb success")
+	self.ply:create_character(self.ply.chaname)
 end
 
 local function get_id_callback(self,err,result)
@@ -89,7 +90,7 @@ local function get_id_callback(self,err,result)
 	print("get_id_callback chaid:" .. chaid)
 	--向帐号数据库插入chaid
 	local cmd = "set " .. ply.actname .. " " .. chaid
-	err = Dbmgr.DBCmd(chaid,cmd,{callback = cb_updateacdb,ply=self})
+	err = Dbmgr.DBCmd(chaid,cmd,{callback = cb_updateacdb,ply=ply})
 	if err then
 		notifybusy(self.ply)
 	end
@@ -98,9 +99,11 @@ end
 local function db_create_callback(self,error,result)
 	local ply = self.ply
 	if error then
+		print("update cha db failed")
 		notifybusy(ply)
 	else
 		--通知玩家进入游戏
+		print("create cha success")
 		notifybegply(ply)
 	end
 	print("db_create_callback")
@@ -117,6 +120,7 @@ function player:create_character(chaname)
 		end	
 	else
 		local cmd = "hmset chaid:" .. self.chaid .. " chaname " .. self.chaname .. " attr " .. Cjson.encode(self.attr.attr)
+		print(cmd)
 		local err = Dbmgr.DBCmd(self.chaid,cmd,{callback = db_create_callback,ply=self})
 		if err then
 			notifybusy(self)
@@ -182,8 +186,10 @@ end
 
 
 function load_chainfo_callback(self,error,result)
+	print("load chainfo callback")
 	if error then
 		notifybusy(self.ply)
+		print("load chainfo error")
 		return
 	end
 	
@@ -199,7 +205,7 @@ function load_chainfo_callback(self,error,result)
 	
 	local ply = self.ply	
 	ply.attr =  Cjson.decode(result[1])
-	ply.skill = Cjson.decode(result[2])
+	--ply.skill = Cjson.decode(result[2])
 	notifybegply(ply)
 end
 
@@ -239,6 +245,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 		wpk_write_uint32(wpk,gateid.low)
 		C.send(conn,wpk)
 	else
+		print("chaid : " .. chaid)
 		ply.gate = {id=gateid,conn = conn}
 		Gate.InsertGatePly(ply,ply.gate)
 		if chaid == 0 then
@@ -251,7 +258,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 		else
 			ply.chaid = chaid
 			--从数据库载入角色数据
-			local cmd = "hmget chaid:" .. chaid .. " attr skill bag"
+			local cmd = "hmget chaid:" .. chaid .. " attr"
 			local err = Dbmgr.DBCmd(chaid,cmd,{callback = load_chainfo_callback,ply=ply})
 			if err then
 				notifybusy(ply)

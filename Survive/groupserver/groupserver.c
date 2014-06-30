@@ -16,10 +16,11 @@ __thread kn_proactor_t t_proactor = NULL;
 
 static void process_cmd(uint16_t cmd,kn_stream_conn_t con,rpacket_t rpk){
 	printf("process_cmd:%d\n",cmd);
+	if(cmd == 1200) 
+		printf("here\n");
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
 		const char *error = NULL;
-		ident _ident = kn_stream_conn_makeident(con);
 		if((error = CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
 						  lua_pushlightuserdata(L,rpk),
 						  lua_pushlightuserdata(L,con)))){
@@ -84,7 +85,10 @@ static int reg_cmd_handler(lua_State *L){
 	luaObject_t obj = create_luaObj(L,2);
 	if(!handler[cmd]){
 		printf("reg cmd %d\n",cmd);
-		cmd_handler_t h = calloc(1,sizeof(*handler));
+		cmd_handler_t h = calloc(1,sizeof(*h));
+		if(cmd == 1200)
+			printf("here\n");
+		h->_type = FN_LUA;
 		h->obj = obj;
 		handler[cmd] = h;
 		lua_pushboolean(L,1);

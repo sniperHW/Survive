@@ -17,7 +17,8 @@ static int  on_packet(kn_stream_conn_t conn,rpacket_t rpk){
 			wpk_write_uint16(wpk,CMD_CG_CREATE);
 			wpk_write_string(wpk,"huangwei");
 			kn_stream_conn_send(conn,wpk);
-	}
+	}else if(cmd == CMD_GC_BEGINPLY)
+		printf("BeginPly\n");
 	return 1;
 }
 

@@ -4,40 +4,40 @@
 
 enum{
 	//client <-> agent
-	CMD_CA_BEGIN = 1,
+	CMD_CA_BEGIN = 0,
 	CMD_CA_LOGIN,
 	CMD_CA_END,
 
-	CMD_AC_BEGIN = CMD_CA_BEGIN + 1,
+	CMD_AC_BEGIN = 100,
 	CMD_AC_END,
 
 	//client <-> game
-	CMD_CS_BEGIN = CMD_AC_END + 1,
+	CMD_CS_BEGIN = 200,
 	CMD_CS_END,
 
-	CMD_SC_BEGIN = CMD_CS_END + 1,
+	CMD_SC_BEGIN = 300,
 	CMD_SC_END,
 
 	//client <-> group
-	CMD_CG_BEGIN = CMD_SC_END + 1,
+	CMD_CG_BEGIN = 400,
 	CMD_CG_CREATE,
 	CMD_CG_ENTERMAP,  //请求进入地图
 	CMD_CG_END,
 
-	CMD_GC_BEGIN = CMD_CG_END + 1,
+	CMD_GC_BEGIN = 500,
 	CMD_GC_CREATE,
 	CMD_GC_BEGINPLY,
 	CMD_GC_ERROR,
 	CMD_GC_END,
 
 	//gate <-> group
-	CMD_AG_BEGIN = CMD_GC_END + 1,
+	CMD_AG_BEGIN = 600,
 	CMD_AG_LOGIN,                     //gateserver进程登陆到group
 	CMD_AG_PLYLOGIN,
 	CMD_AG_CLIENT_DISCONN,            //客户端连接断开 
 	CMD_AG_END,
 
-	CMD_GA_BEGIN = CMD_AG_END + 1,
+	CMD_GA_BEGIN = 700,
 	CMD_GA_BUSY,
 	CMD_GA_PLY_INVAILD,
 	CMD_GA_CREATE,
@@ -45,26 +45,26 @@ enum{
 
 	//game <-> group
 
-	CMD_GAMEG_BEGIN = CMD_GA_END + 1,
+	CMD_GAMEG_BEGIN = 800,
 	CMD_GAMEG_LOGIN,     //gameserver进程登陆到group 
 	CMD_GAMEG_END,
 
-	CMD_GGAME_BEGIB = CMD_GAMEG_END + 1,
+	CMD_GGAME_BEGIB = 900,
 	CMD_GGAME_ENTERMAP,
 	CMD_GGAME_END,
 
 	//game <-> gate
 
-	CMD_AGAME_BEGIN = CMD_GAMEG_END + 1,
+	CMD_AGAME_BEGIN = 1000,
 	CMD_AGAME_LOGIN, //gateserver进程登陆到game 
 	CMD_AGAME_CLIENT_DISCONN,        //客户端连接断开   
 	CMD_AGAME_END,
 
-	CMD_GAMEA_BEGIN = CMD_AGAME_END + 1,
+	CMD_GAMEA_BEGIN = 1100,
 	CMD_GAMEA_END,
 
 	//dummy cmd
-	DUMMY_ON_GATE_DISCONNECTED = CMD_GAMEA_END + 1,
+	DUMMY_ON_GATE_DISCONNECTED = 1200,
 	DUMMY_ON_GAME_DISCONNECTED,
 };
 

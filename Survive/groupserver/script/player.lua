@@ -250,7 +250,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 			Gate.InsertGatePly(ply,ply.gate)			
 			if ply.status == stat_playing then
 				notifybegply(ply)
-			else if ply.status == stat_normal then
+			elseif ply.status == stat_normal then
 				if not ply.bag and not ply.attr and not ply.skill then
 					notifycreate(self.ply)
 				end

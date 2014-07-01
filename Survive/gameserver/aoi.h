@@ -36,7 +36,7 @@ typedef struct
 }aoi_block;
 
 //aoi对象
-struct aoi_object
+typedef struct aoi_object
 {
 	kn_dlist_node       node;                  
 	aoi_block*          cur_block;//当前所属的管理单元	
@@ -45,12 +45,12 @@ struct aoi_object
 	point2D             pos;     
 	void*               ud;
 	//使用者提供的函数，用于判断other是否在self的可视范围之内
-	uint8_t (*in_myscope)(aoi_object *self,aoi_object *other);
+	uint8_t (*in_myscope)(struct aoi_object *self,struct aoi_object *other);
 	//other进入self视野之后的回调函数
-	void    (*cb_enter)(aoi_object *self,aoi_object *other);
+	void    (*cb_enter)(struct aoi_object *self,struct aoi_object *other);
 	//other离开self视野之后的回调函数
-	void    (*cb_leave)(aoi_object *self,aoi_object *other);
-};
+	void    (*cb_leave)(struct aoi_object *self,struct aoi_object *other);
+}aoi_object;
 
 
 

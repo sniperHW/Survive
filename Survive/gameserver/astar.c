@@ -1,4 +1,4 @@
-#include "astar"
+#include "astar.h"
 
 int direction[8][2] = {
 	{0,-1},//上
@@ -11,14 +11,14 @@ int direction[8][2] = {
 	{1,1},//右下
 };	
 
-static int8_t _less(heapele*_l,heapele*_r)
+static int8_t _less(struct heapele*_l,struct heapele*_r)
 {
 	AStarNode *l = (AStarNode*)((int8_t*)_l-sizeof(kn_dlist_node));
 	AStarNode *r = (AStarNode*)((int8_t*)_r-sizeof(kn_dlist_node));
 	return l->F < r->F;
 }
 
-static void _clear(heapele*e){
+static void _clear(struct heapele*e){
 	AStarNode *n = (AStarNode*)((int8_t*)e-sizeof(kn_dlist_node));
 	n->F = n->G = n->H = 0;
 }
@@ -55,7 +55,7 @@ AStar_t create_AStar(int xsize,int ysize,int *values){
 }
 
 
-static inline clear_neighbors(AStar_t astar){
+static inline void clear_neighbors(AStar_t astar){
 	while(!kn_dlist_empty(&astar->neighbors))
 		kn_dlist_pop(&astar->neighbors);
 }
@@ -65,7 +65,6 @@ static inline kn_dlist* get_neighbors(AStar_t astar,AStarNode *node)
 {
 	clear_neighbors(astar);
 	int32_t i = 0;
-	int32_t c = 0;
 	for( ; i < 8; ++i)
 	{
 		int x = node->x + direction[i][0];
@@ -113,14 +112,14 @@ static inline double cost_2_goal(AStarNode *from,AStarNode *to)
 	return (delta_x * 50.0f) + (delta_y * 50.0f);
 }
 
-static inline reset(AStar_t astar){
+static inline void reset(AStar_t astar){
 	//清理close list
 	AStarNode *n = NULL;
-	while((n = (AStarNode*)kn_dlist_pop(&astar->close_list)))
+	while((n = (AStarNode*)kn_dlist_pop(&astar->close_list))){
 		n->G = n->H = n->F = 0;
 	}
 	//清理open list
-	minheap_clear(&astar->open_list,_clear);
+	minheap_clear(astar->open_list,_clear);
 }
 
 int find_path(AStar_t astar,int x,int y,int x1,int y1,kn_dlist *path){
@@ -128,10 +127,10 @@ int find_path(AStar_t astar,int x,int y,int x1,int y1,kn_dlist *path){
 	AStarNode *to = get_node(astar,x1,y1);
 	if(from == to || to->value == 0xFFFFFFFF)		
 		return 0;
-	minheap_insert(&astar->open_list,from->heap);	
+	minheap_insert(astar->open_list,&from->heap);	
 	AStarNode *current_node = NULL;	
 	while(1){	
-		struct heapele *e = minheap_popmin(&astar->open_list);
+		struct heapele *e = minheap_popmin(astar->open_list);
 		current_node = (AStarNode*)((int8_t*)e-sizeof(kn_dlist_node));
 		if(!current_node){ 
 			reset(astar);
@@ -145,7 +144,7 @@ int find_path(AStar_t astar,int x,int y,int x1,int y1,kn_dlist *path){
 				current_node = current_node->parent;
 				t->parent = NULL;
 				t->F = t->G = t->H = 0;
-				t->index = 0;
+				t->heap.index = 0;
 			}	
 			reset(astar);
 			return 1;
@@ -158,7 +157,7 @@ int find_path(AStar_t astar,int x,int y,int x1,int y1,kn_dlist *path){
 		{
 			AStarNode *n;
 			while((n = (AStarNode*)kn_dlist_pop(neighbors))){
-				if(n->index)//在openlist中
+				if(n->heap.index)//在openlist中
 				{
 					double new_G = current_node->G + cost_2_neighbor(current_node,n);
 					if(new_G < n->G)
@@ -167,7 +166,7 @@ int find_path(AStar_t astar,int x,int y,int x1,int y1,kn_dlist *path){
 						n->G = new_G;
 						n->F = n->G + n->H;
 						n->parent = current_node;
-						minheap_change(&astar->open_list,&n->heap);
+						minheap_change(astar->open_list,&n->heap);
 					}
 					continue;
 				}
@@ -175,7 +174,7 @@ int find_path(AStar_t astar,int x,int y,int x1,int y1,kn_dlist *path){
 				n->G = current_node->G + cost_2_neighbor(current_node,n);
 				n->H = cost_2_goal(n,to);
 				n->F = n->G + n->H;
-				minheap_insert(&astar->open_list,&n->heap);
+				minheap_insert(astar->open_list,&n->heap);
 			}
 			neighbors = NULL;
 		}	

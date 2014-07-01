@@ -133,61 +133,61 @@ static int8_t cal_blockset(aoi_map *m,point2D *newpos,point2D *oldpos,uint32_t r
 
 static inline void enter_me(aoi_object *me,aoi_object *other)
 {
-	set_bit(me->view_objs,other->aoi_object_id);
+	set_bit(me->view_objs,other->id);
 	me->cb_enter(me,other);
 }
 
 static inline void leave_me(aoi_object *me,aoi_object *other)
 {
-	clear_bit(me->view_objs,other->aoi_object_id);
+	clear_bit(me->view_objs,other->id);
 	me->cb_leave(me,other);
 }
 
 static inline void block_process_enter(aoi_map *m,aoi_block *bl,aoi_object *o)
 {
 	if(kn_dlist_empty(&bl->aoi_objs))return;
-	aoi_object *cur = (aoi_object*)dlist_first(&bl->aoi_objs);
-	while(cur != (aoi_object*)DLIST_TAIL(&bl->aoi_objs))
-	{
-		if(!is_set(o->view_objs,cur->aoi_object_id) && o->in_myscope(o,cur))enter_me(o,cur);
-		if(!is_set(cur->view_objs,o->aoi_object_id) && cur->in_myscope(cur,o))enter_me(cur,o);
-		cur = (aoi_object *)cur->block_node.next;
-	}
+	aoi_object *cur = (aoi_object*)kn_dlist_first(&bl->aoi_objs);
+	aoi_object *last = (aoi_object*)kn_dlist_last(&bl->aoi_objs);
+	do{
+		if(!is_set(o->view_objs,cur->id) && o->in_myscope(o,cur))enter_me(o,cur);
+		if(!is_set(cur->view_objs,o->id) && cur->in_myscope(cur,o))enter_me(cur,o);
+		cur = (aoi_object *)cur->node.next;
+	}while(cur != last);
 }
 
 static inline void block_process_unchange(aoi_map *m,aoi_block *bl,aoi_object *o)
 {
 	if(kn_dlist_empty(&bl->aoi_objs))return;
-	aoi_object *cur = (aoi_object*)dlist_first(&bl->aoi_objs);
-	while(cur != (aoi_object*)DLIST_TAIL(&bl->aoi_objs))
-	{	
+	aoi_object *cur = (aoi_object*)kn_dlist_first(&bl->aoi_objs);
+	aoi_object *last = (aoi_object*)kn_dlist_last(&bl->aoi_objs);
+	do{	
 		if(o->in_myscope(o,cur)){
-			 if(!is_set(o->view_objs,cur->aoi_object_id))
+			 if(!is_set(o->view_objs,cur->id))
 				enter_me(o,cur);
 		}else{
-			 if(is_set(o->view_objs,cur->aoi_object_id))
+			 if(is_set(o->view_objs,cur->id))
 				leave_me(o,cur);
 		}
 		if(cur->in_myscope(cur,o)){
-			 if(!is_set(cur->view_objs,o->aoi_object_id))
+			 if(!is_set(cur->view_objs,o->id))
 				enter_me(cur,o);
 		}else{
-			 if(is_set(cur->view_objs,o->aoi_object_id))
+			 if(is_set(cur->view_objs,o->id))
 				leave_me(cur,o);
 		}		
-		cur = (aoi_object *)cur->block_node.next;
-	}
+		cur = (aoi_object *)cur->node.next;
+	}while(cur != last);
 }
 
 static inline void block_process_leave(aoi_map *m,aoi_block *bl,aoi_object *o)
 {
-	if(dlist_empty(&bl->aoi_objs))return;
+	if(kn_dlist_empty(&bl->aoi_objs))return;
 	aoi_object *cur = (aoi_object*)kn_dlist_first(&bl->aoi_objs);
 	aoi_object *last = (aoi_object*)kn_dlist_last(&bl->aoi_objs);
 	do{
-		if(is_set(o->view_objs,cur->aoi_object_id) && !o->in_myscope(o,cur))leave_me(o,cur);
-		if(is_set(cur->view_objs,o->aoi_object_id) && !cur->in_myscope(cur,o))leave_me(cur,o);
-		cur = (aoi_object *)cur->block_node.next;		
+		if(is_set(o->view_objs,cur->id) && !o->in_myscope(o,cur))leave_me(o,cur);
+		if(is_set(cur->view_objs,o->id) && !cur->in_myscope(cur,o))leave_me(cur,o);
+		cur = (aoi_object *)cur->node.next;		
 	}while(cur != last);
 }
 
@@ -201,7 +201,7 @@ int32_t aoi_moveto(aoi_map *m,aoi_object *o,int32_t _x,int32_t _y)
 	aoi_block *old_block = get_block_by_point(m,&old_pos);
 	aoi_block *new_block = get_block_by_point(m,&new_pos);
 	if(old_block != new_block)
-		kn_dlist_remove(&o->block_node);
+		kn_dlist_remove(&o->node);
 
 	uint32_t i;
 	for(i = 0; m->enter_blocks[i];++i)
@@ -214,7 +214,7 @@ int32_t aoi_moveto(aoi_map *m,aoi_object *o,int32_t _x,int32_t _y)
 		block_process_leave(m,m->leave_blocks[i],o);
 		
 	if(old_block != new_block)
-		kn_dlist_push(&new_block->aoi_objs,&o->block_node);
+		kn_dlist_push(&new_block->aoi_objs,&o->node);
 	return 0;
 }
 
@@ -227,12 +227,12 @@ int32_t aoi_enter(aoi_map *m,aoi_object *o,int32_t _x,int32_t _y)
 	o->pos.y = _y;
 	aoi_block *block = get_block_by_point(m,&o->pos);
 	if(!block) return -1;
-	o->aoi_object_id = get_id(m->_idmgr);
-	if(o->aoi_object_id == -1) return -1;
+	o->id = get_id(m->_idmgr);
+	if(o->id == -1) return -1;
 	aoi_block **blocks = ENTER_BLOCKS(m,&o->pos,m->radius);
 	uint32_t i;
 	for(i = 0; blocks[i];++i) block_process_enter(m,blocks[i],o);
-	kn_dlist_push(&block->aoi_objs,&o->block_node);
+	kn_dlist_push(&block->aoi_objs,&o->node);
 	enter_me(o,o);
 	return 0;
 }
@@ -241,7 +241,7 @@ int32_t aoi_leave(aoi_map *m,aoi_object *o)
 {
 	aoi_block *block = get_block_by_point(m,&o->pos);
 	if(!block) return -1;
-	kn_dlist_remove(&o->block_node);
+	kn_dlist_remove(&o->node);
 	
 	aoi_block **blocks = LEAVE_BLOCKS(m,&o->pos,m->radius);
 	uint32_t i;

@@ -66,9 +66,10 @@ extern int direction[8][2];
 
 #define BLOCK 0xFFFFFFFF
 
-typedef struct{
-	kn_dlist_node  list_node;
-	struct heapele heap;
+typedef struct AStarNode{
+	kn_dlist_node     list_node;
+	struct heapele    heap;
+	struct AStarNode *parent;
 	double G;      //从初始点到当前点的开销
 	double H;      //从当前点到目标点的估计开销
 	double F;
@@ -88,7 +89,7 @@ typedef struct{
 
 
 AStar_t create_AStar(int xsize,int ysize,int *values);
-int     find_path(int x,int y,int x1,int y1,kn_dlist *path);
+int     find_path(AStar_t,int x,int y,int x1,int y1,kn_dlist *path);
 
 
 

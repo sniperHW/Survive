@@ -62,8 +62,12 @@ groupserverd:\
 gameserverd:\
 	Survive/gameserver/gameserver.c\
 	Survive/gameserver/config.c\
+	Survive/gameserver/astar.c\
+	Survive/gameserver/aoi.c\
+	Survive/common/wordfilter.c\
 	kendynet.a
 	$(CC) $(CFLAGS) -o gameserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
+	mv gameserverd Survive/gameserver
 	
 testclient:\
 	testclient.c\

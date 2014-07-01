@@ -1,5 +1,5 @@
-local Avatar = require "avatar"
-local Que = require "queue"
+local Avatar = require "script/avatar"
+local Que = require "script/queue"
 
 local astarmgr = {}
 

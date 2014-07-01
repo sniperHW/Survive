@@ -188,8 +188,11 @@ int lua_send(lua_State *L){
 */	
 	kn_stream_conn_t conn = lua_touserdata(L,1);
 	wpacket_t wpk = lua_touserdata(L,2);
-	kn_stream_conn_send(conn,wpk);
-	return 0;
+	if(0 == kn_stream_conn_send(conn,wpk))
+		lua_pushboolean(L,1);
+	else
+		lua_pushboolean(L,0);
+	return 1;
 }
 
 //redis

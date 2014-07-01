@@ -1,168 +1,183 @@
-#include "../astar.h"
-#include "common_hash_function.h"
-#include <float.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
+#include "astar"
 
-//返回path_node是否在open表中
-static inline int8_t is_in_openlist(struct path_node *pnode)
+int direction[8][2] = {
+	{0,-1},//上
+	{0,1},//下
+	{-1,0},//左
+	{1,0},//右
+	{-1,-1},//左上
+	{1,-1},//右上
+	{-1,1},//左下
+	{1,1},//右下
+};	
+
+static int8_t _less(heapele*_l,heapele*_r)
 {
-	return pnode->_heapele.index > 0;
+	AStarNode *l = (AStarNode*)((int8_t*)_l-sizeof(kn_dlist_node));
+	AStarNode *r = (AStarNode*)((int8_t*)_r-sizeof(kn_dlist_node));
+	return l->F < r->F;
 }
 
-//返回path_node是否在close表中
-static inline int8_t is_in_closelist(struct path_node *pnode)
-{
-	return pnode->_close_list_node.pre && pnode->_close_list_node.next;
+static void _clear(heapele*e){
+	AStarNode *n = (AStarNode*)((int8_t*)e-sizeof(kn_dlist_node));
+	n->F = n->G = n->H = 0;
 }
 
-static inline struct path_node *get_pnode_from_mnode(struct A_star_procedure *astar,struct map_node *mnode)
+
+static inline AStarNode *get_node(AStar_t astar,int x,int y)
 {
-	struct path_node *pnode = NULL;
-	hash_map_iter it = HASH_MAP_FIND(void*,astar->mnode_2_pnode,(void*)mnode);
-	//if(hash_map_is_vaild_iter(it))
-	hash_map_iter end = hash_map_end(astar->mnode_2_pnode);
-	if(!IT_EQ(it,end))
-		pnode = (struct path_node *)IT_GET_VAL(void*,it);
-	else
+	if(x < 0 || x >= astar->xcount || y < 0 || y >= astar->ycount)
+		return NULL;
+	return &astar->map[y*astar->xcount+x];
+}
+
+
+AStar_t create_AStar(int xsize,int ysize,int *values){
+	AStar_t astar = calloc(1,sizeof(*astar)+sizeof(AStarNode)*xsize*ysize);
+	astar->open_list = minheap_create(xsize*ysize,_less);
+	kn_dlist_init(&astar->close_list);
+	kn_dlist_init(&astar->neighbors);
+	astar->xcount = xsize;
+	astar->ycount = ysize;
+	int i = 0;
+	int j = 0;
+	for( ; i < ysize; ++i)
 	{
-		pnode = calloc(1,sizeof(*pnode));
-		pnode->_map_node = mnode;
-		HASH_MAP_INSERT(void*,void*,astar->mnode_2_pnode,(void*)mnode,(void*)pnode);
-	}
-	return pnode;
-}
-
-static inline struct path_node *remove_min_pnode(struct A_star_procedure *astar)
-{
-	struct heapele *hele = minheap_popmin(astar->open_list);
-	return (struct path_node*)hele;
-}
-
-static inline void insert_2_open(struct A_star_procedure *astar,struct path_node *pnode)
-{
-	minheap_insert(astar->open_list,(struct heapele*)pnode);
-}
-
-static inline void insert_2_close(struct A_star_procedure *astar,struct path_node *pnode)
-{
-	dlist_push(&astar->close_list,&pnode->_close_list_node);
-}
-
-static inline void change_open(struct A_star_procedure *astar,struct path_node *pnode)
-{
-	minheap_change(astar->open_list,(struct heapele*)pnode);
-}
-
-static inline void init_state(struct A_star_procedure *astar)
-{
-	struct dnode *dln = NULL;
-	while((dln = dlist_pop(&astar->close_list))!=NULL);
-	minheap_clear(astar->open_list,NULL);
-}
-
-struct path_node* find_path(struct A_star_procedure *astar,struct map_node *from,struct map_node *to)
-{
-	init_state(astar);
-	struct path_node *_from = get_pnode_from_mnode(astar,from);
-	if(from == to)
-		return _from;//起始点与目标点在同一个节点
-	struct path_node *_to = get_pnode_from_mnode(astar,to);
-	insert_2_open(astar,_from);
-	struct path_node *current_node = NULL;	
-	while(1)
-	{	
-		current_node = remove_min_pnode(astar);
-		if(!current_node)
-			return NULL;//无路可达
-		if(current_node == _to)
-			return current_node;
-		//current插入到close表
-		insert_2_close(astar,current_node);	
-		//获取current的相邻节点
-		struct map_node **neighbors = astar->_get_neighbors(current_node->_map_node);
-		if(neighbors)
-		{
-			uint32_t i = 0;
-			for( ; ; i++)
-			{
-				if(NULL == neighbors[i])
-					break;
-				struct path_node *neighbor = get_pnode_from_mnode(astar,neighbors[i]);
-				if(is_in_closelist(neighbor))
-					continue;//在close表中,不做处理
-				if(is_in_openlist(neighbor))
-				{
-					double new_G = current_node->G + astar->_cost_2_neighbor(current_node,neighbor);
-					if(new_G < neighbor->G)
-					{
-						//经过当前neighbor路径更佳,更新路径
-						neighbor->G = new_G;
-						neighbor->F = neighbor->G + neighbor->H;
-						neighbor->parent = current_node;
-						change_open(astar,neighbor);
-					}
-					continue;
-				}
-				neighbor->parent = current_node;
-				neighbor->G = current_node->G + astar->_cost_2_neighbor(current_node,neighbor);
-				neighbor->H = astar->_cost_2_goal(neighbor,_to);
-				neighbor->F = neighbor->G + neighbor->H;
-				insert_2_open(astar,neighbor);					
-			}
-			free(neighbors);
-			neighbors = NULL;
-		}	
-	}
-}
-
-static int32_t _hash_key_eq_(void *l,void *r)
-{
-	struct map_node** _l = (struct map_node**)l;
-	struct map_node** _r = (struct map_node**)r;
-	if(*_r == *_l)
-		return 0;
-	return -1;
-}
-
-static uint64_t _hash_func_(void* key)
-{
-	return burtle_hash(key,sizeof(key),1);
-}
-
-static inline int8_t _less(struct heapele*l,struct heapele*r)
-{
-	struct path_node *_l = (struct path_node*)l;
-	struct path_node *_r = (struct path_node*)r;  
-	return _l->F < _r->F;
-}
-
-struct A_star_procedure *create_astar(get_neighbors _get_neighbors,cost_2_neighbor _cost_2_neighbor,cost_2_goal _cost_2_goal)
-{
-	struct A_star_procedure *astar = (struct A_star_procedure *)calloc(1,sizeof(*astar));
-	astar->_get_neighbors = _get_neighbors;
-	astar->_cost_2_neighbor = _cost_2_neighbor;
-	astar->_cost_2_goal = _cost_2_goal;
-	astar->open_list = minheap_create(8192,_less);
-	dlist_init(&astar->close_list);
-	astar->mnode_2_pnode = hash_map_create(8192,sizeof(void*),sizeof(void*),_hash_func_,_hash_key_eq_);
+		for(j = 0; j < xsize;++j)
+		{		
+			AStarNode *tmp = &astar->map[i*xsize+j];
+			tmp->x = j;
+			tmp->y = i;
+			tmp->value = values[i*xsize+j];
+		}
+	}	
 	return astar;
 }
 
-void   destroy_Astar(struct A_star_procedure **_astar)
+
+static inline clear_neighbors(AStar_t astar){
+	while(!kn_dlist_empty(&astar->neighbors))
+		kn_dlist_pop(&astar->neighbors);
+}
+
+
+static inline kn_dlist* get_neighbors(AStar_t astar,AStarNode *node)
 {
-	struct A_star_procedure *astar = *_astar;
-	hash_map_iter it = hash_map_begin(astar->mnode_2_pnode);
-	hash_map_iter end = hash_map_end(astar->mnode_2_pnode);
-	while(!IT_EQ(it,end))
+	clear_neighbors(astar);
+	int32_t i = 0;
+	int32_t c = 0;
+	for( ; i < 8; ++i)
 	{
-		struct path_node *tmp = IT_GET_VAL(struct path_node*,it);
-		free(tmp);
-		IT_NEXT(it);
+		int x = node->x + direction[i][0];
+		int y = node->y + direction[i][1];
+		AStarNode *tmp = get_node(astar,x,y);
+		if(tmp){
+			if(tmp->list_node.pre || tmp->list_node.next)
+				continue;//在close表中,不处理
+			if(tmp->value != 0xFFFFFFFF)
+				kn_dlist_push(&astar->neighbors,(kn_dlist_node*)tmp);
+		}
 	}
-	minheap_destroy(&astar->open_list);
-	hash_map_destroy(&astar->mnode_2_pnode);
-	free(astar);
-	*_astar = NULL;
+	if(kn_dlist_empty(&astar->neighbors)) 
+		return NULL;
+	else 
+		return &astar->neighbors;
+}
+
+//计算到达相临节点需要的代价
+static inline double cost_2_neighbor(AStarNode *from,AStarNode *to)
+{
+	int delta_x = from->x - to->x;
+	int delta_y = from->y - to->y;
+	int i = 0;
+	for( ; i < 8; ++i)
+	{
+		if(direction[i][0] == delta_x && direction[i][1] == delta_y)
+			break;
+	}
+	if(i < 4)
+		return 50.0f;
+	else if(i < 8)
+		return 60.0f;
+	else
+	{
+		assert(0);
+		return 0.0f;
+	}	
+}
+
+static inline double cost_2_goal(AStarNode *from,AStarNode *to)
+{
+	int delta_x = abs(from->x - to->x);
+	int delta_y = abs(from->y - to->y);
+	return (delta_x * 50.0f) + (delta_y * 50.0f);
+}
+
+static inline reset(AStar_t astar){
+	//清理close list
+	AStarNode *n = NULL;
+	while((n = (AStarNode*)kn_dlist_pop(&astar->close_list)))
+		n->G = n->H = n->F = 0;
+	}
+	//清理open list
+	minheap_clear(&astar->open_list,_clear);
+}
+
+int find_path(AStar_t astar,int x,int y,int x1,int y1,kn_dlist *path){
+	AStarNode *from = get_node(astar,x,y);
+	AStarNode *to = get_node(astar,x1,y1);
+	if(from == to || to->value == 0xFFFFFFFF)		
+		return 0;
+	minheap_insert(&astar->open_list,from->heap);	
+	AStarNode *current_node = NULL;	
+	while(1){	
+		struct heapele *e = minheap_popmin(&astar->open_list);
+		current_node = (AStarNode*)((int8_t*)e-sizeof(kn_dlist_node));
+		if(!current_node){ 
+			reset(astar);
+			return 0;
+		}
+		if(current_node == to){ 
+			while(current_node)
+			{
+				kn_dlist_push_front(path,(kn_dlist_node*)current_node);
+				AStarNode *t = current_node;
+				current_node = current_node->parent;
+				t->parent = NULL;
+				t->F = t->G = t->H = 0;
+				t->index = 0;
+			}	
+			reset(astar);
+			return 1;
+		}
+		//current插入到close表
+		kn_dlist_push(&astar->close_list,(kn_dlist_node*)current_node);
+		//获取current的相邻节点
+		kn_dlist *neighbors =  get_neighbors(astar,current_node);
+		if(neighbors)
+		{
+			AStarNode *n;
+			while((n = (AStarNode*)kn_dlist_pop(neighbors))){
+				if(n->index)//在openlist中
+				{
+					double new_G = current_node->G + cost_2_neighbor(current_node,n);
+					if(new_G < n->G)
+					{
+						//经过当前neighbor路径更佳,更新路径
+						n->G = new_G;
+						n->F = n->G + n->H;
+						n->parent = current_node;
+						minheap_change(&astar->open_list,&n->heap);
+					}
+					continue;
+				}
+				n->parent = current_node;
+				n->G = current_node->G + cost_2_neighbor(current_node,n);
+				n->H = cost_2_goal(n,to);
+				n->F = n->G + n->H;
+				minheap_insert(&astar->open_list,&n->heap);
+			}
+			neighbors = NULL;
+		}	
+	}	
 }

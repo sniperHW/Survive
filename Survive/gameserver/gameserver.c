@@ -191,6 +191,29 @@ static int lua_destroy_aoimap(lua_State *L){
 	return 0;
 }
 
+static int lua_findpath(lua_State *L){
+	AStar_t astar = lua_touserdata(L,1);
+	int x1 = lua_tonumber(L,2);
+	int y1 = lua_tonumber(L,3);
+	int x2 = lua_tonumber(L,4);
+	int y2 = lua_tonumber(L,5);
+	kn_dlist path;kn_dlist_init(&path);
+	if(find_path(astar,x1,y1,x2,y2,&path)){
+		lua_newtable(L);
+		AStarNode *n;
+		while((n = kn_dlist_pop(&path)){
+			lua_newtable(L);
+			lua_pushinteger(L,n->x);
+			lua_rawseti(L,-2,1);
+			lua_pushinteger(L,n->y);
+			lua_rawseti(L,-2,2);
+		}
+		lua_rawseti(LUASTATE,-2,1);	
+	}else
+		lua_pushnil(L);
+	return 1;
+}
+
 void reg_game_c_function(lua_State *L){
 	lua_getglobal(L,"GameApp");
 	if(!lua_istable(L, -1))
@@ -200,6 +223,10 @@ void reg_game_c_function(lua_State *L){
 		lua_pushvalue(L,-1);
 		lua_setglobal(L,"GameApp");
 	}
+	
+	lua_pushstring(L, "findpath");
+	lua_pushcfunction(L, &lua_findpath);
+	lua_settable(L, -3);	
 	
 	lua_pushstring(L, "create_aoimap");
 	lua_pushcfunction(L, &lua_create_aoimap);

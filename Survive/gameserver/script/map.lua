@@ -11,7 +11,8 @@ local map = {
 	aoi,
 	avatars,
 	freeidx,
-	plycount,   --地图上玩家的数量
+	plycount,      --地图上玩家的数量
+	movingavatar,  --有移动请求的avatar
 }
 
 local function map:new(o)
@@ -57,15 +58,33 @@ local function map:leavemap(plyid)
 	end
 end
 
+local function map:findpath(from,to)
+	return GameApp.findpath(self.astar,from[1],from[2],to[1],to[2])
+end
+
+local function map:beginMov(avatar)
+	if not self.movingavatar[avatar.id] then
+		self.movingavatar[avatar.id] = avatar
+	end
+end
+
 local function map:clear()
 	GameApp.destroy_aoimap(self.aoi)
 end
 
-
-local function reg_cmd_handler()
-
-end
-
+--处理本地图上的对象移动请求
+local function map:process_mov()
+	local stops = {}
+	for k,v in pairs(self.movingavatar) do
+		if v:process_mov() then
+			table.insert(stops,k)
+		end
+	end
+	
+	for k,v in pairs(stops) do
+		self.movingavatar[v] = nil
+	end
+end 
 
 return {
 	NewMap = function (mapid,maptype) return map:new():init(mapid,maptype) end,

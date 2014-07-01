@@ -10,7 +10,10 @@ local avatar ={
 	see_radius,    --可视距离
 	view_obj,      --在自己视野内的对象
 	watch_me,      --可以看到我的对象
-	gate,       
+	gate,
+	map,           --所在地图对象
+	path,
+	speed,         --移动速度                  
 }
 
 function avatar:new(o)
@@ -63,6 +66,11 @@ function player:new(id,avatid)
 	self.see_radius = 5
 	self.view_obj = {}
 	self.watch_me = {}
+	self.gate = nil
+	self.map =  nil
+	self.path = nil
+	self.speed = 3
+	self.pos = nil
 	return o	
 end
 
@@ -83,17 +91,25 @@ function player:leave_see(other)
 	other.watch_me[self.id] = nil
 end
 
-
-
-
-
-local function reg_cmd_handler()
-	
+--处理客户端的移动请求
+function player:mov(x,y)
+	local path = self.map:findpath(self.pos,{x,y})
+	if path then
+		self.path = {cur=1,path=path}
+		self.map:beginMov(self)
+	end
 end
 
+function player:process_mov()
+		
+	if self.path.cur == #self.path.path then
+		self.path = nil
+		return true
+	else
+		return false
+	end
+end
 
 return {
-	RegHandler = reg_cmd_handler,
 	NewPlayer = function (id,avatid) return player:new(id,avatid) end,
 } 
-

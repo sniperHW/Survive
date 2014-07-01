@@ -1,5 +1,6 @@
 local Map = require "map"
 local Que = require "queue"
+local Avatar = require "avatar"
 
 local game = {
 	id,
@@ -62,10 +63,26 @@ local function GGAME_DESTROYMAP(_,rpk,conn)
 end
 
 
+local function CS_MOV(_,rpk,conn)
+	local mapid = rpk_read_uint16(rpk)
+	local map = game.maps[mapid]
+	if map then
+		local plyid = rpk_read_uint16(rpk)
+		local ply = map.avatars[plyid]
+		if ply and ply.avattype == Avatar.type_player then
+			local x = rpk_read_uint16(rpk)
+			local y = rpk_read_uint16(rpk)
+			ply:mov(x,y)
+		end
+	end
+end
+
+
 local function reg_cmd_handler()
-	GroupApp.reg_cmd_handler(CMD_GGAME_ENTERMAP,{handle=GGAME_ENTERMAP})
-	GroupApp.reg_cmd_handler(CMD_CGAME_LEAVEMAP,{handle=CGAME_LEAVEMAP})
-	GroupApp.reg_cmd_handler(CMD_GGAME_DESTROYMAP,{handle=GGAME_DESTROYMAP})	
+	GameApp.reg_cmd_handler(CMD_GGAME_ENTERMAP,{handle=GGAME_ENTERMAP})
+	GameApp.reg_cmd_handler(CMD_CGAME_LEAVEMAP,{handle=CGAME_LEAVEMAP})
+	GameApp.reg_cmd_handler(CMD_GGAME_DESTROYMAP,{handle=GGAME_DESTROYMAP})
+	GameApp.reg_cmd_handler(CMD_CS_MOV,{handle=CS_MOV})	
 end
 
 return {

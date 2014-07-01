@@ -13,6 +13,7 @@ enum{
 
 	//client <-> game
 	CMD_CS_BEGIN = 200,
+	CMD_CS_MOV,
 	CMD_CS_END,
 
 	CMD_SC_BEGIN = 300,

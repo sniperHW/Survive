@@ -248,9 +248,9 @@ static void build_resultset(struct redisReply* reply,lua_State *L){
 		lua_newtable(L);
 		int i = 0;
 		for(; i < reply->elements; ++i){
-			lua_pushinteger(L,i+1);
+			//lua_pushinteger(L,i+1);
 			build_resultset(reply->element[i],L);
-			lua_settable(L, -3);
+			lua_settable(L, -2);
 		}
 	}else{
 		lua_pushnil(L);

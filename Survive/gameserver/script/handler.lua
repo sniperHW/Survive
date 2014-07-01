@@ -6,5 +6,4 @@ local Avatar = require "avatar"
 function reghandler()
 	Gate.RegHandler()
 	Game.RegHandler()
-	AVatar.RegHandler()
 end

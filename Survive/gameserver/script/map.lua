@@ -1,6 +1,9 @@
 local Avatar = require "avatar"
 local Que = require "queue"
 
+
+local astarmgr = {}
+
 local map = {
 	maptype,
 	mapid,
@@ -8,6 +11,7 @@ local map = {
 	aoi,
 	avatars,
 	freeidx,
+	plycount,   --地图上玩家的数量
 }
 
 local function map:new(o)
@@ -24,7 +28,8 @@ local function map:init(mapid,maptype)
 	for i=1,65536 do
 		self.freeidx:push({v=i,__next=nil})
 	end
-	--TODO 初始化aoi和astar
+	self.astar = astarmgr[maptype]
+	--self.aoi = GameApp.create_aoimap(100,100,0,0,100,100)
 	return self
 end
 
@@ -45,9 +50,23 @@ local function map:entermap(rpk)
 	end
 end
 
+local function map:leavemap(plyid)
+	local ply = self.avatars[plyid]
+	if ply and ply.avattype == Avatar.type_player then
+		--处理离开地图
+	end
+end
+
+local function map:clear()
+	GameApp.destroy_aoimap(self.aoi)
+end
+
+
+local function reg_cmd_handler()
+
+end
+
+
 return {
-	NewMap = function () map:new() end,
+	NewMap = function (mapid,maptype) return map:new():init(mapid,maptype) end,
 }
-
-
-

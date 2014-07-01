@@ -234,6 +234,7 @@ int32_t aoi_enter(aoi_map *m,aoi_object *o,int32_t _x,int32_t _y)
 	for(i = 0; blocks[i];++i) block_process_enter(m,blocks[i],o);
 	kn_dlist_push(&block->aoi_objs,&o->node);
 	enter_me(o,o);
+	o->map = m;
 	return 0;
 }
 
@@ -248,6 +249,8 @@ int32_t aoi_leave(aoi_map *m,aoi_object *o)
 	for(i = 0; blocks[i];++i) block_process_leave(m,blocks[i],o);
 	//自己离开自己的视野
 	leave_me(o,o);
+	release_id(m->_idmgr,o->id);
+	o->map = NULL;
 	return 0;			
 }
 

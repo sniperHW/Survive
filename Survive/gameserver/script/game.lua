@@ -18,7 +18,7 @@ function game_init(id)
 end
 
 
-local function GGAME_ENTERMAP(rpk,conn)
+local function GGAME_ENTERMAP(_,rpk,conn)
 	local mapid = rpk_read_uint16(rpk)
 	local maptype = rpk_read_uint8(rpk)
 	if not mapid then
@@ -41,9 +41,31 @@ local function GGAME_ENTERMAP(rpk,conn)
 	end
 end
 
+local function CGAME_LEAVEMAP(_,rpk,conn)
+	local mapid = rpk_read_uint16(rpk)
+	local map = game.maps[mapid]
+	if map then
+		local plyid = rpk_read_uint16(rpk)
+		map:leavemap(plyid)
+	end
+end
+
+
+local function GGAME_DESTROYMAP(_,rpk,conn)
+	local mapid = rpk_read_uint16(rpk)
+	local map = game.maps[mapid]
+	if map then
+		map:clear()
+		game.que:push({v=mapid,__next=nil})
+		game.maps[mapid] = nil
+	end
+end
+
 
 local function reg_cmd_handler()
 	GroupApp.reg_cmd_handler(CMD_GGAME_ENTERMAP,{handle=GGAME_ENTERMAP})
+	GroupApp.reg_cmd_handler(CMD_CGAME_LEAVEMAP,{handle=CGAME_LEAVEMAP})
+	GroupApp.reg_cmd_handler(CMD_GGAME_DESTROYMAP,{handle=GGAME_DESTROYMAP})	
 end
 
 return {

@@ -49,8 +49,10 @@ enum{
 	CMD_GAMEG_LOGIN,     //gameserver½ø³ÌµÇÂ½µ½group 
 	CMD_GAMEG_END,
 
-	CMD_GGAME_BEGIB = 900,
+	CMD_GGAME_BEGIN = 900,
 	CMD_GGAME_ENTERMAP,
+	CMD_GGAME_LEAVEMAP,
+	CMD_GGAME_DESTROYMAP,
 	CMD_GGAME_END,
 
 	//game <-> gate

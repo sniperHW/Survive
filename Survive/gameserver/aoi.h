@@ -35,6 +35,7 @@ typedef struct
 	uint32_t index;
 }aoi_block;
 
+struct aoi_map;
 //aoi对象
 typedef struct aoi_object
 {
@@ -44,6 +45,7 @@ typedef struct aoi_object
 	bit_set_t           view_objs;//在当前对象视野内的对象位图      
 	point2D             pos;     
 	void*               ud;
+	struct aoi_map*     map;
 	//使用者提供的函数，用于判断other是否在self的可视范围之内
 	uint8_t (*in_myscope)(struct aoi_object *self,struct aoi_object *other);
 	//other进入self视野之后的回调函数
@@ -54,7 +56,7 @@ typedef struct aoi_object
 
 
 
-typedef struct{
+typedef struct aoi_map{
 	//以下7个成员用于移动时做集合运算
 	bit_set_t        new_block_set;
 	bit_set_t        old_block_set;

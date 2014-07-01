@@ -171,7 +171,7 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 			while(size){
 				agentsession session;
 				rpk_read_agentsession(tmp,&session);
-				if(session.aid != t_agent->idx) break;
+				if(session.aid != t_agent->idx) continue;
 				agentplayer_t ply = get_agent_player_bysession(&session);
 				if(ply){
 					if(cmd == CMD_GC_BEGINPLY){

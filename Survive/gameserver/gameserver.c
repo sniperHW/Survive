@@ -7,6 +7,8 @@
 #include "common/netcmd.h"
 #include "common/cmdhandler.h"
 #include "common/common_c_function.h"
+#include "aio.h"
+#include "astar.h"
 
 IMP_LOG(gamelog);
 
@@ -22,11 +24,10 @@ static int on_gate_packet(kn_stream_conn_t con,rpacket_t rpk){
 	uint16_t cmd = rpk_read_uint16(rpk);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
-		if(CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
+		const char *error = NULL;
+		if((error = CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
 						  lua_pushlightuserdata(L,rpk),
-						  lua_pushlightuserdata(L,con))){
-			const char * error = lua_tostring(L, -1);
-			lua_pop(L,1);
+						  lua_pushlightuserdata(L,con)))){
 			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
 		}
 	}
@@ -51,11 +52,10 @@ static int on_group_packet(kn_stream_conn_t con,rpacket_t rpk){
 	uint16_t cmd = rpk_read_uint16(rpk);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
-		if(CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
+		const char *error = NULL;
+		if((error = CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
 						  lua_pushlightuserdata(L,rpk),
-						  lua_pushlightuserdata(L,con))){
-			const char * error = lua_tostring(L, -1);
-			lua_pop(L,1);
+						  lua_pushlightuserdata(L,con)))){
 			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
 		}
 	}
@@ -116,7 +116,80 @@ static int lua_gamelog(lua_State *L){
 	return 0;
 }
 
+static uint8_t in_myscope(aoi_object *_self,aoi_object *_other){
+	luaObject_t self = (luaObject_t)_self->ud;
+	luaObject_t other = (luaObject_t)_other->ud;
+	lua_State *L = self->L;
+	const char error = NULL;
+	if((error = CALL_OBJ_FUNC1(self,"isInMyScope",1,
+					  PUSH_LUAOBJECT(L,other)))){
+		LOG_GAME(LOG_INFO,"error on enter_see:%s\n",error);
+		return 0;
+	}
+	return lua_tonumber(L,1);		
+}
 
+static void    cb_enter(aoi_object *_self,aoi_object *_other){
+	luaObject_t self = (luaObject_t)_self->ud;
+	luaObject_t other = (luaObject_t)_other->ud;
+	lua_State *L = self->L;
+	const char error = NULL;
+	if((error = CALL_OBJ_FUNC1(self,"enter_see",0,
+					  PUSH_LUAOBJECT(L,other)))){
+		LOG_GAME(LOG_INFO,"error on enter_see:%s\n",error);
+	}		
+}
+
+static void    cb_leave(aoi_object *_self,aoi_object *_other){
+	luaObject_t self = (luaObject_t)_self->ud;
+	luaObject_t other = (luaObject_t)_other->ud;
+	lua_State *L = self->L;
+	const char error = NULL;
+	if((error = CALL_OBJ_FUNC1(self,"leave_see",0,
+					  PUSH_LUAOBJECT(L,other)))){
+		LOG_GAME(LOG_INFO,"error on leave_see:%s\n",error);
+	}		
+}
+
+static int lua_create_aoi_obj(lua_State *L){
+	luaObject_t obj = create_luaObj(L,1);
+	aoi_object* o = calloc(1,sizeof(*o));
+	o->in_myscope = in_myscope;
+	o->cb_enter = cb_enter;
+	o->cb_leave = cb_leave;
+	o->ud = obj;
+	o->view_objs = new_bitset(4096);
+	lua_pushlightuserdata(L,o);
+	return 1;
+}
+
+static int lua_destroy_aoi_obj(lua_State *L){
+	aoi_object* o = lua_touserdata(L,1);
+	if(o->map) aoi_leave(o->map,o);
+	del_bitset(o->view_objs);
+	release_luaObj((luaObject_t)o->ud);
+	free(o);
+	return 0;
+}
+
+static int lua_create_aoimap(lua_State *L){
+	uint32_t length = lua_tonumber(L,1);
+	uint32_t radius = lua_tonumber(L,2);
+	point2D  top_left,bottom_right;
+	top_left.x = lua_tonumber(L,3);
+	top_left.y = lua_tonumber(L,4);
+	bottom_right.x = lua_tonumber(L,5);
+	bottom_right.y = lua_tonumber(L,6);	
+	aoi_map *m = aoi_create(4096,length,radius,top_left,bottom_right);
+	lua_pushlightuserdata(L,(void*)m);
+	return 1;
+}
+
+static int lua_destroy_aoimap(lua_State *L){
+	aoi_map *m = lua_touserdata(L,2);
+	aoi_destroy(m);
+	return 0;
+}
 
 void reg_game_c_function(lua_State *L){
 	lua_getglobal(L,"GameApp");
@@ -127,6 +200,22 @@ void reg_game_c_function(lua_State *L){
 		lua_pushvalue(L,-1);
 		lua_setglobal(L,"GameApp");
 	}
+	
+	lua_pushstring(L, "create_aoimap");
+	lua_pushcfunction(L, &lua_create_aoimap);
+	lua_settable(L, -3);	
+	
+	lua_pushstring(L, "destroy_aoimap");
+	lua_pushcfunction(L, &lua_destroy_aoimap);
+	lua_settable(L, -3);	
+	
+	lua_pushstring(L, "create_aoi_obj");
+	lua_pushcfunction(L, &lua_create_aoi_obj);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "destroy_aoi_obj");
+	lua_pushcfunction(L, &lua_destroy_aoi_obj);
+	lua_settable(L, -3);		
 
 	lua_pushstring(L, "reg_cmd_handler");
 	lua_pushcfunction(L, &reg_cmd_handler);

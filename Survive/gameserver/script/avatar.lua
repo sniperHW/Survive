@@ -1,5 +1,6 @@
-local type_player  = 1    --玩家
-local type_monster = 2    --怪物
+local type_player   = 1    --玩家
+local type_monster  = 2    --怪物
+local type_pickable = 3    --地上可拾取物
 
 local avatar ={
 	id,            --对象索引

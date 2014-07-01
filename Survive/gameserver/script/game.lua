@@ -12,7 +12,7 @@ function game_init(id)
 	game.id = id
 	game.maps = {}
 	local que = Que.Queue()
-	for i=1,65536 do
+	for i=1,65535 do
 		que:push({v=i,__next=nil})
 	end
 	game.freeidx = que
@@ -30,14 +30,18 @@ local function GGAME_ENTERMAP(_,rpk,conn)
 		else
 			local map = Map.NewMap():init(mapid,maptype)
 			game.maps[mapid] = map
-			map:entermap(rpk)
+			if not map:entermap(rpk) then
+				--通知group进入地图失败
+			end
 		end
 	else
 		local map = game.maps[mapid]
 		if not map then
 			--TODO 通知group错误的mapid(可能实例已经被销毁)
 		else
-			map:entermap(rpk)
+			if not map:entermap(rpk) then
+				--通知group进入地图失败
+			end
 		end
 	end
 end

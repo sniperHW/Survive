@@ -335,6 +335,33 @@ int lua_isvaildword(lua_State *L){
 	return 1;
 }
 
+int lua_timer_callback(kn_timer_t t)//如果返回1继续注册，否则不再注册
+{
+	luaObject_t obj = (luaObject_t)kn_timer_getud(t);
+	lua_State *L = self->L;
+	const char error = NULL;
+	if((error = CALL_OBJ_FUNC0(obj,"on_timeout",1,))){
+		LOG_GAME(LOG_INFO,"error on on_timeout:%s\n",error);
+		return 1;
+	}	
+	return lua_tonumber(L,1);	
+}
+
+int lua_reg_timer(lua_State *L){
+	luaObject_t obj = create_luaObj(L,1);
+	uint64_t    timeout = (uint64_t)lua_tonumber(L,2); 
+	kn_reg_timer(t_proactor,timeout,lua_timer_callback,(void*)obj);
+	return 0;
+}
+
+int lua_del_timer(lua_State *L){
+	kn_timer_t timer = lua_touserdata(L,1);
+	luaObject_t obj = (luaObject_t)kn_timer_getud(timer);
+	kn_del_timer(timer);
+	release_luaObj(obj);
+	return 0;
+}
+
 void reg_common_c_function(lua_State *L){
 	
 	lua_getglobal(L,"_G");
@@ -557,6 +584,14 @@ void reg_common_c_function(lua_State *L){
 	lua_pushcfunction(L,&on_db_initfinish);
 	lua_settable(L, -3);
 	
+	lua_pushstring(L,"reg_timer");
+	lua_pushcfunction(L,&lua_reg_timer);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L,"del_timer");
+	lua_pushcfunction(L,&lua_del_timer);
+	lua_settable(L, -3);		
+		
 	lua_setglobal(L,"C");
 }
 

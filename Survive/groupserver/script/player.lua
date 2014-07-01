@@ -142,7 +142,7 @@ end
 
 local function initfreeidx()
 	local que = Que.Queue()
-	for i=1,65536 do
+	for i=1,65535 do
 		que:push({v=i,__next=nil})
 	end
 	return que

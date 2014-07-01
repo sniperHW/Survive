@@ -55,9 +55,15 @@ local function removeGamePly(ply,game)
 	end
 end
 
+local function getGameByName(name)
+	return gamemgr.name2game[name]
+end
+
+
 return {
 	RegHandler = reg_cmd_handler,
 	BoradCast = BoradCast,
 	InsertGamePly = insertGamePly,
-	RemoveGamePly = removeGamePly,	
+	RemoveGamePly = removeGamePly,
+	GetGameByName = getGameByName,	
 }

@@ -1,7 +1,6 @@
 local Avatar = require "avatar"
 local Que = require "queue"
 
-
 local astarmgr = {}
 
 local map = {
@@ -13,6 +12,7 @@ local map = {
 	freeidx,
 	plycount,      --地图上玩家的数量
 	movingavatar,  --有移动请求的avatar
+	movtimer,      --移动处理定时器
 }
 
 local function map:new(o)
@@ -26,11 +26,18 @@ local function map:init(mapid,maptype)
 	self.mapid = mapid
 	self.maptype = maptype
 	self.freeidx = Que.Queue()
-	for i=1,65536 do
+	for i=1,65535 do
 		self.freeidx:push({v=i,__next=nil})
 	end
 	self.astar = astarmgr[maptype]
-	--self.aoi = GameApp.create_aoimap(100,100,0,0,100,100)
+	--管理格边长,标准视距,左上角x,左上角y,右下角x,右下角y	
+	self.aoi = GameApp.create_aoimap(100,100,0,0,100,100)
+	local m = self
+	--注册定时器
+	self.movtimer = C.reg_timer(100,{on_timeout = function (_)
+										m:process_mov()
+										return 1				
+									 end})
 	return self
 end
 
@@ -47,6 +54,9 @@ local function map:entermap(rpk)
 		for _,v in pairs(plys) do
 			--TODO 根据信息创建avatar
 		end
+		
+		--通告group进入地图请求完成
+		
 		return true
 	end
 end
@@ -62,14 +72,17 @@ local function map:findpath(from,to)
 	return GameApp.findpath(self.astar,from[1],from[2],to[1],to[2])
 end
 
+--将avatar添加到移动处理列表中
 local function map:beginMov(avatar)
 	if not self.movingavatar[avatar.id] then
 		self.movingavatar[avatar.id] = avatar
 	end
 end
 
+--地图销毁之前的清理操作
 local function map:clear()
 	GameApp.destroy_aoimap(self.aoi)
+	C.del_timer(self.movtimer)
 end
 
 --处理本地图上的对象移动请求

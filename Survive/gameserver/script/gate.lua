@@ -59,9 +59,14 @@ local function removeGatePly(ply,gate)
 	end
 end
 
+local function getGateByName(name)
+	return gatemgr.name2gate[name]
+end
+
 return {
 	RegHandler = reg_cmd_handler,
 	BoradCast = BoradCast,
 	InsertGatePly = insertGatePly,
 	RemoveGatePly = removeGatePly,
+	GetGateByName = getGateByName,
 }

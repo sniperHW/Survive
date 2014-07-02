@@ -14,7 +14,10 @@ local avatar ={
 	gate,
 	map,           --所在地图对象
 	path,
-	speed,         --移动速度                  
+	speed,         --移动速度
+	lastmovtick,   --上次执行process_mov的时间  
+	movmargin,     --可用于执行process_mov的剩余时间(毫秒)
+	dir,           --当前朝向                  
 }
 
 function avatar:new(o)
@@ -98,12 +101,94 @@ function player:mov(x,y)
 	if path then
 		self.path = {cur=1,path=path}
 		self.map:beginMov(self)
+		self.lastmovtick = C.systemms()
+		self.movmargin = 0
+	end
+end
+
+
+local north = 1
+local south = 2
+local east = 3
+local west = 4
+local north_east = 5
+local north_west = 6
+local south_east = 7
+local south_west = 8
+
+local function direction(old_t,new_t,olddir)	
+	local dir = olddir	
+	if new_t.y == old_t.y then
+		if new_t.x > old_t.x then
+			dir = east
+		elseif new_t.x < old_t.x then
+			dir = west
+		end
+	elseif new_t.y > old_t.y then
+		if new_t.x > old_t.x then
+			dir = south_east
+		elseif new_t.x < old_t.x then
+			dir = south_west
+		else 
+			dir = south
+		end
+	else
+		if new_t.x > old_t.x then
+			dir = north_east
+		elseif new_t.x < old_t.x then
+			dir = north_west
+		else 
+			dir = north
+		end	
+	end
+	return dir
+end
+
+local tiled_width = 32
+local tiled_hight = 16
+
+local tiled_half_width = tiled_width/2
+local tiled_half_hight = tiled_hight/2
+
+local function distance(dir)
+	if dir == north or dir == south or dir == east or dir == west then
+		return math.sqrt(tiled_half_width*tiled_half_width + tiled_half_hight*tiled_half_hight)
+	elseif dir == south_east or dir == north_west
+		return tiled_hight
+	else 
+		return tiled_width
 	end
 end
 
 function player:process_mov()
-		
+	local now = C.systemms()
+	local movmargin = self.movmargin + now - self.lastmovtick
+	local path = self.path.path
+	local cur  = self.path.cur
+	local size = #path
+	local break = false
+	while cur <= size and break == false do
+		local node = path[cur]
+		local tmpdir = direction(self.pos,node,self.dir)
+		local dis    =  distance(tmpdir)
+		local speed  = self.speed * 0.9 * (1000/30) / 1000
+		local elapse = dis/speed
+		if elapse < movmargin then
+			self.dir = tmpdir
+			self.pos = node
+			cur = cur + 1
+			movmargin = movmargin - elapse;			
+			--更新aoi
+		else
+			break = true	
+		end
+	end
+	self.path.cur = cur
+	self.movmargin = movmargin
+	self.lastmovtick = C.systemms()
+	
 	if self.path.cur == #self.path.path then
+		--到达目的地
 		self.path = nil
 		return true
 	else

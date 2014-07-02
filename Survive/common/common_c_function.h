@@ -365,6 +365,9 @@ int lua_del_timer(lua_State *L){
 	return 0;
 }
 
+
+void reg_cmd_handler(lua_State *L);
+
 void reg_common_c_function(lua_State *L){
 	
 	lua_getglobal(L,"_G");
@@ -594,7 +597,11 @@ void reg_common_c_function(lua_State *L){
 	
 	lua_pushstring(L,"del_timer");
 	lua_pushcfunction(L,&lua_del_timer);
-	lua_settable(L, -3);		
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "reg_cmd_handler");
+	lua_pushcfunction(L, &reg_cmd_handler);
+	lua_settable(L, -3);			
 		
 	lua_setglobal(L,"C");
 }

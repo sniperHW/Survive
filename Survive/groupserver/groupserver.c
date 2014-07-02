@@ -77,7 +77,7 @@ static void sig_int(int sig){
 	stop = 1;
 }
 
-static int reg_cmd_handler(lua_State *L){
+int reg_cmd_handler(lua_State *L){
 	uint16_t cmd = lua_tonumber(L,1);
 	luaObject_t obj = create_luaObj(L,2);
 	if(!handler[cmd]){
@@ -101,7 +101,7 @@ static int lua_grouplog(lua_State *L){
 	return 0;
 }
 
-void reg_group_c_function(lua_State *L){
+void reg_service_c_function(lua_State *L){
 	lua_getglobal(L,"GroupApp");
 	if(!lua_istable(L, -1))
 	{

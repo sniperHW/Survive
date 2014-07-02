@@ -84,7 +84,7 @@ static void on_group_connect(kn_stream_client_t _,kn_stream_conn_t conn,void *ud
 	}
 }
 
-static int reg_cmd_handler(lua_State *L){
+int reg_cmd_handler(lua_State *L){
 	uint16_t cmd = lua_tonumber(L,1);
 	luaObject_t obj = create_luaObj(L,2);
 	if(!handler[cmd]){
@@ -243,10 +243,6 @@ void reg_game_c_function(lua_State *L){
 	lua_pushstring(L, "destroy_aoi_obj");
 	lua_pushcfunction(L, &lua_destroy_aoi_obj);
 	lua_settable(L, -3);		
-
-	lua_pushstring(L, "reg_cmd_handler");
-	lua_pushcfunction(L, &reg_cmd_handler);
-	lua_settable(L, -3);
 
 	lua_pushstring(L, "send2grp");
 	lua_pushcfunction(L, &lua_send2grp);

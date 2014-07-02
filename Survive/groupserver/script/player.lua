@@ -5,6 +5,7 @@ local Attr = require "script/attr"
 local Bag = require "script/bag"
 local Skill = require "script/skill"
 local Gate = require "script/gate"
+local MapMgr = require "script/mapmgr"
 
 
 local player = {
@@ -20,10 +21,11 @@ local player = {
 	status,
 }
 
-local stat_normal   = 0
-local stat_loading  = 1
-local stat_creating = 2
-local stat_playing  = 3
+stat_normal      = 0
+stat_loading     = 1
+stat_creating    = 2
+stat_playing     = 3
+stat_enteringmap = 4 --正在进入地图中  
 
 function player:new(o)
   o = o or {}   
@@ -322,11 +324,22 @@ local function AG_CLIENT_DISCONN(_,rpk,conn)
 end
 
 
+local function CG_ENTERMAP(_,rpk,conn)
+	local groupid = rpk_read_uint16(rpk)	
+	local ply = playermgr:getplybyid(groupid)
+	if ply and ply.status == stat_playing then
+		local type = rpk_read_uint8(rpk)
+		if MapMgr.EnterMap(ply,type) then
+			ply.status = stat_enteringmap
+		end
+	end
+end
+
 local function reg_cmd_handler()
 	GroupApp.reg_cmd_handler(CMD_AG_PLYLOGIN,{handle=AG_PLYLOGIN})
 	GroupApp.reg_cmd_handler(CMD_CG_CREATE,{handle=CG_CREATE})
 	GroupApp.reg_cmd_handler(CMD_AG_CLIENT_DISCONN,{handle=AG_CLIENT_DISCONN})
-	
+	GroupApp.reg_cmd_handler(CMD_CG_ENTERMAP,{handle=CG_ENTERMAP})
 end
 
 return {

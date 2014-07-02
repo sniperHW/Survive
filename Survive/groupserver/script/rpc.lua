@@ -18,8 +18,9 @@ local rpcCall(conn,remoteFunc,param,callbackObj)
 			pending_rpc[conn] = conn_pending_rpc
 		end
 		conn_pending_rpc[rpcno] = callbackObj
+		return true
 	else
-		callbackObj:OnRPCResponse(nil,"can not send rpc request")
+		return false
 	end
 end
 
@@ -58,7 +59,7 @@ local function	RPC_RESPONSE(_,rpk,conn)
 	if conn_pending_rpc then
 		local callbackObj = conn_pending_rpc[response.rpcno]
 		if callbackObj then
-			callbackObj:OnRPCResponse(response.ret,response.err)
+			callbackObj.OnRPCResponse(callbackObj,response.ret,response.err)
 		end
 	end
 end
@@ -67,7 +68,7 @@ local function  onDisconnect(conn)
 	local conn_pending_rpc = pending_rpc[conn]
 	if conn_pending_rpc then
 		for k,v in do 
-			v:OnRPCResponse(nil,"connection loss")
+			v.OnRPCResponse(v,nil,"connection loss")
 		end
 		pending_rpc[conn] = nil
 	end

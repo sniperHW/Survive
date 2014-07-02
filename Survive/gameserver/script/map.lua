@@ -49,15 +49,15 @@ local function map:entermap(rpk)
 	local plys = read_player_from_rpk(rpk)
 	if self.freeidx:len() < #plys then
 		--没有足够的id创建玩家avatar
-		return false
+		return nil
 	else
+		local gameids = {}
 		for _,v in pairs(plys) do
 			--TODO 根据信息创建avatar
 		end
 		
-		--通告group进入地图请求完成
-		
-		return true
+		--通告group进入地图请求完成 
+		return gameids
 	end
 end
 
@@ -65,7 +65,9 @@ local function map:leavemap(plyid)
 	local ply = self.avatars[plyid]
 	if ply and ply.avattype == Avatar.type_player then
 		--处理离开地图
+		return true
 	end
+	return false
 end
 
 local function map:findpath(from,to)

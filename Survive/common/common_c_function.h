@@ -431,7 +431,7 @@ void reg_common_c_function(lua_State *L){
 	lua_pushinteger(L, CMD_GAMEG_LOGIN);
 	lua_settable(L, -3);
 
-	lua_pushstring(L, "CMD_GGAME_ENTERMAP");
+/*	lua_pushstring(L, "CMD_GGAME_ENTERMAP");
 	lua_pushinteger(L, CMD_GGAME_ENTERMAP);
 	lua_settable(L, -3);
 	
@@ -441,7 +441,8 @@ void reg_common_c_function(lua_State *L){
 	
 	lua_pushstring(L, "CMD_GGAME_DESTROYMAP");
 	lua_pushinteger(L, CMD_GGAME_DESTROYMAP);
-	lua_settable(L, -3);	
+	lua_settable(L, -3);
+*/ 	
 	
 	lua_pushstring(L, "CMD_AGAME_LOGIN");
 	lua_pushinteger(L, CMD_AGAME_LOGIN);

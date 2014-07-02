@@ -28,8 +28,8 @@ local function game_disconnected(_,rpk,conn)
 end
 
 local function reg_cmd_handler()
-	GroupApp.reg_cmd_handler(CMD_GAMEG_LOGIN,{handle=game_login})
-	GroupApp.reg_cmd_handler(DUMMY_ON_GAME_DISCONNECTED,{handle=game_disconnected})
+	C.reg_cmd_handler(CMD_GAMEG_LOGIN,{handle=game_login})
+	C.reg_cmd_handler(DUMMY_ON_GAME_DISCONNECTED,{handle=game_disconnected})
 end
 
 

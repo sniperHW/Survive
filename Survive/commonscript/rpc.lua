@@ -75,8 +75,8 @@ local function  onDisconnect(conn)
 end
 
 local function reg_cmd_handler()
-	GroupApp.reg_cmd_handler(CMD_RPC_CALL,{handle=RPC_CALL})
-	GroupApp.reg_cmd_handler(CMD_RPC_RESPONSE,{handle=RPC_RESPONSE})
+	C.reg_cmd_handler(CMD_RPC_CALL,{handle=RPC_CALL})
+	C.reg_cmd_handler(CMD_RPC_RESPONSE,{handle=RPC_RESPONSE})
 end
 
 return {

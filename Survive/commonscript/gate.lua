@@ -32,8 +32,8 @@ end
 
 local function reg_cmd_handler()
 	print("gate reg_cmd_handler")
-	GroupApp.reg_cmd_handler(CMD_AG_LOGIN,{handle=gate_login})
-	GroupApp.reg_cmd_handler(DUMMY_ON_GATE_DISCONNECTED,{handle=gate_disconnected})
+	C.reg_cmd_handler(CMD_AG_LOGIN,{handle=gate_login})
+	C.reg_cmd_handler(DUMMY_ON_GATE_DISCONNECTED,{handle=gate_disconnected})
 end
 
 
@@ -63,15 +63,10 @@ local function getGateByName(name)
 	return gatemgr.name2gate[name]
 end
 
-local function getGateByConn(conn)
-	return gatemgr.con2gate[conn]
-end
-
 return {
 	RegHandler = reg_cmd_handler,
 	BoradCast = BoradCast,
 	InsertGatePly = insertGatePly,
 	RemoveGatePly = removeGatePly,
 	GetGateByName = getGateByName,
-	GetGateByConn = getGateByConn,
 }

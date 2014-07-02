@@ -72,4 +72,14 @@ gameserverd:\
 testclient:\
 	testclient.c\
 	kendynet.a
-	$(CC) $(CFLAGS) -o testclient $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm	
+	$(CC) $(CFLAGS) -o testclient $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
+	
+buildscript:
+	rm Survive/gameserver/script/dbmgr.lua Survive/gameserver/script/gate.lua Survive/gameserver/script/queue.lua Survive/gameserver/script/rpc.lua
+	rm Survive/groupserver/script/dbmgr.lua Survive/groupserver/script/gate.lua Survive/groupserver/script/queue.lua Survive/groupserver/script/rpc.lua
+	cp Survive/commonscript/dbmgr.lua Survive/commonscript/dbmgr.lua Survive/commonscript/dbmgr.lua Survive/commonscript/dbmgr.lua Survive/groupserver/script
+	cp Survive/commonscript/dbmgr.lua Survive/commonscript/dbmgr.lua Survive/commonscript/dbmgr.lua Survive/commonscript/dbmgr.lua Survive/gameserver/script
+	
+cleanscript:
+	rm Survive/gameserver/script/dbmgr.lua Survive/gameserver/script/gate.lua Survive/gameserver/script/queue.lua Survive/gameserver/script/rpc.lua
+	rm Survive/groupserver/script/dbmgr.lua Survive/groupserver/script/gate.lua Survive/groupserver/script/queue.lua Survive/groupserver/script/rpc.lua	

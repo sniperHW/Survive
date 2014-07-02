@@ -336,10 +336,10 @@ local function CG_ENTERMAP(_,rpk,conn)
 end
 
 local function reg_cmd_handler()
-	GroupApp.reg_cmd_handler(CMD_AG_PLYLOGIN,{handle=AG_PLYLOGIN})
-	GroupApp.reg_cmd_handler(CMD_CG_CREATE,{handle=CG_CREATE})
-	GroupApp.reg_cmd_handler(CMD_AG_CLIENT_DISCONN,{handle=AG_CLIENT_DISCONN})
-	GroupApp.reg_cmd_handler(CMD_CG_ENTERMAP,{handle=CG_ENTERMAP})
+	C.reg_cmd_handler(CMD_AG_PLYLOGIN,{handle=AG_PLYLOGIN})
+	C.reg_cmd_handler(CMD_CG_CREATE,{handle=CG_CREATE})
+	C.reg_cmd_handler(CMD_AG_CLIENT_DISCONN,{handle=AG_CLIENT_DISCONN})
+	C.reg_cmd_handler(CMD_CG_ENTERMAP,{handle=CG_ENTERMAP})
 end
 
 return {

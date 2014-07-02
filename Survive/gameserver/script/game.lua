@@ -112,7 +112,7 @@ end
 
 
 local function reg_cmd_handler()
-	GameApp.reg_cmd_handler(CMD_CS_MOV,{handle=CS_MOV})	
+	C.reg_cmd_handler(CMD_CS_MOV,{handle=CS_MOV})	
 end
 
 return {

@@ -38,24 +38,24 @@ Rpc.RegisterRpcFunction("EnterMap",function (rpcHandle)
 			gameids = map:entermap(rpk)
 			if gameids then
 				--通知group进入地图失败
-				rpcResponse(rpcHandle,nil,"failed")
+				Rpc.rpcResponse(rpcHandle,nil,"failed")
 			end
 		end
 	else
 		local map = game.maps[mapid]
 		if not map then
 			--TODO 通知group错误的mapid(可能实例已经被销毁)
-			rpcResponse(rpcHandle,nil,"instance not found")
+			Rpc.rpcResponse(rpcHandle,nil,"instance not found")
 		else
 			gameids = map:entermap(rpk)
 			if not gameids then
 				--通知group进入地图失败
-				rpcResponse(rpcHandle,nil,"failed")
+				Rpc.rpcResponse(rpcHandle,nil,"failed")
 			end
 		end
 	end
 	--将成功进入的mapid返回给调用方
-	rpcResponse(rpcHandle,{mapid,gameids},nil)	
+	Rpc.rpcResponse(rpcHandle,{mapid,gameids},nil)	
 end)
 
 Rpc.RegisterRpcFunction("LeaveMap",function (rpcHandle)
@@ -65,7 +65,7 @@ Rpc.RegisterRpcFunction("LeaveMap",function (rpcHandle)
 	if map then
 		local plyid = rpk_read_uint16(rpk)
 		if map:leavemap(plyid) then
-			rpcResponse(rpcHandle,mapid,nil)
+			Rpc.rpcResponse(rpcHandle,mapid,nil)
 			if map.plycount == 0 then
 				--没有玩家了，销毁地图
 				map:clear()
@@ -73,10 +73,10 @@ Rpc.RegisterRpcFunction("LeaveMap",function (rpcHandle)
 				game.maps[mapid] = nil				
 			end
 		else
-			rpcResponse(rpcHandle,nil,"failed")
+			Rpc.rpcResponse(rpcHandle,nil,"failed")
 		end
 	else
-		rpcResponse(rpcHandle,nil,"failed")
+		Rpc.rpcResponse(rpcHandle,nil,"failed")
 	end	
 end)
 

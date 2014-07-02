@@ -68,3 +68,91 @@ gameid:32位整数高16字节标识场景,低16字节标识对象.
 ###玩家进入地图处理
 
 ![Alt text](./玩家进入地图处理.jpg)
+
+
+###RPC
+
+服务器通过lua实现RPC调用,RPC使用限制是通讯双方的协议处理均由lua实现.就目前来说group<->game之间可以进行RPC通讯,group<->gate,game<->gate,均无法使用RPC通讯方式.
+
+RPC提供方通过`RegisterRpcFunction`注册服务函数.
+
+例如如下函数:
+
+	Rpc.RegisterRpcFunction("EnterMap",function (rpcHandle)
+		local param = rpcHandle.param
+		local mapid = param[1]
+		local maptype = param[2]
+		local plys = param[3]
+		local gameids
+		if not mapid then
+			--创建实例
+			mapid = game.freeidx:pop()
+			if not mapid then
+				--通知group,gameserver繁忙
+				rpcResponse(rpcHandle,nil,"busy")
+			else
+				local map = Map.NewMap():init(mapid,maptype)
+				game.maps[mapid] = map
+				gameids = map:entermap(rpk)
+				if gameids then
+					--通知group进入地图失败
+					Rpc.rpcResponse(rpcHandle,nil,"failed")
+				end
+			end
+		else
+			local map = game.maps[mapid]
+			if not map then
+				--TODO 通知group错误的mapid(可能实例已经被销毁)
+				Rpc.rpcResponse(rpcHandle,nil,"instance not found")
+			else
+				gameids = map:entermap(rpk)
+				if not gameids then
+					--通知group进入地图失败
+					Rpc.rpcResponse(rpcHandle,nil,"failed")
+				end
+			end
+		end
+		--将成功进入的mapid返回给调用方
+		Rpc.rpcResponse(rpcHandle,{mapid,gameids},nil)	
+	end)
+
+其中的参数rpcHandle包含了调用上下文和远端传过来的调用参数.服务方可通过`rpcResponse`将调用结果返回给调用方.
+
+下面是调用方的示例:
+
+	local function enterMap(ply,type)
+		--暂时不处理需要配对进入的地图类型
+		local m = getInstanceByType(type,1)
+		if not m then
+			return false
+		end	
+		local mapid = m[2]
+		local game = m[1]
+		local gate = Gate.getGateByConn(ply.gate.conn)	
+		local paramply = {
+			chaname=plychaname,
+			gate = {name=gate.name,id=ply.gate.id},
+			groupid = ply.groupid,
+		}
+		local param = {paramply}
+		local callbackObj = {OnRPCResponse=function (_,ret,err)
+			if err then	
+			
+			else
+				if mapid == 0 then
+					mapid = ret[1]
+					addInstance(game,type,mapid,32,1)
+				else
+					addMapPlyCount(type,mapid,1)
+					addGamePlyCount(game,1)
+				end
+				ply.game = {conn=game.conn,id=ret[2][1]}
+				Game.insertGamePly(ply,game)	
+			end
+			ply.status = stat_playing
+		end}
+		return Rpc.RPCCall(game,"EnterMap",param,callbackObj)
+	end
+
+调用方需要定义一个`callbackObj`对象,并为此对象定义`OnRPCResponse`函数,如果调用成功传递给
+`OnRPCResponse`的`err`参数为空,否则`err`描述了错误原因.调用的返回值保存在`ret`参数中.

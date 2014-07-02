@@ -101,7 +101,7 @@ static int lua_grouplog(lua_State *L){
 	return 0;
 }
 
-void reg_service_c_function(lua_State *L){
+void reg_group_c_function(lua_State *L){
 	lua_getglobal(L,"GroupApp");
 	if(!lua_istable(L, -1))
 	{

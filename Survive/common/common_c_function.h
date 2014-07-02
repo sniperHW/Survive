@@ -341,10 +341,10 @@ int lua_isvaildword(lua_State *L){
 int lua_timer_callback(kn_timer_t t)//如果返回1继续注册，否则不再注册
 {
 	luaObject_t obj = (luaObject_t)kn_timer_getud(t);
-	lua_State *L = self->L;
-	const char error = NULL;
-	if((error = CALL_OBJ_FUNC0(obj,"on_timeout",1,))){
-		LOG_GAME(LOG_INFO,"error on on_timeout:%s\n",error);
+	lua_State *L = obj->L;
+	const char* error = NULL;
+	if((error = CALL_OBJ_FUNC(obj,"on_timeout",1))){
+		//LOG_GAME(LOG_INFO,"error on on_timeout:%s\n",error);
 		return 1;
 	}	
 	return lua_tonumber(L,1);	
@@ -366,7 +366,7 @@ int lua_del_timer(lua_State *L){
 }
 
 
-void reg_cmd_handler(lua_State *L);
+int reg_cmd_handler(lua_State *L);
 
 void reg_common_c_function(lua_State *L){
 	

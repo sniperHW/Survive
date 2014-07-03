@@ -33,6 +33,7 @@ kendynet.a: \
 		   ../KendyNet/src/redisconn.c\
 		   ../KendyNet/src/tls.c\
 		   ../KendyNet/src/lua_util.c\
+		   ../KendyNet/src/kn_timerfd.c\
 		   ../KendyNet/src/kn_channel.c
 		$(CC) $(CFLAGS) -c $^ $(INCLUDE) $(DEFINE)
 		ar -rc kendynet.a *.o

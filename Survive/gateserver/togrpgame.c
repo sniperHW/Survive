@@ -25,8 +25,8 @@ static struct st_2gameconn* g_togames[MAX_GAME_CONN];
 static kn_stream_conn_t GetGame(const char *name){
 	int i = 0;
 	for( ; i < MAX_GAME_CONN; ++i){
-		if(g_togames[i] && strcmp(g_togames[i].name,name) == 0){
-			return g_togames[i].conn;
+		if(g_togames[i] && strcmp(g_togames[i]->name,name) == 0){
+			return g_togames[i]->conn;
 		}
 	}
 	return NULL;	
@@ -34,7 +34,7 @@ static kn_stream_conn_t GetGame(const char *name){
 
 static int AddGame(kn_stream_conn_t conn,const char *name){
 	if(GetGame(name)) return -1;
-	struct st_2gameconn *st = calloc(sizeof(*st)));
+	struct st_2gameconn *st = calloc(1,sizeof(*st));
 	st->conn = conn;
 	strcpy(st->name,name);
 	int i = 0;
@@ -51,7 +51,7 @@ static int AddGame(kn_stream_conn_t conn,const char *name){
 static void RemGame(kn_stream_conn_t conn){
 	int i = 0;
 	for( ; i < MAX_GAME_CONN; ++i){
-		if(g_togames[i] && g_togames[i].conn == conn){
+		if(g_togames[i] && g_togames[i]->conn == conn){
 			free(g_togames[i]);
 			g_togames[i] = NULL;
 			return;
@@ -64,8 +64,7 @@ void GA_NOTIFYGAME(rpacket_t rpk);
 void GAMEA_LOGINRET(kn_stream_conn_t conn,rpacket_t rpk);
 
 //处理来group和game的消息
-static int on_packet(kn_stream_conn_t _,rpacket_t rpk){
-	(void)_;
+static int on_packet(kn_stream_conn_t conn,rpacket_t rpk){
 	printf("togrpgame on_packet\n");
 	
 	uint16_t cmd = rpk_peek_uint16(rpk);
@@ -83,7 +82,7 @@ static int on_packet(kn_stream_conn_t _,rpacket_t rpk){
 static int  cb_timer(kn_timer_t timer)//如果返回1继续注册，否则不再注册
 {
 	struct connect_st *st = kn_timer_getud(timer);
-	kn_stream_connect(g_togrpgame->stream_client,NULL,&st->addr,(void*)st)
+	kn_stream_connect(g_togrpgame->stream_client,NULL,&st->addr,(void*)st);
 	free(timer);
 	return 0;
 }
@@ -105,14 +104,14 @@ static void on_disconnected(kn_stream_conn_t conn,int err){
 	remoteServerType type = (remoteServerType)kn_stream_conn_getud(conn);
 	if(type == GROUPSERVER){
 		g_togrpgame->togroup = NULL;
-		struct connect_st *st = calloc(sizeof(*st));
+		struct connect_st *st = calloc(1,sizeof(*st));
 		st->type = GROUPSERVER;
 		kn_addr_init_in(&st->addr,kn_to_cstr(g_config->groupip),g_config->groupport);	
 		kn_reg_timer(g_togrpgame->p,5000,cb_timer,st);
 	}else if(type == GAMESERVER){
 		RemGame(conn);
 		kn_sockaddr *remoteaddr = kn_stream_conn_remote_addr(conn);
-		struct connect_st *st = calloc(sizeof(*st));
+		struct connect_st *st = calloc(1,sizeof(*st));
 		st->addr = *remoteaddr;
 		st->type = GAMESERVER;
 		kn_reg_timer(g_togrpgame->p,5000,cb_timer,st);
@@ -127,7 +126,7 @@ static void on_connect(kn_stream_client_t c,kn_stream_conn_t conn,void *ud){
 			break;
 		}
 		struct connect_st *st = (struct connect_st *)ud;
-		if((remoteServerType)st->ud == GROUPSERVER){
+		if((remoteServerType)st->type == GROUPSERVER){
 			g_togrpgame->togroup = conn;
 			kn_stream_conn_setud(conn,(void*)GROUPSERVER);
 			printf("connect to group success\n");		
@@ -135,7 +134,7 @@ static void on_connect(kn_stream_client_t c,kn_stream_conn_t conn,void *ud){
 			wpk_write_uint16(wpk,CMD_AG_LOGIN);
 			wpk_write_string(wpk,"gate1");
 			kn_stream_conn_send(conn,wpk);		
-		}else if((remoteServerType)st->ud == GAMESERVER){
+		}else if((remoteServerType)st->type == GAMESERVER){
 			kn_stream_conn_setud(conn,(void*)GAMESERVER);
 			printf("connect to game success\n");		
 			wpacket_t wpk = NEW_WPK(64);
@@ -153,7 +152,7 @@ void GA_NOTIFYGAME(rpacket_t rpk){
 	for( ; i < size; ++i){
 		const char *ip = rpk_read_string(rpk);
 		uint16_t   port = rpk_read_uint16(rpk);
-		struct connect_st *st = calloc(sizeof(*st));
+		struct connect_st *st = calloc(1,sizeof(*st));
 		kn_addr_init_in(&st->addr,ip,port);
 		st->type = GAMESERVER;	
 		kn_stream_connect(g_togrpgame->stream_client,NULL,&st->addr,(void*)st);		
@@ -201,7 +200,7 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 static void *service_main(void *ud){
 	g_togrpgame->stream_client = kn_new_stream_client(g_togrpgame->p,on_connect,on_connect_failed);
 	
-	struct connect_st *st = calloc(sizeof(*st));
+	struct connect_st *st = calloc(1,sizeof(*st));
 	kn_addr_init_in(&st->addr,kn_to_cstr(g_config->groupip),g_config->groupport);
 	st->type = GROUPSERVER;	
 	kn_stream_connect(g_togrpgame->stream_client,NULL,&st->addr,(void*)st);

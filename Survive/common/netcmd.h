@@ -60,11 +60,12 @@ enum{
 	//game <-> gate
 
 	CMD_AGAME_BEGIN = 1000,
-	CMD_AGAME_LOGIN, //gateserver进程登陆到game 
+	CMD_AGAME_LOGIN,                 //gateserver进程登陆到game 
 	CMD_AGAME_CLIENT_DISCONN,        //客户端连接断开   
 	CMD_AGAME_END,
 
 	CMD_GAMEA_BEGIN = 1100,
+	CMD_GAMEA_LOGINRET,              //gameserver对gate login的响应
 	CMD_GAMEA_END,
 
 	//dummy cmd

@@ -11,8 +11,7 @@ local function gate_login(_,rpk,conn)
 		local gate = {conn=conn,name=name,gateplys={}}
 		gatemgr.con2gate[conn] = gate
 		gatemgr.name2gate[name] = gate
-		print("gateserver: " .. name .. " login success")
-		--向gate发送game信息		
+		print("gateserver: " .. name .. " login success")	
 	end
 end
 
@@ -22,8 +21,7 @@ local function gate_disconnected(_,rpk,conn)
 		local gate = gatemgr.con2gate[conn]
 		gatemgr.con2gate[conn] = nil
 		gatemgr.name2gate[gate.name] = nil
-		print("gateserver: " .. gate.name .. " disconnected")
-		
+		print("gateserver: " .. gate.name .. " disconnected")		
 		for k,v in pairs(gate.gateplys) do
 			v.gate = nil
 		end
@@ -32,7 +30,7 @@ end
 
 local function reg_cmd_handler()
 	print("gate reg_cmd_handler")
-	C.reg_cmd_handler(CMD_AG_LOGIN,{handle=gate_login})
+	C.reg_cmd_handler(CMD_AGAME_LOGIN,{handle=gate_login})
 	C.reg_cmd_handler(DUMMY_ON_GATE_DISCONNECTED,{handle=gate_disconnected})
 end
 

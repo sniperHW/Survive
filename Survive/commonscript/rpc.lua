@@ -47,7 +47,11 @@ local function RPC_CALL(_,rpk,conn)
 	local func = rpc_function[funcname]
 	if func then
 		--todo use pcall
-		func(rpcHandle)
+		local ret,err = func(rpcHandle)		
+		if err then
+			C.syslog(LOG_ERROR,"on rpccall:" .. funcname .. ":" .. err)
+			rpcResponse(rpcHandle,nil,err)
+		end		
 	else
 		rpcResponse(rpcHandle,nil,"unknow function:" .. func)
 	end

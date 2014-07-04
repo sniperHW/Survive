@@ -14,6 +14,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#ifndef _ASTAR_H
+#define _ASTAR_H
 #include <stdint.h>
 #include <stdlib.h>
 #include "kn_dlist.h"
@@ -47,3 +49,4 @@ typedef struct{
 
 AStar_t create_AStar(int xsize,int ysize,int *values);
 int     find_path(AStar_t,int x,int y,int x1,int y1,kn_dlist *path);
+#endif

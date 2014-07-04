@@ -2,7 +2,7 @@ local Gate = require "script/gate"
 local Game = require "script/game"
 local Dbmgr = require "script/dbmgr"
 local Player = require "script/player"
-local Rpc = require "script/rcp"
+local Rpc = require "script/rpc"
 
 
 

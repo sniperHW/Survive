@@ -433,6 +433,10 @@ void reg_common_c_function(lua_State *L){
 	lua_pushstring(L, "CMD_GAMEG_LOGIN");
 	lua_pushinteger(L, CMD_GAMEG_LOGIN);
 	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_CS_MOV");
+	lua_pushinteger(L, CMD_CS_MOV);
+	lua_settable(L, -3);
 
 /*	lua_pushstring(L, "CMD_GGAME_ENTERMAP");
 	lua_pushinteger(L, CMD_GGAME_ENTERMAP);
@@ -462,6 +466,14 @@ void reg_common_c_function(lua_State *L){
 
 	lua_pushstring(L, "DUMMY_ON_GAME_DISCONNECTED");
 	lua_pushinteger(L,DUMMY_ON_GAME_DISCONNECTED);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_RPC_CALL");
+	lua_pushinteger(L,CMD_RPC_CALL);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "CMD_RPC_RESPONSE");
+	lua_pushinteger(L,CMD_RPC_RESPONSE);
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "LOG_INFO");

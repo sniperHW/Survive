@@ -15,14 +15,14 @@ local map = {
 	movtimer,      --移动处理定时器
 }
 
-local function map:new(o)
+function map:new(o)
   o = o or {}   
   setmetatable(o, self)
   self.__index = self
   return o
 end
 
-local function map:init(mapid,maptype)
+function map:init(mapid,maptype)
 	self.mapid = mapid
 	self.maptype = maptype
 	self.freeidx = Que.Queue()
@@ -45,7 +45,7 @@ local function read_player_from_rpk(rpk)
 	
 end
 
-local function map:entermap(rpk)
+function map:entermap(rpk)
 	local plys = read_player_from_rpk(rpk)
 	if self.freeidx:len() < #plys then
 		--没有足够的id创建玩家avatar
@@ -61,7 +61,7 @@ local function map:entermap(rpk)
 	end
 end
 
-local function map:leavemap(plyid)
+function map:leavemap(plyid)
 	local ply = self.avatars[plyid]
 	if ply and ply.avattype == Avatar.type_player then
 		--处理离开地图
@@ -70,25 +70,25 @@ local function map:leavemap(plyid)
 	return false
 end
 
-local function map:findpath(from,to)
+function map:findpath(from,to)
 	return GameApp.findpath(self.astar,from[1],from[2],to[1],to[2])
 end
 
 --将avatar添加到移动处理列表中
-local function map:beginMov(avatar)
+function map:beginMov(avatar)
 	if not self.movingavatar[avatar.id] then
 		self.movingavatar[avatar.id] = avatar
 	end
 end
 
 --地图销毁之前的清理操作
-local function map:clear()
+function map:clear()
 	GameApp.destroy_aoimap(self.aoi)
 	C.del_timer(self.movtimer)
 end
 
 --处理本地图上的对象移动请求
-local function map:process_mov()
+function map:process_mov()
 	local stops = {}
 	for k,v in pairs(self.movingavatar) do
 		if v:process_mov() then

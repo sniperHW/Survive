@@ -27,12 +27,13 @@ local function on_gate_login(gate)
 end
 
 local function game_login(_,rpk,conn)
+	print("game_login")
 	local name = rpk_read_string(rpk)
 	if gamemgr.con2game[conn] == nil and gamemgr.name2game[name] == nil then
 		--game监听gate的ip和port
 		local ip = rpk_read_string(rpk)
 		local port = rpk_read_uint16(rpk)
-		local game = {conn=conn,name=name,ip=ip,port=port,gameplys={}}
+		local game = {name=name,conn=conn,name=name,ip=ip,port=port,gameplys={}}
 		gamemgr.con2game[conn] = game
 		gamemgr.name2game[name] = game	
 		gamemgr.size = gamemgr.size + 1
@@ -44,6 +45,7 @@ local function game_login(_,rpk,conn)
 		wpk_write_string(wpk,game.ip)
 		wpk_write_uint16(wpk,game.port)
 		BoradCast2Gate(wpk);
+		print("game:" ..name .. " login success")
 	end
 end
 
@@ -52,7 +54,7 @@ local function game_disconnected(_,rpk,conn)
 		local game = gamemgr.con2game[conn]
 		gamemgr.con2game[conn] = nil
 		gamemgr.name2game[game.name] = nil
-		print("gateserver: " .. gate.name .. " disconnected")		
+		print("gameserver: " .. game.name .. " disconnected")		
 		for k,v in pairs(game.gameplys) do
 			v.game = nil
 		end

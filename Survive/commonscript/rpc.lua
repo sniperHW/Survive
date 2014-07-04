@@ -4,7 +4,7 @@ local pending_rpc = {}
 local rpc_function = {}
 local counter = 1
 
-local rpcCall(conn,remoteFunc,param,callbackObj)
+local function rpcCall(conn,remoteFunc,param,callbackObj)
 	local rpcno = '' .. C.systemms .. '' .. counter
 	counter = counter + 1
 	local wpk = new_wpk()
@@ -24,7 +24,7 @@ local rpcCall(conn,remoteFunc,param,callbackObj)
 	end
 end
 
-local rpcResponse(rpcHandle,result,error)
+local function rpcResponse(rpcHandle,result,error)
 	local conn = rpcHandle.conn
 	local rpcno = rpcHandle.rpcno
 	local response = {rpcno = rpcno,ret=result,err=error}
@@ -35,7 +35,7 @@ local rpcResponse(rpcHandle,result,error)
 end
 
 
-local registerRpcFunction(name,func)
+local function registerRpcFunction(name,func)
 	rpc_function[name] = func
 end
 
@@ -71,7 +71,7 @@ end
 local function  onDisconnect(conn)
 	local conn_pending_rpc = pending_rpc[conn]
 	if conn_pending_rpc then
-		for k,v in do 
+		for k,v in ipairs(conn_pending_rpc) do 
 			v.OnRPCResponse(v,nil,"connection loss")
 		end
 		pending_rpc[conn] = nil
@@ -79,6 +79,7 @@ local function  onDisconnect(conn)
 end
 
 local function reg_cmd_handler()
+	print("rpc reg_cmd_handler")
 	C.reg_cmd_handler(CMD_RPC_CALL,{handle=RPC_CALL})
 	C.reg_cmd_handler(CMD_RPC_RESPONSE,{handle=RPC_RESPONSE})
 end

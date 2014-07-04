@@ -153,7 +153,7 @@ local tiled_half_hight = tiled_hight/2
 local function distance(dir)
 	if dir == north or dir == south or dir == east or dir == west then
 		return math.sqrt(tiled_half_width*tiled_half_width + tiled_half_hight*tiled_half_hight)
-	elseif dir == south_east or dir == north_west
+	elseif dir == south_east or dir == north_west then
 		return tiled_hight
 	else 
 		return tiled_width
@@ -166,8 +166,7 @@ function player:process_mov()
 	local path = self.path.path
 	local cur  = self.path.cur
 	local size = #path
-	local break = false
-	while cur <= size and break == false do
+	while cur <= size do
 		local node = path[cur]
 		local tmpdir = direction(self.pos,node,self.dir)
 		local dis    =  distance(tmpdir)
@@ -180,7 +179,7 @@ function player:process_mov()
 			movmargin = movmargin - elapse;			
 			--更新aoi
 		else
-			break = true	
+			break	
 		end
 	end
 	self.path.cur = cur

@@ -6,9 +6,9 @@
 #include "kn_stream_conn_client.h"
 #include "common/netcmd.h"
 #include "common/cmdhandler.h"
-#include "common/common_c_function.h"
-#include "aio.h"
 #include "astar.h"
+#include "aoi.h"
+#include "common/common_c_function.h"
 
 IMP_LOG(gamelog);
 
@@ -29,14 +29,16 @@ static int on_gate_packet(kn_stream_conn_t conn,rpacket_t rpk){
 						  lua_pushlightuserdata(L,rpk),
 						  lua_pushlightuserdata(L,conn)))){
 			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
+			printf("error on handle[%u]:%s\n",cmd,error);
 		}
 	}
 	return 1;
 }
 
 static void on_gate_disconnected(kn_stream_conn_t conn,int err){
-	if(handler[DUMMY_ON_GATE_DISCONNECTED]){
-		lua_State *L = handler[DUMMY_ON_GATE_DISCONNECTED]->obj->L;
+	uint16_t cmd = DUMMY_ON_GATE_DISCONNECTED;
+	if(handler[cmd]){
+		lua_State *L = handler[cmd]->obj->L;
 		const char *error = NULL;
 		if((error = CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
 						  lua_pushnil(L),lua_pushlightuserdata(L,conn)))){
@@ -64,6 +66,7 @@ static int on_group_packet(kn_stream_conn_t con,rpacket_t rpk){
 						  lua_pushlightuserdata(L,rpk),
 						  lua_pushlightuserdata(L,con)))){
 			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
+			printf("error on handle[%u]:%s\n",cmd,error);
 		}
 	}
 	return 1;
@@ -82,10 +85,11 @@ static int  cb_timer(kn_timer_t timer)//如果返回1继续注册，否则不再注册
 static void on_group_connect_failed(kn_stream_client_t _,kn_sockaddr *addr,int err,void *ud)
 {
 	(void)_;
-	(void)addr);
+	(void)addr;
 	(void)err;
 	(void)ud;
 	kn_reg_timer(t_proactor,5000,cb_timer,NULL);
+	printf("connect to group failed,retry after 5 sec\n");
 }
 
 static void on_group_disconnected(kn_stream_conn_t conn,int err){
@@ -106,17 +110,21 @@ static void on_group_connect(kn_stream_client_t _,kn_stream_conn_t conn,void *ud
 		wpk_write_string(wpk,kn_to_cstr(g_config->lgateip));
 		wpk_write_uint16(wpk,g_config->lgateport);
 		kn_stream_conn_send(conn,wpk);		
+		printf("connect to group success\n");
 	}else{
 		kn_stream_conn_close(conn);		
 		LOG_GAME(LOG_ERROR,"on_group_connect failed\n");
 	}
 }
 
+
 int reg_cmd_handler(lua_State *L){
 	uint16_t cmd = lua_tonumber(L,1);
 	luaObject_t obj = create_luaObj(L,2);
 	if(!handler[cmd]){
-		cmd_handler_t h = calloc(1,sizeof(*handler));
+		printf("reg cmd %d\n",cmd);
+		cmd_handler_t h = calloc(1,sizeof(*h));
+		h->_type = FN_LUA;
 		h->obj = obj;
 		handler[cmd] = h;
 		lua_pushboolean(L,1);
@@ -126,6 +134,7 @@ int reg_cmd_handler(lua_State *L){
 	}
 	return 1;
 }
+
 
 static int lua_send2grp(lua_State *L){
 	wpacket_t wpk = lua_touserdata(L,1);
@@ -148,7 +157,7 @@ static uint8_t in_myscope(aoi_object *_self,aoi_object *_other){
 	luaObject_t self = (luaObject_t)_self->ud;
 	luaObject_t other = (luaObject_t)_other->ud;
 	lua_State *L = self->L;
-	const char error = NULL;
+	const char *error = NULL;
 	if((error = CALL_OBJ_FUNC1(self,"isInMyScope",1,
 					  PUSH_LUAOBJECT(L,other)))){
 		LOG_GAME(LOG_INFO,"error on enter_see:%s\n",error);
@@ -161,7 +170,7 @@ static void    cb_enter(aoi_object *_self,aoi_object *_other){
 	luaObject_t self = (luaObject_t)_self->ud;
 	luaObject_t other = (luaObject_t)_other->ud;
 	lua_State *L = self->L;
-	const char error = NULL;
+	const char *error = NULL;
 	if((error = CALL_OBJ_FUNC1(self,"enter_see",0,
 					  PUSH_LUAOBJECT(L,other)))){
 		LOG_GAME(LOG_INFO,"error on enter_see:%s\n",error);
@@ -172,7 +181,7 @@ static void    cb_leave(aoi_object *_self,aoi_object *_other){
 	luaObject_t self = (luaObject_t)_self->ud;
 	luaObject_t other = (luaObject_t)_other->ud;
 	lua_State *L = self->L;
-	const char error = NULL;
+	const char *error = NULL;
 	if((error = CALL_OBJ_FUNC1(self,"leave_see",0,
 					  PUSH_LUAOBJECT(L,other)))){
 		LOG_GAME(LOG_INFO,"error on leave_see:%s\n",error);
@@ -208,7 +217,7 @@ static int lua_create_aoimap(lua_State *L){
 	top_left.y = lua_tonumber(L,4);
 	bottom_right.x = lua_tonumber(L,5);
 	bottom_right.y = lua_tonumber(L,6);	
-	aoi_map *m = aoi_create(4096,length,radius,top_left,bottom_right);
+	aoi_map *m = aoi_create(4096,length,radius,&top_left,&bottom_right);
 	lua_pushlightuserdata(L,(void*)m);
 	return 1;
 }
@@ -229,14 +238,14 @@ static int lua_findpath(lua_State *L){
 	if(find_path(astar,x1,y1,x2,y2,&path)){
 		lua_newtable(L);
 		AStarNode *n;
-		while((n = kn_dlist_pop(&path)){
+		while((n = (AStarNode*)kn_dlist_pop(&path))){
 			lua_newtable(L);
 			lua_pushinteger(L,n->x);
 			lua_rawseti(L,-2,1);
 			lua_pushinteger(L,n->y);
 			lua_rawseti(L,-2,2);
 		}
-		lua_rawseti(LUASTATE,-2,1);	
+		lua_rawseti(L,-2,1);	
 	}else
 		lua_pushnil(L);
 	return 1;
@@ -290,6 +299,7 @@ static lua_State *init(){
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
 		LOG_GAME(LOG_INFO,"error on handler.lua:%s\n",error);
+		printf("error on handler.lua:%s\n",error);
 		lua_close(L); 
 		return NULL;
 	}
@@ -304,6 +314,7 @@ static lua_State *init(){
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
 		LOG_GAME(LOG_INFO,"error on reghandler:%s\n",error);
+		printf("error on handler.lua:%s\n",error);
 		lua_close(L); 
 	}
 	return L;
@@ -314,18 +325,9 @@ static void sig_int(int sig){
 	stop = 1;
 }
 
-
-int main(int argc,char **argv){
-
-	if(loadconfig() != 0){
-		return 0;
-	}
-
-	if(!init())
-		return 0;
-
-	signal(SIGINT,sig_int);
-	t_proactor = kn_new_proactor();
+int on_db_initfinish(lua_State *_){
+	(void)_;
+	printf("on_db_initfinish\n");
 	//启动监听
 	kn_sockaddr lgateserver;
 	kn_addr_init_in(&lgateserver,kn_to_cstr(g_config->lgateip),g_config->lgateport);
@@ -333,12 +335,25 @@ int main(int argc,char **argv){
 
 	//连接group
 	c = kn_new_stream_client(t_proactor,
-							 on_group_connect,
-						     on_group_connect_failed);
+			on_group_connect,
+			on_group_connect_failed);
 
 	kn_sockaddr grpaddr;
 	kn_addr_init_in(&grpaddr,kn_to_cstr(g_config->groupip),g_config->groupport);
 	kn_stream_connect(c,NULL,&grpaddr,NULL);
+	return 0;
+} 
+
+int main(int argc,char **argv){
+	signal(SIGINT,sig_int);
+	t_proactor = kn_new_proactor();
+	if(loadconfig() != 0){
+		return 0;
+	}
+
+	if(!init())
+		return 0;
+
 	while(!stop)
 		kn_proactor_run(t_proactor,50);
 

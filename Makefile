@@ -2,7 +2,7 @@ CFLAGS = -g -Wall -fno-strict-aliasing -std=gnu99 -rdynamic
 LDFLAGS = -lpthread -lrt -lm -ltcmalloc
 SHARED = -fPIC --shared
 CC = gcc
-INCLUDE =  -I../KendyNet/include -I./Survive -I./Survive/gateserver -I../KendyNet
+INCLUDE =  -I../KendyNet/include -I./Survive -I../KendyNet
 
 kendynet.a: \
 		   ../KendyNet/src/kn_connector.c \
@@ -61,11 +61,11 @@ groupserverd:\
 	mv groupserverd Survive/groupserver
 
 gameserverd:\
-	Survive/gameserver/gameserver.c\
 	Survive/gameserver/config.c\
 	Survive/gameserver/astar.c\
 	Survive/gameserver/aoi.c\
 	Survive/common/wordfilter.c\
+	Survive/gameserver/gameserver.c\
 	kendynet.a
 	$(CC) $(CFLAGS) -o gameserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
 	mv gameserverd Survive/gameserver

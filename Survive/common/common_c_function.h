@@ -200,23 +200,21 @@ extern __thread kn_proactor_t t_proactor;
 
 static inline void lua_on_redis_connected(redisconn_t conn,int err,void *ud){
 	luaObject_t obj = (luaObject_t)ud;
-	if(CALL_OBJ_FUNC2(obj,"on_connect",0,
+	const char *error;
+	if((error = CALL_OBJ_FUNC2(obj,"on_connect",0,
 				   lua_pushlightuserdata(obj->L,conn),
-				   lua_pushnumber(obj->L,err))){
-		const char * error = lua_tostring(obj->L, -1);
+				   lua_pushnumber(obj->L,err)))){
 		SYS_LOG(LOG_ERROR,"on_redis_connected:%s\n",error);
-		lua_pop(obj->L,1);
 		release_luaObj(obj);
 	}
 }
 
 static inline void lua_on_redis_disconnected(redisconn_t conn,void *ud){
 	luaObject_t obj = (luaObject_t)ud;
-	if(CALL_OBJ_FUNC1(obj,"on_disconnect",0,
-			  lua_pushlightuserdata(obj->L,conn))){
-		const char * error = lua_tostring(obj->L, -1);
+	const char *error;
+	if((error = CALL_OBJ_FUNC1(obj,"on_disconnect",0,
+			  lua_pushlightuserdata(obj->L,conn)))){
 		SYS_LOG(LOG_ERROR,"on_redis_disconnected:%s\n",error);
-		lua_pop(obj->L,1);
 	}	
 	release_luaObj(obj);
 }
@@ -264,23 +262,18 @@ void redis_command_cb(redisconn_t conn,struct redisReply* reply,void *pridata)
 {
 	printf("redis_command_cb\n");
 	luaObject_t obj = (luaObject_t)pridata;
+	const char * error;
 	if(!reply || reply->type == REDIS_REPLY_NIL){
-		if(CALL_OBJ_FUNC2(obj,"callback",0,lua_pushnil(obj->L),lua_pushnil(obj->L))){
-			const char * error = lua_tostring(obj->L, -1);
+		if((error = CALL_OBJ_FUNC2(obj,"callback",0,lua_pushnil(obj->L),lua_pushnil(obj->L)))){
 			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
-			lua_pop(obj->L,1);
 		}				
 	}else if(reply->type == REDIS_REPLY_ERROR){
-		if(CALL_OBJ_FUNC2(obj,"callback",0,lua_pushstring(obj->L,reply->str),lua_pushnil(obj->L))){
-			const char * error = lua_tostring(obj->L, -1);
+		if((error = CALL_OBJ_FUNC2(obj,"callback",0,lua_pushstring(obj->L,reply->str),lua_pushnil(obj->L)))){
 			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
-			lua_pop(obj->L,1);
 		}			
 	}else{
-		if(CALL_OBJ_FUNC2(obj,"callback",0,lua_pushnil(obj->L),build_resultset(reply,obj->L))){
-		const char * error = lua_tostring(obj->L, -1);
+		if((error = CALL_OBJ_FUNC2(obj,"callback",0,lua_pushnil(obj->L),build_resultset(reply,obj->L)))){
 			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
-			lua_pop(obj->L,1);
 		}			
 	} 	
 	release_luaObj(obj);

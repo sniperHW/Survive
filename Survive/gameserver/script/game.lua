@@ -21,6 +21,10 @@ end
 
 
 Rpc.RegisterRpcFunction("EnterMap",function (rpcHandle)
+	print("EnterMap")
+	if true then
+		Rpc.rpcResponse(rpcHandle,nil,"failed")
+	end
 	local param = rpcHandle.param
 	local mapid = param[1]
 	local maptype = param[2]

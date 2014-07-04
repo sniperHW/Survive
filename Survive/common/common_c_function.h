@@ -262,6 +262,7 @@ static void build_resultset(struct redisReply* reply,lua_State *L){
 
 void redis_command_cb(redisconn_t conn,struct redisReply* reply,void *pridata)
 {
+	printf("redis_command_cb\n");
 	luaObject_t obj = (luaObject_t)pridata;
 	if(!reply || reply->type == REDIS_REPLY_NIL){
 		if(CALL_OBJ_FUNC2(obj,"callback",0,lua_pushnil(obj->L),lua_pushnil(obj->L))){

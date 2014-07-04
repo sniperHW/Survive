@@ -41,7 +41,7 @@ end
 
 function BoradCast2Gate(wpk)
 	for k,_ in pairs(gatemgr.con2gate) do
-		local l_wpk = C.new_wpk_by_wpk(wpk)
+		local l_wpk = new_wpk_by_wpk(wpk)
 		C.send(k,l_wpk)
 	end
 	destroy_wpk(wpk)

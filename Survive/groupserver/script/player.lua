@@ -197,7 +197,9 @@ end
 
 
 function load_chainfo_callback(self,error,result)
+	print("load_chainfo_callback")
 	if error then
+		print("error")
 		notifybusy(self.ply)
 		return
 	end
@@ -261,6 +263,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 		wpk_write_uint32(wpk,gateid.low)
 		C.send(conn,wpk)
 	else
+		print("here:" .. chaid)
 		ply.gate = {id=gateid,conn = conn}
 		Gate.InsertGatePly(ply,ply.gate)
 		if chaid == 0 then
@@ -273,9 +276,11 @@ local function AG_PLYLOGIN(_,rpk,conn)
 			ply.chaid = chaid
 			--从数据库载入角色数据
 			local cmd = "hmget chaid:" .. chaid .. " attr"
+			print(cmd)
 			local err = Dbmgr.DBCmd(chaid,cmd,{callback = load_chainfo_callback,ply=ply})
 			if err then
 				notifybusy(ply)
+				print("error:" .. err)
 			end
 			ply.status = stat_loading
 		end
@@ -325,6 +330,7 @@ end
 
 
 local function CG_ENTERMAP(_,rpk,conn)
+	print("CG_ENTERMAP")
 	local groupid = rpk_read_uint16(rpk)	
 	local ply = playermgr:getplybyid(groupid)
 	if ply and ply.status == stat_playing then

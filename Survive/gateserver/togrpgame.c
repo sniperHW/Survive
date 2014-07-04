@@ -68,6 +68,7 @@ static int on_packet(kn_stream_conn_t conn,rpacket_t rpk){
 	printf("togrpgame on_packet\n");
 	
 	uint16_t cmd = rpk_peek_uint16(rpk);
+	printf("%d\n",cmd);
 	if(cmd == CMD_GA_NOTIFYGAME){
 		rpk_read_uint16(rpk);
 		GA_NOTIFYGAME(rpk);

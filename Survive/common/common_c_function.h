@@ -417,6 +417,10 @@ void reg_common_c_function(lua_State *L){
 	lua_pushstring(L, "CMD_AG_CLIENT_DISCONN");
 	lua_pushinteger(L, CMD_AG_CLIENT_DISCONN);
 	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_GA_NOTIFYGAME");
+	lua_pushinteger(L, CMD_GA_NOTIFYGAME);
+	lua_settable(L, -3);
 
 	lua_pushstring(L, "CMD_GA_BUSY");
 	lua_pushinteger(L, CMD_GA_BUSY);
@@ -459,6 +463,9 @@ void reg_common_c_function(lua_State *L){
 	lua_pushinteger(L, CMD_AGAME_CLIENT_DISCONN);
 	lua_settable(L, -3);
 
+	lua_pushstring(L, "CMD_GAMEA_LOGINRET");
+	lua_pushinteger(L, CMD_GAMEA_LOGINRET);
+	lua_settable(L, -3);
 
 	lua_pushstring(L, "DUMMY_ON_GATE_DISCONNECTED");
 	lua_pushinteger(L,DUMMY_ON_GATE_DISCONNECTED);

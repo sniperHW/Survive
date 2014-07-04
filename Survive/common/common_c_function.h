@@ -379,10 +379,17 @@ void reg_common_c_function(lua_State *L){
 		lua_setglobal(L,"_G");
 	}
 	
-	
+	//client <-> agent
 	lua_pushstring(L, "CMD_CA_LOGIN");
 	lua_pushinteger(L, CMD_CA_LOGIN);
 	lua_settable(L, -3);
+	
+	//client <-> game
+	lua_pushstring(L, "CMD_CS_MOV");
+	lua_pushinteger(L, CMD_CS_MOV);
+	lua_settable(L, -3);	
+
+	//client <-> group
 
 	lua_pushstring(L, "CMD_CG_CREATE");
 	lua_pushinteger(L, CMD_CG_CREATE);
@@ -406,6 +413,7 @@ void reg_common_c_function(lua_State *L){
 	lua_pushinteger(L, CMD_GC_ERROR);
 	lua_settable(L, -3);
 
+	//gate <-> group
 	lua_pushstring(L, "CMD_AG_LOGIN");
 	lua_pushinteger(L, CMD_AG_LOGIN);
 	lua_settable(L, -3);
@@ -434,26 +442,10 @@ void reg_common_c_function(lua_State *L){
 	lua_pushinteger(L, CMD_GA_CREATE);
 	lua_settable(L, -3);
 
+	//game <-> group
 	lua_pushstring(L, "CMD_GAMEG_LOGIN");
 	lua_pushinteger(L, CMD_GAMEG_LOGIN);
 	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_CS_MOV");
-	lua_pushinteger(L, CMD_CS_MOV);
-	lua_settable(L, -3);
-
-/*	lua_pushstring(L, "CMD_GGAME_ENTERMAP");
-	lua_pushinteger(L, CMD_GGAME_ENTERMAP);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_GGAME_LEAVEMAP");
-	lua_pushinteger(L, CMD_GGAME_LEAVEMAP);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_GGAME_DESTROYMAP");
-	lua_pushinteger(L, CMD_GGAME_DESTROYMAP);
-	lua_settable(L, -3);
-*/ 	
 	
 	lua_pushstring(L, "CMD_AGAME_LOGIN");
 	lua_pushinteger(L, CMD_AGAME_LOGIN);
@@ -467,6 +459,7 @@ void reg_common_c_function(lua_State *L){
 	lua_pushinteger(L, CMD_GAMEA_LOGINRET);
 	lua_settable(L, -3);
 
+	//dummy cmd
 	lua_pushstring(L, "DUMMY_ON_GATE_DISCONNECTED");
 	lua_pushinteger(L,DUMMY_ON_GATE_DISCONNECTED);
 	lua_settable(L, -3);
@@ -474,7 +467,7 @@ void reg_common_c_function(lua_State *L){
 	lua_pushstring(L, "DUMMY_ON_GAME_DISCONNECTED");
 	lua_pushinteger(L,DUMMY_ON_GAME_DISCONNECTED);
 	lua_settable(L, -3);
-	
+	//rpc
 	lua_pushstring(L, "CMD_RPC_CALL");
 	lua_pushinteger(L,CMD_RPC_CALL);
 	lua_settable(L, -3);
@@ -482,7 +475,8 @@ void reg_common_c_function(lua_State *L){
 	lua_pushstring(L, "CMD_RPC_RESPONSE");
 	lua_pushinteger(L,CMD_RPC_RESPONSE);
 	lua_settable(L, -3);
-
+	//end of netcmd
+	
 	lua_pushstring(L, "LOG_INFO");
 	lua_pushinteger(L, LOG_INFO);
 	lua_settable(L, -3);

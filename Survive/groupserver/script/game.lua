@@ -1,6 +1,3 @@
-
-local MapMgr = require "script/mapmgr"
-
 local gamemgr = {
 	con2game  = {},
 	name2game = {},
@@ -35,7 +32,7 @@ local function game_login(_,rpk,conn)
 		--game监听gate的ip和port
 		local ip = rpk_read_string(rpk)
 		local port = rpk_read_uint16(rpk)
-		local game = {name=name,conn=conn,name=name,ip=ip,port=port,gameplys={}}
+		local game = {name=name,conn=conn,name=name,ip=ip,port=port,gameplys={},plycount=0}
 		gamemgr.con2game[conn] = game
 		gamemgr.name2game[name] = game	
 		gamemgr.size = gamemgr.size + 1
@@ -46,8 +43,7 @@ local function game_login(_,rpk,conn)
 		wpk_write_uint8(wpk,1)
 		wpk_write_string(wpk,game.ip)
 		wpk_write_uint16(wpk,game.port)
-		BoradCast2Gate(wpk);
-		MapMgr.OnGameConnect(game);
+		BoradCast2Gate(wpk)
 		print("game:" ..name .. " login success")
 	end
 end
@@ -75,6 +71,7 @@ local function insertGamePly(ply,game)
 	local t = gamemgr.con2game[game.conn]
 	if t then
 		t.gameplys[ply] = nil
+		t.plycount = t.plycount + 1
 	end
 end
 
@@ -82,6 +79,7 @@ local function removeGamePly(ply,game)
 	local t = gamemgr.con2game[game.conn]
 	if t then
 		t.gameplys[ply] = ply
+		t.plycount = t.plycount - 1
 	end
 end
 
@@ -90,10 +88,24 @@ local function getGameByName(name)
 end
 
 
+local function getMinGame()
+	local min = 65535
+	local game = nil
+	for k,v in pairs(gamemgr.con2game) do
+		if v.plycount < min then
+			min = v.plycount
+			game = v
+		end
+	end
+	return game
+end
+
+
 return {
 	RegHandler = reg_cmd_handler,
 	InsertGamePly = insertGamePly,
 	RemoveGamePly = removeGamePly,
 	GetGameByName = getGameByName,
-	OnGateLogin	  = on_gate_login,
+	OnGateLogin   = on_gate_login,
+	GetMinGame    = getMinGame,
 }

@@ -30,19 +30,12 @@ local function getInstanceByType(type,plycount)
 	if not gamemaps then
 		return nil
 	end
-	
-	local min = 65535
-	local game = nil
-	for k,v in pairs(gamemaps) do
-		if v.size < min then
-			min = v.size
-			game = k
-		end
-	end
-	
+
+	local game = Game.GetMinGame()
 	if not game then
 		return nil
 	end
+	
 	return {game,0}
 end
 
@@ -55,10 +48,10 @@ local function addInstance(game,type,mapid,plymax,plycount)
 	m[mapid] = instance	
 	local g = gamemaps[game]
 	if not g then
-		g = {size=0,maps={}}
+		g = {}
+		gamemaps[game] = g
 	end	
-	g.maps[mapid] = instance
-	g.size = g.size + 1
+	g[mapid] = instance
 end
 
 local function remInstance(game,type,mapid)
@@ -69,7 +62,6 @@ local function remInstance(game,type,mapid)
 	local g = gamemaps[game]
 	if g then
 		local m = g.maps[mapid]
-		g.size = g.size - m.plycount
 		g.maps[mapid] = nil
 	end
 end
@@ -78,9 +70,6 @@ local function onGameDisconnect(game)
 	gamemaps[game] = nil 
 end
 
-local function onGameConnect(game)
-	gamemaps[game] = {size = 0}
-end
 
 local function addMapPlyCount(type,mapid,count)
 	local m = maps[type]
@@ -110,6 +99,8 @@ local function subMapPlyCount(type,mapid,count)
 	return false	
 end
 
+
+--[[
 local function addGamePlyCount(game,count)
 	local g = gamemaps[game]
 	if g then
@@ -126,7 +117,7 @@ local function subGamePlyCount(game,count)
 		return true
 	end
 	return false
-end
+end--]]
 
 local function enterMap(ply,type)
 	print("enterMap")
@@ -144,22 +135,23 @@ local function enterMap(ply,type)
 		groupid = ply.groupid,
 	}
 	local param = {paramply}
-	return Rpc.RPCCall(game.conn,"EnterMap",param,{OnRPCResponse=function (_,ret,err)
+	local r = Rpc.RPCCall(game.conn,"EnterMap",param,{OnRPCResponse=function (_,ret,err)
 		if err then	
-		
+			Game.RemoveGamePly(ply,game)
 		else
 			if mapid == 0 then
 				mapid = ret[1]
 				addInstance(game,type,mapid,32,1)
-			else
-				addMapPlyCount(type,mapid,1)
-				addGamePlyCount(game,1)
 			end
 			ply.game = {conn=game.conn,id=ret[2][1]}
-			Game.insertGamePly(ply,game)	
 		end
 		ply.status = stat_playing
 	end})
+	if r then
+		--addMapPlyCount(type,mapid,1)
+		Game.InsertGamePly(ply,game)	
+	end
+	return r
 end
 
 return {
@@ -168,9 +160,9 @@ return {
 	OnGameDisconnect = onGameDisconnect,
 	AddMapPlyCount = addMapPlyCount,
 	SubMapPlyCount = subMapPlyCount,
-	AddGamePlyCount = addGamePlyCount,
-	SubGamePlyCount = subGamePlyCount,
+	--AddGamePlyCount = addGamePlyCount,
+	--SubGamePlyCount = subGamePlyCount,
 	RemInstance = remInstance,
 	EnterMap = enterMap,
-	OnGameConnect = onGameConnect,
+	--OnGameConnect = onGameConnect,
 }

@@ -10,7 +10,8 @@ local function rpcCall(conn,remoteFunc,param,callbackObj)
 	local wpk = new_wpk()
 	wpk_write_uint16(wpk,CMD_RPC_CALL)
 	local rpcReq = {rpcno = rpcno,param=param}
-	wpk_write_string(Cjson.encode(rpcReq))
+	wpk_write_string(wpk,remoteFunc)
+	wpk_write_string(wpk,Cjson.encode(rpcReq))
 	if C.send(conn,wpk) then
 		local conn_pending_rpc = pending_rpc[conn]
 		if not conn_pending_rpc then
@@ -30,7 +31,7 @@ local function rpcResponse(rpcHandle,result,error)
 	local response = {rpcno = rpcno,ret=result,err=error}
 	local wpk = new_wpk()
 	wpk_write_uint16(wpk,CMD_RPC_RESPONSE)
-	wpk_write_string(Cjson.encode(response))
+	wpk_write_string(wpk,Cjson.encode(response))
 	C.send(conn,wpk)
 end
 
@@ -42,6 +43,7 @@ end
 
 local function RPC_CALL(_,rpk,conn)
 	local funcname = rpk_read_string(rpk)
+	print("RPC_CALL:" .. funcname)
 	local rpcHandle = Cjson.decode(rpk_read_string(rpk))
 	rpcHandle.conn = conn
 	local func = rpc_function[funcname]

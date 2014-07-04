@@ -213,6 +213,7 @@ function load_chainfo_callback(self,error,result)
 	local ply = self.ply	
 	ply.attr =  Cjson.decode(result[1])
 	--ply.skill = Cjson.decode(result[2])
+	print("notify begply")
 	notifybegply(ply)
 end
 
@@ -332,9 +333,12 @@ end
 local function CG_ENTERMAP(_,rpk,conn)
 	print("CG_ENTERMAP")
 	local groupid = rpk_read_uint16(rpk)	
+	print(groupid)
 	local ply = playermgr:getplybyid(groupid)
+	print(ply)
 	if ply and ply.status == stat_playing then
-		local type = rpk_read_uint8(rpk)
+		print("here")
+		local type = 1--rpk_read_uint8(rpk)
 		if MapMgr.EnterMap(ply,type) then
 			ply.status = stat_enteringmap
 		end

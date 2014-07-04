@@ -125,6 +125,7 @@ local function subGamePlyCount(game,count)
 end
 
 local function enterMap(ply,type)
+	print("enterMap")
 	--暂时不处理需要配对进入的地图类型
 	local m = getInstanceByType(type,1)
 	if not m then
@@ -132,12 +133,13 @@ local function enterMap(ply,type)
 	end	
 	local mapid = m[2]
 	local game = m[1]
-	local gate = Gate.getGateByConn(ply.gate.conn)	
+	local gate = Gate.GetGateByConn(ply.gate.conn)	
 	local paramply = {
 		chaname=plychaname,
 		gate = {name=gate.name,id=ply.gate.id},
 		groupid = ply.groupid,
 	}
+	print("entermap 2")
 	local param = {paramply}
 	return Rpc.RPCCall(game,"EnterMap",param,{OnRPCResponse=function (_,ret,err)
 		if err then	

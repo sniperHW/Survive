@@ -50,7 +50,7 @@ static void on_gate_disconnected(kn_stream_conn_t conn,int err){
 static void on_new_gate(kn_stream_server_t server,kn_stream_conn_t conn){
 	if(0 == kn_stream_server_bind(server,conn,0,65536,
 				      on_gate_packet,on_gate_disconnected,
-				      30*1000,NULL,0,NULL)){
+				      0,NULL,0,NULL)){
 	}else{
 		kn_stream_conn_close(conn);
 	}
@@ -102,7 +102,7 @@ static void on_group_disconnected(kn_stream_conn_t conn,int err){
 static void on_group_connect(kn_stream_client_t _,kn_stream_conn_t conn,void *ud){
 	(void)_;
 	if(0 == kn_stream_client_bind(c,conn,0,65536,on_group_packet,on_group_disconnected,
-						  30*1000,NULL,0,NULL)){	
+						  0,NULL,0,NULL)){	
 		togrp = conn;		
 		wpacket_t wpk = NEW_WPK(64);
 		wpk_write_uint16(wpk,CMD_GAMEG_LOGIN);

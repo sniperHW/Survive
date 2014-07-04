@@ -5,7 +5,7 @@ local rpc_function = {}
 local counter = 1
 
 local function rpcCall(conn,remoteFunc,param,callbackObj)
-	local rpcno = '' .. C.systemms .. '' .. counter
+	local rpcno = '' .. C.systemms() .. '' .. counter
 	counter = counter + 1
 	local wpk = new_wpk()
 	wpk_write_uint16(wpk,CMD_RPC_CALL)

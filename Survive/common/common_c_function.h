@@ -249,9 +249,9 @@ static void build_resultset(struct redisReply* reply,lua_State *L){
 		lua_newtable(L);
 		int i = 0;
 		for(; i < reply->elements; ++i){
-			//lua_pushinteger(L,i+1);
+			lua_pushinteger(L,i+1);
 			build_resultset(reply->element[i],L);
-			lua_settable(L, -2);
+			lua_settable(L, -3);
 		}
 	}else{
 		lua_pushnil(L);
@@ -266,14 +266,17 @@ void redis_command_cb(redisconn_t conn,struct redisReply* reply,void *pridata)
 	if(!reply || reply->type == REDIS_REPLY_NIL){
 		if((error = CALL_OBJ_FUNC2(obj,"callback",0,lua_pushnil(obj->L),lua_pushnil(obj->L)))){
 			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
+			printf("redis_command_cb:%s\n",error);
 		}				
 	}else if(reply->type == REDIS_REPLY_ERROR){
 		if((error = CALL_OBJ_FUNC2(obj,"callback",0,lua_pushstring(obj->L,reply->str),lua_pushnil(obj->L)))){
 			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
+			printf("redis_command_cb:%s\n",error);
 		}			
 	}else{
 		if((error = CALL_OBJ_FUNC2(obj,"callback",0,lua_pushnil(obj->L),build_resultset(reply,obj->L)))){
 			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
+			printf("redis_command_cb:%s\n",error);
 		}			
 	} 	
 	release_luaObj(obj);

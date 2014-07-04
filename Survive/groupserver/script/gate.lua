@@ -65,9 +65,14 @@ local function getGateByName(name)
 	return gatemgr.name2gate[name]
 end
 
+local function getGateByConn(conn)
+	return gatemgr.con2gate[conn]
+end
+
 return {
 	RegHandler = reg_cmd_handler,
 	InsertGatePly = insertGatePly,
 	RemoveGatePly = removeGatePly,
 	GetGateByName = getGateByName,
+	GetGateByConn = getGateByConn,
 }

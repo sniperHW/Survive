@@ -168,7 +168,7 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 			rpacket_t tmp = rpk_create_skip(_msg->rpk,rpk_len(_msg->rpk)-dropsize);
 			//丢弃尾部附加的数据
 			rpk_dropback(_msg->rpk,dropsize);
-			while(size){
+			while(size--){
 				agentsession session;
 				rpk_read_agentsession(tmp,&session);
 				if(session.aid != t_agent->idx) continue;

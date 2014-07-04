@@ -78,6 +78,10 @@ local function onGameDisconnect(game)
 	gamemaps[game] = nil 
 end
 
+local function onGameConnect(game)
+	gamemaps[game] = {size = 0}
+end
+
 local function addMapPlyCount(type,mapid,count)
 	local m = maps[type]
 	if m then
@@ -139,9 +143,8 @@ local function enterMap(ply,type)
 		gate = {name=gate.name,id=ply.gate.id},
 		groupid = ply.groupid,
 	}
-	print("entermap 2")
 	local param = {paramply}
-	return Rpc.RPCCall(game,"EnterMap",param,{OnRPCResponse=function (_,ret,err)
+	return Rpc.RPCCall(game.conn,"EnterMap",param,{OnRPCResponse=function (_,ret,err)
 		if err then	
 		
 		else
@@ -169,4 +172,5 @@ return {
 	SubGamePlyCount = subGamePlyCount,
 	RemInstance = remInstance,
 	EnterMap = enterMap,
+	OnGameConnect = onGameConnect,
 }

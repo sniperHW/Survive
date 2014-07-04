@@ -1,4 +1,6 @@
 
+local MapMgr = require "script/mapmgr"
+
 local gamemgr = {
 	con2game  = {},
 	name2game = {},
@@ -45,6 +47,7 @@ local function game_login(_,rpk,conn)
 		wpk_write_string(wpk,game.ip)
 		wpk_write_uint16(wpk,game.port)
 		BoradCast2Gate(wpk);
+		MapMgr.OnGameConnect(game);
 		print("game:" ..name .. " login success")
 	end
 end

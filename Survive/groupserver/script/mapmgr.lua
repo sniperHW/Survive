@@ -139,7 +139,7 @@ local function enterMap(ply,type)
 		groupid = ply.groupid,
 	}
 	local param = {paramply}
-	local callbackObj = {OnRPCResponse=function (_,ret,err)
+	return Rpc.RPCCall(game,"EnterMap",param,{OnRPCResponse=function (_,ret,err)
 		if err then	
 		
 		else
@@ -154,8 +154,7 @@ local function enterMap(ply,type)
 			Game.insertGamePly(ply,game)	
 		end
 		ply.status = stat_playing
-	end}
-	return Rpc.RPCCall(game,"EnterMap",param,callbackObj)
+	end})
 end
 
 return {

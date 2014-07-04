@@ -20,14 +20,14 @@ static kn_stream_conn_t   togrp;
 
 __thread kn_proactor_t t_proactor = NULL;
 
-static int on_gate_packet(kn_stream_conn_t con,rpacket_t rpk){
-	uint16_t cmd = rpk_read_uint16(rpk);
+static int on_gate_packet(kn_stream_conn_t conn,rpacket_t rpk){
+	uint16_t cmd = rpk_read_uint16(rpk);	
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
 		const char *error = NULL;
 		if((error = CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
 						  lua_pushlightuserdata(L,rpk),
-						  lua_pushlightuserdata(L,con)))){
+						  lua_pushlightuserdata(L,conn)))){
 			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
 		}
 	}
@@ -35,7 +35,14 @@ static int on_gate_packet(kn_stream_conn_t con,rpacket_t rpk){
 }
 
 static void on_gate_disconnected(kn_stream_conn_t conn,int err){
-
+	if(handler[DUMMY_ON_GATE_DISCONNECTED]){
+		lua_State *L = handler[DUMMY_ON_GATE_DISCONNECTED]->obj->L;
+		const char *error = NULL;
+		if((error = CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
+						  lua_pushnil(L),lua_pushlightuserdata(L,conn)))){
+			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
+		}
+	}	
 }
 
 static void on_new_gate(kn_stream_server_t server,kn_stream_conn_t conn){
@@ -62,24 +69,45 @@ static int on_group_packet(kn_stream_conn_t con,rpacket_t rpk){
 	return 1;
 }
 
+
+static int  cb_timer(kn_timer_t timer)//如果返回1继续注册，否则不再注册
+{
+	kn_sockaddr grpaddr;
+	kn_addr_init_in(&grpaddr,kn_to_cstr(g_config->groupip),g_config->groupport);		
+	kn_stream_connect(c,NULL,&grpaddr,NULL);
+	free(timer);
+	return 0;
+}
+
 static void on_group_connect_failed(kn_stream_client_t _,kn_sockaddr *addr,int err,void *ud)
 {
 	(void)_;
-	kn_stream_connect(c,NULL,addr,NULL);
+	(void)addr);
+	(void)err;
+	(void)ud;
+	kn_reg_timer(t_proactor,5000,cb_timer,NULL);
 }
 
 static void on_group_disconnected(kn_stream_conn_t conn,int err){
-		
+	(void)conn;
+	(void)err; 
+	togrp = NULL;
+	kn_reg_timer(t_proactor,5000,cb_timer,NULL);	
 }
 
 static void on_group_connect(kn_stream_client_t _,kn_stream_conn_t conn,void *ud){
 	(void)_;
 	if(0 == kn_stream_client_bind(c,conn,0,65536,on_group_packet,on_group_disconnected,
-						  30*1000,NULL,0,NULL)){
-	
-		togrp = conn;
+						  30*1000,NULL,0,NULL)){	
+		togrp = conn;		
+		wpacket_t wpk = NEW_WPK(64);
+		wpk_write_uint16(wpk,CMD_GAMEG_LOGIN);
+		wpk_write_string(wpk,"game1");
+		wpk_write_string(wpk,kn_to_cstr(g_config->lgateip));
+		wpk_write_uint16(wpk,g_config->lgateport);
+		kn_stream_conn_send(conn,wpk);		
 	}else{
-		
+		kn_stream_conn_close(conn);		
 		LOG_GAME(LOG_ERROR,"on_group_connect failed\n");
 	}
 }
@@ -297,22 +325,22 @@ int main(int argc,char **argv){
 		return 0;
 
 	signal(SIGINT,sig_int);
-	kn_proactor_t p = kn_new_proactor();
+	t_proactor = kn_new_proactor();
 	//启动监听
 	kn_sockaddr lgateserver;
 	kn_addr_init_in(&lgateserver,kn_to_cstr(g_config->lgateip),g_config->lgateport);
-	kn_new_stream_server(p,&lgateserver,on_new_gate);
+	kn_new_stream_server(t_proactor,&lgateserver,on_new_gate);
 
 	//连接group
-	kn_stream_client_t c = kn_new_stream_client(p,
-									on_group_connect,
-									on_group_connect_failed);
+	c = kn_new_stream_client(t_proactor,
+							 on_group_connect,
+						     on_group_connect_failed);
 
 	kn_sockaddr grpaddr;
 	kn_addr_init_in(&grpaddr,kn_to_cstr(g_config->groupip),g_config->groupport);
 	kn_stream_connect(c,NULL,&grpaddr,NULL);
 	while(!stop)
-		kn_proactor_run(p,50);
+		kn_proactor_run(t_proactor,50);
 
 	return 0;	
 }

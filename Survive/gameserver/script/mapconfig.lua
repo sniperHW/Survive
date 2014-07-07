@@ -4,9 +4,9 @@ local mapdef = {
 			toleft = {0,0},           --左上角坐标
 			bottomright = {100,100},  --右下角坐标
 			radius = 75,              --视距大小
-			coli_x = 60,              --寻路地图大小60X60
- 			coli_y = 60,
- 			coli   = "../map1.coli",   --寻路碰撞文件
+			coli_x = 30,              --寻路地图大小60X60
+ 			coli_y = 30,
+ 			coli   = "./map1.coli",   --寻路碰撞文件
  			astar  = nil,
 		},
 	}

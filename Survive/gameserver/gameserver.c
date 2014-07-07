@@ -264,27 +264,6 @@ int readline(FILE * f, char *vptr, unsigned int maxlen){
 	}
 }
 
-/*static int lua_LoadColi(lua_State *L){
-	const char *filename = lua_tostring(L,-1);
-	FILE *f = fopen(filename,"r");
-	if(f)
-	{
-		lua_newtable(L);
-		int c = 1;
-		int r;
-		char buf[1024];
-		do{
-			r = readline(f,buf,1024);
-			if(r != 0){
-				lu_pushstring(L,buf);
-				lua_rawseti(L,-2,c);
-			}
-		}while(r!=0);
-	}else
-		lua_pushnil(L);
-	return 1;
-}*/
-
 static int lua_create_astar(lua_State *L){
 	const char *colifile = lua_tostring(L,1);
 	int  xcount = lua_tonumber(L,2);
@@ -307,9 +286,7 @@ static int lua_create_astar(lua_State *L){
 				return 1;
 			}
 			coli[i] = atol(buf);
-			printf("%s\n",buf);
 		}
-		
 		AStar_t astar = create_AStar(xcount,ycount,coli);
 		lua_pushlightuserdata(L,astar);
 		free(coli);
@@ -389,6 +366,12 @@ void reg_game_c_function(lua_State *L){
 static lua_State *init(){
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
+	//注册C函数，常量到lua
+	reg_common_c_function(L);
+
+	//注册group特有的函数
+	reg_game_c_function(L);
+
 	if (luaL_dofile(L,"script/handler.lua")) {
 		const char * error = lua_tostring(L, -1);
 		lua_pop(L,1);
@@ -397,11 +380,6 @@ static lua_State *init(){
 		lua_close(L); 
 		return NULL;
 	}
-	//注册C函数，常量到lua
-	reg_common_c_function(L);
-
-	//注册group特有的函数
-	reg_game_c_function(L);
 
 	//注册lua消息处理器
 	if(CALL_LUA_FUNC(L,"reghandler",0)){

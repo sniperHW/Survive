@@ -17,7 +17,9 @@ local avatar ={
 	speed,         --移动速度
 	lastmovtick,   --上次执行process_mov的时间  
 	movmargin,     --可用于执行process_mov的剩余时间(毫秒)
-	dir,           --当前朝向                  
+	dir,           --当前朝向 
+	nickname,      --昵称
+	groupid,                 
 }
 
 function avatar:new(o)

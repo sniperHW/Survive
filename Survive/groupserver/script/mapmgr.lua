@@ -130,9 +130,10 @@ local function enterMap(ply,type)
 	local game = m[1]
 	local gate = Gate.GetGateByConn(ply.gate.conn)	
 	local paramply = {
-		chaname=plychaname,
+		nickname=plychaname,
 		gate = {name=gate.name,id=ply.gate.id},
 		groupid = ply.groupid,
+		avatid = 1,--暂时设置
 	}
 	local param = {paramply}
 	local r = Rpc.RPCCall(game.conn,"EnterMap",param,{OnRPCResponse=function (_,ret,err)

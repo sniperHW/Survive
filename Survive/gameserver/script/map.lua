@@ -1,6 +1,8 @@
 local Avatar = require "script/avatar"
 local Que = require "script/queue"
 local MapConfig = require "script/mapconfig"
+local Cjson = require "cjson"
+local Gate = require "script/gate"
 
 local map = {
 	maptype,
@@ -43,12 +45,9 @@ function map:init(mapid,maptype)
 	return self
 end
 
-local function read_player_from_rpk(rpk)
-	
-end
 
 function map:entermap(rpk)
-	local plys = read_player_from_rpk(rpk)
+	local plys = Cjson.decode(rpk_read_string(rpk))
 	if self.freeidx:len() < #plys then
 		--没有足够的id创建玩家avatar
 		return nil
@@ -56,8 +55,19 @@ function map:entermap(rpk)
 		local gameids = {}
 		for _,v in pairs(plys) do
 			--TODO 根据信息创建avatar
+			local avatid = v.avatid
+			local gate = Gate.GetGateByName(v.gate.name)
+			if not gate then
+				return nil
+			end
+			local gateid = v.gate.id
+			local ply = Avatar.NewPlayer(self.freeidx:pop(),avatid)
+			ply.gate = {conn=gate.conn,id=gateid}
+			ply.nickname = v.nickname
+			ply.groupid = v.groupid
+			table.insert(gameids,ply.id)
+			print(v.nickname .. " enter map")
 		end
-		
 		--通告group进入地图请求完成 
 		return gameids
 	end

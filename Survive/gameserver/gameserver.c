@@ -228,6 +228,96 @@ static int lua_destroy_aoimap(lua_State *L){
 	return 0;
 }
 
+int readline(FILE * f, char *vptr, unsigned int maxlen){
+	if(f == stdin){
+		int c = 0;
+		for(; c < maxlen; ++c)
+		{
+			vptr[c] = (char)getchar();
+			if(vptr[c] == '\n'){
+				vptr[c] = '\0';
+				return c+1;
+			}
+		}
+		vptr[maxlen-1] = '\0';
+		return maxlen;
+	}
+	else{
+		long curpos = ftell(f);
+		int rc = fread(vptr,1,maxlen,f);
+		if(rc > 0){
+			int c = 0;
+			for( ; c < rc; ++c){
+				if(vptr[c] == '\n' && (unsigned int)c < maxlen-1){
+					vptr[c] = '\0';
+					fseek(f,curpos+c+2,SEEK_SET);
+					return c+1;
+				}
+			}
+			if((unsigned int)c < maxlen-1)
+				vptr[c] = '\0';
+			else
+				vptr[maxlen-1] = '\0';
+			return c;
+		} 
+		return 0;
+	}
+}
+
+/*static int lua_LoadColi(lua_State *L){
+	const char *filename = lua_tostring(L,-1);
+	FILE *f = fopen(filename,"r");
+	if(f)
+	{
+		lua_newtable(L);
+		int c = 1;
+		int r;
+		char buf[1024];
+		do{
+			r = readline(f,buf,1024);
+			if(r != 0){
+				lu_pushstring(L,buf);
+				lua_rawseti(L,-2,c);
+			}
+		}while(r!=0);
+	}else
+		lua_pushnil(L);
+	return 1;
+}*/
+
+static int lua_create_astar(lua_State *L){
+	const char *colifile = lua_tostring(L,1);
+	int  xcount = lua_tonumber(L,2);
+	int  ycount = lua_tonumber(L,3);
+	
+	FILE *f = fopen(colifile,"r");
+	if(!f) 
+		lua_pushnil(L);
+	else{
+		int* coli = calloc(1,xcount*ycount);
+		char buf[1024];
+		int size = xcount*ycount;
+		int i = 0;
+		for(; i < size; ++i){
+			if(readline(f,buf,1024) == 0){
+				free(coli);
+				fclose(f);
+				//Êä³öÌáÊ¾
+				lua_pushnil(L);
+				return 1;
+			}
+			coli[i] = atol(buf);
+			printf("%s\n",buf);
+		}
+		
+		AStar_t astar = create_AStar(xcount,ycount,coli);
+		lua_pushlightuserdata(L,astar);
+		free(coli);
+		fclose(f);	
+	}	
+	return 1;
+}
+
 static int lua_findpath(lua_State *L){
 	AStar_t astar = lua_touserdata(L,1);
 	int x1 = lua_tonumber(L,2);
@@ -260,6 +350,10 @@ void reg_game_c_function(lua_State *L){
 		lua_pushvalue(L,-1);
 		lua_setglobal(L,"GameApp");
 	}
+		
+	lua_pushstring(L, "create_astar");
+	lua_pushcfunction(L, &lua_create_astar);
+	lua_settable(L, -3);		
 	
 	lua_pushstring(L, "findpath");
 	lua_pushcfunction(L, &lua_findpath);

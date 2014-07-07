@@ -1,7 +1,6 @@
 local Avatar = require "script/avatar"
 local Que = require "script/queue"
-
-local astarmgr = {}
+local MapConfig = require "script/mapconfig"
 
 local map = {
 	maptype,
@@ -29,9 +28,12 @@ function map:init(mapid,maptype)
 	for i=1,65535 do
 		self.freeidx:push({v=i,__next=nil})
 	end
-	self.astar = astarmgr[maptype]
+	
+	local mapdef = MapConfig.GetDefByType(maptype)	
+	self.astar = mapdef.astar
 	--管理格边长,标准视距,左上角x,左上角y,右下角x,右下角y	
-	self.aoi = GameApp.create_aoimap(100,100,0,0,100,100)
+	self.aoi = GameApp.create_aoimap(mapdef.gridlength,
+			   mapdef.radius,mapdef.toleft[1],mapdef.toleft[2],mapdef.bottomright[1],mapdef.bottomright[2])
 	local m = self
 	--注册定时器
 	self.movtimer = C.reg_timer(100,{on_timeout = function (_)

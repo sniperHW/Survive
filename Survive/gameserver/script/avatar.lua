@@ -77,24 +77,57 @@ function player:new(id,avatid)
 	self.path = nil
 	self.speed = 3
 	self.pos = nil
+	self.nickname = ""
 	return o	
 end
 
-
-function player:isInMyScope(other)
-	return 1
+function player:send2gate(wpk)
+	if not self.gate then
+		return
+	end	
+	wpk_write_uint32(wpk,self.gate.id.high)
+	wpk_write_uint32(wpk,self.gate.id.low)
+	wpk_write_uint32(wpk,1)
+	C.send(self.gate.conn,wpk)	
 end
 
 function player:enter_see(other)
-	--通告客户端
 	self.view_obj[other.id] = other
-	other.watch_me[self.id] = self
+	other.watch_me[self.id] = self	
+	
+	--通告客户端	
+	local wpk = new_wpk(1024)
+	wpk_write_uint16(wpk,CMD_SC_ENTERSEE)
+	wpk_write_uint32(wpk,other.id)
+	wpk_write_uint8(wpk,other.avattype)
+	wpk_write_uint16(wpk,other.avatid)
+	wpk_write_string(wpk,other.nickname)
+	wpk_write_uint16(wpk,other.pos[1])
+	wpk_write_uint16(wpk,other.pos[2])
+	wpk_write_uint8(wpk,other.dir)
+	self:send2gate(wpk)
+	
+	if other.path then
+		local size = #other.path.path
+		local target = other.path.path[size]
+		local wpk = new_wpk(64)
+		wpk_write_uint16(wpk,CMD_SC_MOV)
+		wpk_write_uint32(wpk,other.id)
+		wpk_write_uint16(wpk,other.speed)
+		wpk_write_uint16(wpk,target[1])
+		wpk_write_uint16(wpk,target[2])
+		self:send2gate(wpk)
+	end	
 end
 
 function player:leave_see(other)
-	--通告客户端
 	self.view_obj[other.id] = nil
 	other.watch_me[self.id] = nil
+	--通告客户端		
+	local wpk = new_wpk(64)
+	wpk_write_uint16(wpk,CMD_SC_LEAVESEE)
+	wpk_write_uint32(wpk,other.id)	
+	self:send2gate(wpk)	
 end
 
 --处理客户端的移动请求
@@ -105,6 +138,16 @@ function player:mov(x,y)
 		self.map:beginMov(self)
 		self.lastmovtick = C.systemms()
 		self.movmargin = 0
+		--将移动请求广播到视野
+		local size = #self.path.path
+		local target = self.path.path[size]
+		local wpk = new_wpk(64)
+		wpk_write_uint16(wpk,CMD_SC_MOV)
+		wpk_write_uint32(wpk,self.id)
+		wpk_write_uint16(wpk,self.speed)
+		wpk_write_uint16(wpk,target[1])
+		wpk_write_uint16(wpk,target[2])	
+		self:send2view(wpk)
 	end
 end
 

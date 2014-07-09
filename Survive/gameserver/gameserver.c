@@ -154,7 +154,7 @@ static int lua_gamelog(lua_State *L){
 }
 
 static uint8_t in_myscope(aoi_object *_self,aoi_object *_other){
-	luaObject_t self = (luaObject_t)_self->ud;
+	/*luaObject_t self = (luaObject_t)_self->ud;
 	luaObject_t other = (luaObject_t)_other->ud;
 	lua_State *L = self->L;
 	const char *error = NULL;
@@ -163,7 +163,9 @@ static uint8_t in_myscope(aoi_object *_self,aoi_object *_other){
 		LOG_GAME(LOG_INFO,"error on enter_see:%s\n",error);
 		return 0;
 	}
-	return lua_tonumber(L,1);		
+	return lua_tonumber(L,1);*/
+	//完全使用管理格判断可视性
+	return 1;		
 }
 
 static void    cb_enter(aoi_object *_self,aoi_object *_other){

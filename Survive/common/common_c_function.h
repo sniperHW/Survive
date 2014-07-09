@@ -385,6 +385,18 @@ void reg_common_c_function(lua_State *L){
 	lua_pushstring(L, "CMD_CS_MOV");
 	lua_pushinteger(L, CMD_CS_MOV);
 	lua_settable(L, -3);	
+	
+	lua_pushstring(L, "CMD_SC_ENTERSEE");
+	lua_pushinteger(L, CMD_SC_ENTERSEE);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_SC_LEAVESEE");
+	lua_pushinteger(L, CMD_SC_LEAVESEE);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_SC_MOV");
+	lua_pushinteger(L, CMD_SC_MOV);
+	lua_settable(L, -3);	
 
 	//client <-> group
 

@@ -17,6 +17,9 @@ enum{
 	CMD_CS_END,
 
 	CMD_SC_BEGIN = 300,
+	CMD_SC_ENTERSEE,
+	CMD_SC_LEAVESEE,
+	CMD_SC_MOV,
 	CMD_SC_END,
 
 	//client <-> group

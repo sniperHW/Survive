@@ -65,10 +65,15 @@ function map:entermap(rpk)
 			ply.gate = {conn=gate.conn,id=gateid}
 			ply.nickname = v.nickname
 			ply.groupid = v.groupid
+			--玩家真实id高16位地图id,低16位玩家id
+			ply.id = self.mapid * 65536 + ply.id
 			table.insert(gameids,ply.id)
 			print(v.nickname .. " enter map")
 		end
-		--通告group进入地图请求完成 
+		
+		--TODO aoi进地图
+		
+		--TODO 通告group进入地图请求完成 
 		return gameids
 	end
 end
@@ -77,6 +82,7 @@ function map:leavemap(plyid)
 	local ply = self.avatars[plyid]
 	if ply and ply.avattype == Avatar.type_player then
 		--处理离开地图
+		--TODO aoi离开地图
 		return true
 	end
 	return false

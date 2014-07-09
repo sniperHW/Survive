@@ -115,9 +115,22 @@ local function CS_MOV(_,rpk,conn)
 	end
 end
 
+local function AGAME_CLIENT_DISCONN(_,rpk,conn)
+	local mapid = rpk_read_uint16(rpk)
+	local map = game.maps[mapid]
+	if map then
+		local plyid = rpk_read_uint16(rpk)
+		local ply = map.avatars[plyid]
+		if ply and ply.avattype == Avatar.type_player then
+			ply.gate = nil
+		end		
+	end	
+end
+
 
 local function reg_cmd_handler()
-	C.reg_cmd_handler(CMD_CS_MOV,{handle=CS_MOV})	
+	C.reg_cmd_handler(CMD_CS_MOV,{handle=CS_MOV})
+	C.reg_cmd_handler(CMD_AGAME_CLIENT_DISCONN,{handle=AGAME_CLIENT_DISCONN})	
 end
 
 return {

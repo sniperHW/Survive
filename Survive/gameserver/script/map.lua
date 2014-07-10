@@ -69,10 +69,8 @@ function map:entermap(rpk)
 			ply.id = self.mapid * 65536 + ply.id
 			table.insert(gameids,ply.id)
 			print(v.nickname .. " enter map")
-		end
-		
-		--TODO aoi进地图
-		
+		end		
+		GameApp.aoi_enter(self.aoi,ply.aoi_obj,ply.pos[1],ply.pos[2])	
 		--TODO 通告group进入地图请求完成 
 		return gameids
 	end
@@ -83,6 +81,7 @@ function map:leavemap(plyid)
 	if ply and ply.avattype == Avatar.type_player then
 		--处理离开地图
 		--TODO aoi离开地图
+		GameApp.aoi_leave(ply.aoi_obj)
 		return true
 	end
 	return false
@@ -101,6 +100,9 @@ end
 
 --地图销毁之前的清理操作
 function map:clear()
+	for k,v in ipairs(self.avatars) do
+		v:destroy()
+	end
 	GameApp.destroy_aoimap(self.aoi)
 	C.del_timer(self.movtimer)
 end

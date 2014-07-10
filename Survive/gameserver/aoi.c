@@ -191,8 +191,10 @@ static inline void block_process_leave(aoi_map *m,aoi_block *bl,aoi_object *o)
 	}while(cur != last);
 }
 
-int32_t aoi_moveto(aoi_map *m,aoi_object *o,int32_t _x,int32_t _y)
+int32_t aoi_moveto(aoi_object *o,int32_t _x,int32_t _y)
 {
+	aoi_map *m = o->map,
+	if(!m) return -1;	
 	point2D new_pos = {_x,_y};
 	point2D old_pos = o->pos;
 	if(0 != cal_blockset(m,&new_pos,&old_pos,m->radius)) return -1;
@@ -238,8 +240,10 @@ int32_t aoi_enter(aoi_map *m,aoi_object *o,int32_t _x,int32_t _y)
 	return 0;
 }
 
-int32_t aoi_leave(aoi_map *m,aoi_object *o)
+int32_t aoi_leave(aoi_object *o)
 {
+	aoi_map *m = o->map,
+	if(!m) return -1;
 	aoi_block *block = get_block_by_point(m,&o->pos);
 	if(!block) return -1;
 	kn_dlist_remove(&o->node);

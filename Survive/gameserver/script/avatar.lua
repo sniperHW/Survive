@@ -58,6 +58,11 @@ function avatar:send2view(wpk)
 	destroy_wpk(wpk)
 end
 
+function avatar:destroy()
+	if self.aoi_obj then
+		GameApp.destroy_aoi_obj(self.aoi_obj)
+	end
+end
 
 local player = avatar:new()
 
@@ -223,6 +228,7 @@ function player:process_mov()
 			cur = cur + 1
 			movmargin = movmargin - elapse;			
 			--更新aoi
+			GameApp.aoi_moveto(self.aoi_obj,node[1],node[2])
 		else
 			break	
 		end

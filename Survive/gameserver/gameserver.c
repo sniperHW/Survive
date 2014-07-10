@@ -225,9 +225,43 @@ static int lua_create_aoimap(lua_State *L){
 }
 
 static int lua_destroy_aoimap(lua_State *L){
-	aoi_map *m = lua_touserdata(L,2);
+	aoi_map *m = lua_touserdata(L,1);
 	aoi_destroy(m);
 	return 0;
+}
+
+static int lua_aoi_enter(lua_State *L){
+	aoi_map   * m = lua_touserdata(L,1);
+	aoi_object* o = lua_touserdata(L,2);
+	int x = (int)lua_tonumber(L,3);
+	int y = (int)lua_tonumber(L,4);
+	
+	if(0 == aoi_enter(m,o,x,y))
+		lua_pushboolean(L,1);
+	else
+		lua_pushboolean(L,0);
+	return 1;	
+}
+
+static int lua_aoi_leave(lua_State *L){
+	aoi_object* o = lua_touserdata(L,1);
+	
+	if(0 == aoi_leave(m,o))
+		lua_pushboolean(L,1);
+	else
+		lua_pushboolean(L,0);
+	return 1;		
+}
+
+static int lua_aoi_moveto(lua_State *L){
+	aoi_object* o = lua_touserdata(L,1);
+	int x = (int)lua_tonumber(L,2);
+	int y = (int)lua_tonumber(L,3);	
+	if(0 == aoi_moveto(m,o,x,y))
+		lua_pushboolean(L,1);
+	else
+		lua_pushboolean(L,0);
+	return 1;			
 }
 
 int readline(FILE * f, char *vptr, unsigned int maxlen){
@@ -352,7 +386,19 @@ void reg_game_c_function(lua_State *L){
 	
 	lua_pushstring(L, "destroy_aoi_obj");
 	lua_pushcfunction(L, &lua_destroy_aoi_obj);
-	lua_settable(L, -3);		
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "aoi_enter");
+	lua_pushcfunction(L, &lua_aoi_enter);
+	lua_settable(L, -3);	
+	
+	lua_pushstring(L, "aoi_leavel");
+	lua_pushcfunction(L, &lua_aoi_leave);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "aoi_moveto");
+	lua_pushcfunction(L, &lua_aoi_moveto);
+	lua_settable(L, -3);			
 
 	lua_pushstring(L, "send2grp");
 	lua_pushcfunction(L, &lua_send2grp);

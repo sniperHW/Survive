@@ -85,11 +85,11 @@ aoi_map *aoi_create(uint32_t max_aoi_objs,uint32_t _length,uint32_t radius,
 					   
 void    aoi_destroy(aoi_map*);
 
-int32_t aoi_moveto(aoi_map *m,aoi_object *o,int32_t _x,int32_t _y);
+int32_t aoi_moveto(aoi_object *o,int32_t _x,int32_t _y);
 
 int32_t aoi_enter(aoi_map *m,aoi_object *o,int32_t _x,int32_t _y);
 
-int32_t aoi_leave(aoi_map *m,aoi_object *o);
+int32_t aoi_leave(aoi_object *o);
 
 
 #endif

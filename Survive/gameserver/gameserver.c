@@ -204,7 +204,7 @@ static int lua_create_aoi_obj(lua_State *L){
 
 static int lua_destroy_aoi_obj(lua_State *L){
 	aoi_object* o = lua_touserdata(L,1);
-	if(o->map) aoi_leave(o->map,o);
+	if(o->map) aoi_leave(o);
 	del_bitset(o->view_objs);
 	release_luaObj((luaObject_t)o->ud);
 	free(o);
@@ -246,7 +246,7 @@ static int lua_aoi_enter(lua_State *L){
 static int lua_aoi_leave(lua_State *L){
 	aoi_object* o = lua_touserdata(L,1);
 	
-	if(0 == aoi_leave(m,o))
+	if(0 == aoi_leave(o))
 		lua_pushboolean(L,1);
 	else
 		lua_pushboolean(L,0);
@@ -257,7 +257,7 @@ static int lua_aoi_moveto(lua_State *L){
 	aoi_object* o = lua_touserdata(L,1);
 	int x = (int)lua_tonumber(L,2);
 	int y = (int)lua_tonumber(L,3);	
-	if(0 == aoi_moveto(m,o,x,y))
+	if(0 == aoi_moveto(o,x,y))
 		lua_pushboolean(L,1);
 	else
 		lua_pushboolean(L,0);

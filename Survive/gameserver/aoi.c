@@ -193,7 +193,7 @@ static inline void block_process_leave(aoi_map *m,aoi_block *bl,aoi_object *o)
 
 int32_t aoi_moveto(aoi_object *o,int32_t _x,int32_t _y)
 {
-	aoi_map *m = o->map,
+	aoi_map *m = o->map;
 	if(!m) return -1;	
 	point2D new_pos = {_x,_y};
 	point2D old_pos = o->pos;
@@ -242,7 +242,7 @@ int32_t aoi_enter(aoi_map *m,aoi_object *o,int32_t _x,int32_t _y)
 
 int32_t aoi_leave(aoi_object *o)
 {
-	aoi_map *m = o->map,
+	aoi_map *m = o->map;
 	if(!m) return -1;
 	aoi_block *block = get_block_by_point(m,&o->pos);
 	if(!block) return -1;

@@ -465,6 +465,7 @@ int on_db_initfinish(lua_State *_){
 } 
 
 int main(int argc,char **argv){
+	signal(SIGPIPE,SIG_IGN);	
 	signal(SIGINT,sig_int);
 	t_proactor = kn_new_proactor();
 	if(loadconfig() != 0){

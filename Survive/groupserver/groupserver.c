@@ -173,6 +173,7 @@ int on_db_initfinish(lua_State *_){
 } 
 
 int main(int argc,char **argv){
+	signal(SIGPIPE,SIG_IGN);	
 	if(loadconfig() != 0){
 		return 0;
 	}

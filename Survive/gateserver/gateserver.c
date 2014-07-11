@@ -48,7 +48,7 @@ int main(int argc,char **argv){
 	if(loadconfig() != 0){
 		return 0;
 	}
-
+	signal(SIGPIPE,SIG_IGN);
 	signal(SIGINT,sig_int);
 	int i = 0;
 	for(; i < g_config->agentcount; ++i)

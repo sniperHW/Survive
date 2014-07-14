@@ -135,7 +135,7 @@ local function enterMap(ply,type)
 		groupid = ply.groupid,
 		avatid = 1,--暂时设置
 	}
-	local param = {paramply}
+	local param = {mapid,type,paramply}
 	local r = Rpc.RPCCall(game.conn,"EnterMap",param,{OnRPCResponse=function (_,ret,err)
 		if err then	
 			Game.RemoveGamePly(ply,game)

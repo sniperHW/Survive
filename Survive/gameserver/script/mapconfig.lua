@@ -1,6 +1,6 @@
 local mapdef = {
 		[1] = {
-			gridlength = 50,          --管理格大小
+			gridlength = 1,          --管理格大小
 			toleft = {0,0},           --左上角坐标
 			bottomright = {30,30},  --右下角坐标
 			radius = 10,              --视距大小
@@ -25,5 +25,5 @@ local function getDefByType(type)
 end
 
 return {
-	GetDefByType = GetDefByType,
+	GetDefByType = getDefByType,
 }

@@ -57,6 +57,7 @@ static inline void chanmsg_forward_group_destroy(void *msg){
 struct chanmsg_rpacket{
 	struct chanmsg chanmsg;
 	rpacket_t rpk;
+	ident    *game;
 };
 
 static inline void chanmsg_rpacket_destroy(void *msg){
@@ -64,6 +65,8 @@ static inline void chanmsg_rpacket_destroy(void *msg){
 	if(_msg->rpk){
 		rpk_destroy(_msg->rpk);
 	}
+	if(_msg->game)
+		free(_msg->game);
 	free(msg);	
 }
 

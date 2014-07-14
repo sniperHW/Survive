@@ -34,10 +34,14 @@ Rpc.RegisterRpcFunction("EnterMap",function (rpcHandle)
 			--通知group,gameserver繁忙
 			Rpc.RPCResponse(rpcHandle,nil,"busy")
 		else
+			mapid = mapid.v
 			print("EnterMap3")
-			local map = Map.NewMap():init(mapid,maptype)
+			print(mapid)
+			print(maptype)
+			print(plys)
+			local map = Map.NewMap(mapid,maptype)
 			game.maps[mapid] = map
-			gameids = map:entermap(rpk)
+			gameids = map:entermap(plys)
 			if gameids then
 				--通知group进入地图失败
 				Rpc.RPCResponse(rpcHandle,nil,"failed")
@@ -104,7 +108,7 @@ local function CS_MOV(_,rpk,conn)
 	local mapid = math.mod(gameid,65536)
 	local map = game.maps[mapid]
 	if map then
-		local plyid = gameid/65536
+		local plyid,_ = math.floor(gameid/65536)
 		local ply = map.avatars[plyid]
 		if ply and ply.avattype == Avatar.type_player then
 			local x = rpk_read_uint16(rpk)
@@ -115,15 +119,19 @@ local function CS_MOV(_,rpk,conn)
 end
 
 local function AGAME_CLIENT_DISCONN(_,rpk,conn)
+	print("client disconn")
 	local gameid = rpk_reverse_read_uint32(rpk)
-	local mapid = math.mod(gameid,65536)
+	local mapid = math.fmod(gameid,65536)
 	local map = game.maps[mapid]
+	print("mapid:" .. mapid)
 	if map then
-		local plyid = gameid/65536
-		local ply = map.avatars[plyid]
-		if ply and ply.avattype == Avatar.type_player then
-			ply.gate = nil
-		end		
+		local plyid,_ = math.floor(gameid/65536)
+		print("plyid:" .. plyid)
+		map:leavemap(plyid)
+		--local ply = map.avatars[plyid]
+		--if ply and ply.avattype == Avatar.type_player then
+		--	ply.gate = nil
+		--end		
 	end	
 end
 

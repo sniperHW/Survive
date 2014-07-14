@@ -22,6 +22,7 @@ __thread kn_proactor_t t_proactor = NULL;
 
 static int on_gate_packet(kn_stream_conn_t conn,rpacket_t rpk){
 	uint16_t cmd = rpk_read_uint16(rpk);	
+	printf("gate_packet:%u\n",cmd);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
 		const char *error = NULL;

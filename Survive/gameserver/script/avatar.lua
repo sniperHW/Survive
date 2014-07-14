@@ -26,6 +26,7 @@ function avatar:new(o)
   o = o or {}   
   setmetatable(o, self)
   self.__index = self
+  self.pos = {}
   return o
 end
 
@@ -73,7 +74,6 @@ function player:new(id,avatid)
 	self.id = id
 	self.avatid = avatid
 	self.avattype = type_player
-	self.aoi_obj = GameApp.create_aoi_obj(self)
 	self.see_radius = 5
 	self.view_obj = {}
 	self.watch_me = {}
@@ -83,6 +83,7 @@ function player:new(id,avatid)
 	self.speed = 3
 	self.pos = nil
 	self.nickname = ""
+	self.aoi_obj = GameApp.create_aoi_obj(o)
 	return o	
 end
 
@@ -97,6 +98,9 @@ function player:send2gate(wpk)
 end
 
 function player:enter_see(other)
+	print("enter_see")
+	print(self)
+	C.debug()
 	self.view_obj[other.id] = other
 	other.watch_me[self.id] = self	
 	
@@ -106,11 +110,12 @@ function player:enter_see(other)
 	wpk_write_uint32(wpk,other.id)
 	wpk_write_uint8(wpk,other.avattype)
 	wpk_write_uint16(wpk,other.avatid)
-	wpk_write_string(wpk,other.nickname)
+	wpk_write_string(wpk,"test")--other.nickname)
 	wpk_write_uint16(wpk,other.pos[1])
 	wpk_write_uint16(wpk,other.pos[2])
 	wpk_write_uint8(wpk,other.dir)
 	self:send2gate(wpk)
+	print("enter_see 1")
 	
 	if other.path then
 		local size = #other.path.path
@@ -123,6 +128,7 @@ function player:enter_see(other)
 		wpk_write_uint16(wpk,target[2])
 		self:send2gate(wpk)
 	end	
+	print("enter_see 2")
 end
 
 function player:leave_see(other)

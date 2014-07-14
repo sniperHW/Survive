@@ -362,6 +362,9 @@ int lua_del_timer(lua_State *L){
 	return 0;
 }
 
+int lua_break(lua_State *L){
+	return 0;
+}
 
 int reg_cmd_handler(lua_State *L);
 
@@ -386,6 +389,10 @@ void reg_common_c_function(lua_State *L){
 	lua_pushinteger(L, CMD_CS_MOV);
 	lua_settable(L, -3);	
 	
+	lua_pushstring(L, "CMD_SC_ENTERMAP");
+	lua_pushinteger(L, CMD_SC_ENTERMAP);
+	lua_settable(L, -3);
+
 	lua_pushstring(L, "CMD_SC_ENTERSEE");
 	lua_pushinteger(L, CMD_SC_ENTERSEE);
 	lua_settable(L, -3);
@@ -625,6 +632,10 @@ void reg_common_c_function(lua_State *L){
 	lua_pushcfunction(L, &reg_cmd_handler);
 	lua_settable(L, -3);			
 		
+	lua_pushstring(L, "debug");
+	lua_pushcfunction(L, &lua_break);
+	lua_settable(L, -3);			
+	
 	lua_setglobal(L,"C");
 }
 

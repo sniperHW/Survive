@@ -17,7 +17,7 @@ struct connect_st{
 #define MAX_GAME_CONN 4096
 
 togrpgame*  g_togrpgame = NULL;
-void forward_agent(rpacket_t rpk);
+void forward_agent(rpacket_t rpk,kn_stream_conn_t);
 
 static struct st_2gameconn* g_togames[MAX_GAME_CONN]; 
 
@@ -65,18 +65,21 @@ void GAMEA_LOGINRET(kn_stream_conn_t conn,rpacket_t rpk);
 
 //处理来group和game的消息
 static int on_packet(kn_stream_conn_t conn,rpacket_t rpk){
-	printf("togrpgame on_packet\n");
-	
 	uint16_t cmd = rpk_peek_uint16(rpk);
-	printf("%d\n",cmd);
+	printf("togrpgame on_packet:%u\n",cmd);
 	if(cmd == CMD_GA_NOTIFYGAME){
 		rpk_read_uint16(rpk);
 		GA_NOTIFYGAME(rpk);
 	}else if(cmd == CMD_GAMEA_LOGINRET){
 		rpk_read_uint16(rpk);
 		GAMEA_LOGINRET(conn,rpk);
-	}else
-		forward_agent(rpk);	
+	}else{
+		
+		if(cmd == CMD_SC_ENTERMAP)
+			forward_agent(rpk,conn);
+		else
+			forward_agent(rpk,NULL);
+	}	
 	return 1;
 }
 

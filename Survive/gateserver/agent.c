@@ -133,6 +133,7 @@ static void on_disconnected(kn_stream_conn_t conn,int err){
 			wpk_write_uint16(wpk,CMD_AGAME_CLIENT_DISCONN);
 			wpk_write_uint32(wpk,player->gameid);
 			send2_game(player->togame,wpk);	
+			printf("send CMD_AGAME_CLIENT_DISCONN:%u\n",player->gameid);
 		}
 		player->groupid = player->gameid = 0;
 		make_empty_ident(&player->togame); 
@@ -186,8 +187,9 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 						printf("CMD_GC_GEGINPLY\n");
 					}else if(cmd == CMD_SC_ENTERMAP){
 						uint32_t gameid = reverse_read_uint32(_msg->rpk);
-						ply->gameid = gameid;					
-						printf("CMD_SC_ENTERMAP\n");
+						ply->gameid = gameid;
+						ply->togame = *_msg->game;					
+						printf("CMD_SC_ENTERMAP:%u\n",gameid);
 					}
 					kn_stream_conn_send(ply->toclient,wpk_create_by_rpacket(_msg->rpk));
 				}

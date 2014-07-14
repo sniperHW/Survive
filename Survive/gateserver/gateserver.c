@@ -16,10 +16,14 @@ static agent *agents[MAX_AGENT]= {NULL};
 IMP_LOG(gatelog);
 
 
-void forward_agent(rpacket_t rpk){
+void forward_agent(rpacket_t rpk,kn_stream_conn_t conn){
 	struct chanmsg_rpacket *msg = calloc(1,sizeof(*msg));
 	msg->chanmsg.msgtype = RPACKET;
 	msg->rpk = rpk_create_by_other((struct packet*)rpk);
+	if(conn){
+		msg->game = calloc(1,sizeof(ident));
+		*msg->game = kn_stream_conn_makeident(conn);	
+	}
 	int i = 0; 
 	for(; i < MAX_AGENT; ++i){
 		if(agents[i]){

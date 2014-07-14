@@ -102,10 +102,11 @@ end)]]--
 
 
 local function CS_MOV(_,rpk,conn)
-	local mapid = rpk_read_uint16(rpk)
+	local gameid = rpk_reverse_read_uint32(rpk)
+	local mapid = math.mod(gameid,65536)
 	local map = game.maps[mapid]
 	if map then
-		local plyid = rpk_read_uint16(rpk)
+		local plyid = gameid/65536
 		local ply = map.avatars[plyid]
 		if ply and ply.avattype == Avatar.type_player then
 			local x = rpk_read_uint16(rpk)
@@ -116,10 +117,11 @@ local function CS_MOV(_,rpk,conn)
 end
 
 local function AGAME_CLIENT_DISCONN(_,rpk,conn)
-	local mapid = rpk_read_uint16(rpk)
+	local gameid = rpk_reverse_read_uint32(rpk)
+	local mapid = math.mod(gameid,65536)
 	local map = game.maps[mapid]
 	if map then
-		local plyid = rpk_read_uint16(rpk)
+		local plyid = gameid/65536
 		local ply = map.avatars[plyid]
 		if ply and ply.avattype == Avatar.type_player then
 			ply.gate = nil

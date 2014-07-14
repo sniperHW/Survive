@@ -57,14 +57,16 @@ static agentplayer_t get_agent_player_bysession(agentsession *session){
 
 static void forward_game(kn_stream_conn_t con,rpacket_t rpk){
 	agentplayer_t ply = (agentplayer_t)kn_stream_conn_getud(con);
-	wpacket_t wpk = wpk_create_by_rpacket(rpk);
-	wpk_write_uint32(wpk,ply->gameid);
-	wpk_write_agentsession(wpk,&ply->agentsession);
-	struct chanmsg_forward_game *msg = calloc(1,sizeof(*msg));
-	msg->chanmsg.msgtype = FORWARD_GAME;
-	msg->game = ply->togame;
-	msg->wpk = wpk;
-	kn_channel_putmsg(g_togrpgame->chan,NULL,msg,chanmsg_forward_game_destroy);
+	if(ply->gameid){
+		wpacket_t wpk = wpk_create_by_rpacket(rpk);
+		wpk_write_uint32(wpk,ply->gameid);
+		//wpk_write_agentsession(wpk,&ply->agentsession);
+		struct chanmsg_forward_game *msg = calloc(1,sizeof(*msg));
+		msg->chanmsg.msgtype = FORWARD_GAME;
+		msg->game = ply->togame;
+		msg->wpk = wpk;
+		kn_channel_putmsg(g_togrpgame->chan,NULL,msg,chanmsg_forward_game_destroy);
+	}
 }
 
 
@@ -78,14 +80,16 @@ static void send2_game(ident game,wpacket_t wpk){
 
 static void forward_group(kn_stream_conn_t con,rpacket_t rpk){
 	agentplayer_t ply = (agentplayer_t)kn_stream_conn_getud(con);
-	wpacket_t wpk = wpk_create_by_rpacket(rpk);
-	wpk_write_uint32(wpk,ply->groupid);
-	wpk_write_agentsession(wpk,&ply->agentsession);
-	struct chanmsg_forward_group *msg = calloc(1,sizeof(*msg));
-	msg->chanmsg.msgtype = FORWARD_GROUP;
-	msg->wpk = wpk;
-	kn_channel_putmsg(g_togrpgame->chan,NULL,msg,chanmsg_forward_group_destroy);
-	printf("forward_group groupid:%d\n",ply->groupid);
+	if(ply->groupid){
+		wpacket_t wpk = wpk_create_by_rpacket(rpk);
+		wpk_write_uint32(wpk,ply->groupid);
+		//wpk_write_agentsession(wpk,&ply->agentsession);
+		struct chanmsg_forward_group *msg = calloc(1,sizeof(*msg));
+		msg->chanmsg.msgtype = FORWARD_GROUP;
+		msg->wpk = wpk;
+		kn_channel_putmsg(g_togrpgame->chan,NULL,msg,chanmsg_forward_group_destroy);
+		printf("forward_group groupid:%d\n",ply->groupid);
+	}
 }
 
 static void send2_group(wpacket_t wpk){
@@ -178,6 +182,9 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 						uint16_t groupid = reverse_read_uint16(_msg->rpk);
 						ply->groupid = groupid;
 						rpk_dropback(_msg->rpk,sizeof(groupid));
+					}else if(cmd == CMD_SC_ENTERMAP){
+						uint32_t gameid = reverse_read_uint32(_msg->rpk);
+						ply->gameid = game;					
 					}
 					kn_stream_conn_send(ply->toclient,wpk_create_by_rpacket(_msg->rpk));
 				}

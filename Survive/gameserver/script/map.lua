@@ -68,10 +68,18 @@ function map:entermap(rpk)
 			--玩家真实id高16位地图id,低16位玩家id
 			ply.id = self.mapid * 65536 + ply.id
 			table.insert(gameids,ply.id)
-			print(v.nickname .. " enter map")
-		end		
-		GameApp.aoi_enter(self.aoi,ply.aoi_obj,ply.pos[1],ply.pos[2])	
-		--TODO 通告group进入地图请求完成 
+			print(v.nickname .. " enter map")			
+			ply.pos[1] = 10
+			ply.pos[2] = 10
+			ply.dir = 5
+			--向客户端发送entermap
+			local wpk = new_wpk(64)
+			wpk_write_uint16(wpk,CMD_SC_ENTERMAP)
+			wpk_write_uint16(wpk,self.maptype)
+			wpk_write_uint32(wpk,ply.id)
+			ply:send2gate(wpk)			
+			GameApp.aoi_enter(self.aoi,ply.aoi_obj,ply.pos[1],ply.pos[2])
+		end 
 		return gameids
 	end
 end
@@ -79,8 +87,6 @@ end
 function map:leavemap(plyid)
 	local ply = self.avatars[plyid]
 	if ply and ply.avattype == Avatar.type_player then
-		--处理离开地图
-		--TODO aoi离开地图
 		GameApp.aoi_leave(ply.aoi_obj)
 		return true
 	end

@@ -291,18 +291,9 @@ end
 local function CG_CREATE(_,rpk,conn)
 	local chaname = rpk_read_string(rpk)
 	print("CG_CREATE:" .. chaname)
-	local groupid = rpk_read_uint32(rpk)
-	local gateid = {}
-	gateid.high = rpk_read_uint32(rpk)
-	gateid.low = rpk_read_uint32(rpk)	
-	local ply = playermgr:getplybyid(groupid)
-	if not ply then
-		local wpk = new_wpk()
-		wpk_write_uint16(wpk,CMD_GA_BUSY)
-		wpk_write_uint32(wpk,gateid.high)
-		wpk_write_uint32(wpk,gateid.low)
-		C.send(conn,wpk)		
-	else
+	local groupid = rpk_read_uint32(rpk)	
+	local ply = playermgr:getplybyid(groupid)	
+	if ply then
 		if ply.status == stat_creating then
 			return
 		end	
@@ -315,6 +306,8 @@ local function CG_CREATE(_,rpk,conn)
 			return
 		end]]--
 		ply:create_character(chaname);
+	else
+		--¼ÇÂ¼ÈÕÖ¾
 	end
 	print("CG_CREATE3")
 end

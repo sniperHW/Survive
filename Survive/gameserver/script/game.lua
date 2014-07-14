@@ -4,13 +4,11 @@ local Avatar = require "script/avatar"
 local Rpc = require "script/rpc"
 
 local game = {
-	id,
 	maps,
 	freeidx,
 }
 
-function game_init(id)
-	game.id = id
+function game_init()
 	game.maps = {}
 	local que = Que.Queue()
 	for i=1,65535 do
@@ -22,45 +20,45 @@ end
 
 Rpc.RegisterRpcFunction("EnterMap",function (rpcHandle)
 	print("EnterMap")
-	if true then
-		Rpc.RPCResponse(rpcHandle,nil,"failed")
-		return
-	end
 	local param = rpcHandle.param
 	local mapid = param[1]
 	local maptype = param[2]
 	local plys = param[3]
 	local gameids
-	if not mapid then
+	print("EnterMap1")
+	if mapid == 0 then
 		--创建实例
 		mapid = game.freeidx:pop()
 		if not mapid then
+			print("EnterMap2")
 			--通知group,gameserver繁忙
-			rpcResponse(rpcHandle,nil,"busy")
+			Rpc.RPCResponse(rpcHandle,nil,"busy")
 		else
+			print("EnterMap3")
 			local map = Map.NewMap():init(mapid,maptype)
 			game.maps[mapid] = map
 			gameids = map:entermap(rpk)
 			if gameids then
 				--通知group进入地图失败
-				Rpc.rpcResponse(rpcHandle,nil,"failed")
+				Rpc.RPCResponse(rpcHandle,nil,"failed")
 			end
 		end
 	else
+		print("EnterMap4")
 		local map = game.maps[mapid]
 		if not map then
 			--TODO 通知group错误的mapid(可能实例已经被销毁)
-			Rpc.rpcResponse(rpcHandle,nil,"instance not found")
+			Rpc.RPCResponse(rpcHandle,nil,"instance not found")
 		else
 			gameids = map:entermap(rpk)
 			if not gameids then
 				--通知group进入地图失败
-				Rpc.rpcResponse(rpcHandle,nil,"failed")
+				Rpc.RPCResponse(rpcHandle,nil,"failed")
 			end
 		end
 	end
 	--将成功进入的mapid返回给调用方
-	Rpc.rpcResponse(rpcHandle,{mapid,gameids},nil)	
+	Rpc.RPCResponse(rpcHandle,{mapid,gameids},nil)	
 end)
 
 Rpc.RegisterRpcFunction("LeaveMap",function (rpcHandle)
@@ -131,6 +129,7 @@ end
 
 
 local function reg_cmd_handler()
+	game_init()
 	C.reg_cmd_handler(CMD_CS_MOV,{handle=CS_MOV})
 	C.reg_cmd_handler(CMD_AGAME_CLIENT_DISCONN,{handle=AGAME_CLIENT_DISCONN})	
 end

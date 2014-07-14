@@ -103,6 +103,7 @@ static void send2_group(wpacket_t wpk){
 //处理来自客户端的网络包
 static int on_packet(kn_stream_conn_t con,rpacket_t rpk){
 	uint16_t cmd = rpk_peek_uint16(rpk);
+	printf("process %u\n",cmd);
 	if(cmd > CMD_CA_BEGIN && cmd < CMD_CA_END){
 		rpk_read_uint16(rpk);
 		if(handler[cmd]->_fn) handler[cmd]->_fn(rpk,con);
@@ -182,9 +183,11 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 						uint16_t groupid = reverse_read_uint16(_msg->rpk);
 						ply->groupid = groupid;
 						rpk_dropback(_msg->rpk,sizeof(groupid));
+						printf("CMD_GC_GEGINPLY\n");
 					}else if(cmd == CMD_SC_ENTERMAP){
 						uint32_t gameid = reverse_read_uint32(_msg->rpk);
-						ply->gameid = game;					
+						ply->gameid = gameid;					
+						printf("CMD_SC_ENTERMAP\n");
 					}
 					kn_stream_conn_send(ply->toclient,wpk_create_by_rpacket(_msg->rpk));
 				}

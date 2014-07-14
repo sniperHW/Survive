@@ -44,7 +44,7 @@ static void sig_int(int sig){
 }
 
 int main(int argc,char **argv){
-
+	LOG_GATE(LOG_INFO,"begin start gateserver\n");
 	if(loadconfig() != 0){
 		return 0;
 	}
@@ -58,7 +58,13 @@ int main(int argc,char **argv){
 	//Æô¶¯¼àÌý
 	kn_sockaddr local;
 	kn_addr_init_in(&local,kn_to_cstr(g_config->toclientip),g_config->toclientport);
-	kn_new_stream_server(p,&local,on_new_client);
+	
+	if(!kn_new_stream_server(p,&local,on_new_client)){
+		printf("create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->toclientip),g_config->toclientport);
+		LOG_GATE(LOG_INFO,"create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->toclientip),g_config->toclientport);
+		
+		exit(0);
+	}
 
 
 	start_togrpgame();

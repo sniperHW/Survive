@@ -47,6 +47,7 @@ end
 
 
 function map:entermap(rpk)
+	print("entermap")
 	local plys = Cjson.decode(rpk_read_string(rpk))
 	if self.freeidx:len() < #plys then
 		--没有足够的id创建玩家avatar
@@ -69,6 +70,7 @@ function map:entermap(rpk)
 			ply.id = self.mapid * 65536 + ply.id
 			table.insert(gameids,ply.id)
 			print(v.nickname .. " enter map")			
+			print("gateid " .. gateid.high .. " " .. gateid.low)			
 			ply.pos[1] = 10
 			ply.pos[2] = 10
 			ply.dir = 5

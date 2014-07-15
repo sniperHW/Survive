@@ -114,11 +114,11 @@ static void on_disconnected(kn_stream_conn_t conn,int err){
 		kn_reg_timer(g_togrpgame->p,5000,cb_timer,st);
 	}else if(type == GAMESERVER){
 		RemGame(conn);
-		kn_sockaddr *remoteaddr = kn_stream_conn_remote_addr(conn);
+		/*kn_sockaddr *remoteaddr = kn_stream_conn_remote_addr(conn);
 		struct connect_st *st = calloc(1,sizeof(*st));
 		st->addr = *remoteaddr;
 		st->type = GAMESERVER;
-		kn_reg_timer(g_togrpgame->p,5000,cb_timer,st);
+		kn_reg_timer(g_togrpgame->p,5000,cb_timer,st);*/
 	}
 }
 

@@ -32,7 +32,7 @@ function map:init(mapid,maptype)
 	self.freeidx = Que.Queue()
 	self.movingavatar = {}
 	self.avatars = {}
-	for i=1,4095 do
+	for i=1,4096 do
 		self.freeidx:push({v=i,__next=nil})
 	end
 	

@@ -84,7 +84,7 @@ function player:new(id,avatid)
 	self.pos = nil
 	self.nickname = ""
 	print("player:new " .. id) 
-	self.aoi_obj = GameApp.create_aoi_obj(o,self.id)
+	self.aoi_obj = GameApp.create_aoi_obj(o)
 	return o	
 end
 

@@ -9,6 +9,7 @@ aoi_map *aoi_create(uint32_t max_aoi_objs,uint32_t _length,uint32_t radius,
 	uint32_t width = abs(top_left->y - bottom_right->y);
 	
 	if(radius > length || radius > width) return NULL;
+	if(radius < _length) radius = _length;
 	
 	uint32_t x_size = length % _length == 0 ? length/_length : length/_length + 1;
 	uint32_t y_size = width % _length == 0 ? width/_length : width/_length + 1;
@@ -34,6 +35,7 @@ aoi_map *aoi_create(uint32_t max_aoi_objs,uint32_t _length,uint32_t radius,
 	}	
 	//计算一个视距最多可能覆盖多少个单元格
 	uint32_t radius_blocksize = radius%_length == 0? radius/_length : radius/_length+1;
+	radius_blocksize *= 2;
 	radius_blocksize += 1;
 	radius_blocksize *= radius_blocksize;
 	m->new_block_set = new_bitset(x_size*y_size);

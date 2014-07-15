@@ -147,23 +147,20 @@ static inline void leave_me(aoi_object *me,aoi_object *other)
 
 static inline void block_process_enter(aoi_map *m,aoi_block *bl,aoi_object *o)
 {
-	if(kn_dlist_empty(&bl->aoi_objs))return;
-	aoi_object *cur = (aoi_object*)kn_dlist_first(&bl->aoi_objs);
-	aoi_object *last = (aoi_object*)kn_dlist_last(&bl->aoi_objs);
-	do{
+	aoi_object *cur = (aoi_object*)kn_dlist_begin(&bl->aoi_objs);
+	aoi_object *end = (aoi_object*)kn_dlist_end(&bl->aoi_objs);
+	while(cur != end){
 		if(!is_set(o->view_objs,cur->id) && o->in_myscope(o,cur))enter_me(o,cur);
 		if(!is_set(cur->view_objs,o->id) && cur->in_myscope(cur,o))enter_me(cur,o);
-		if(cur == last)break;
 		cur = (aoi_object *)cur->node.next;
-	}while(1);
+	}
 }
 
 static inline void block_process_unchange(aoi_map *m,aoi_block *bl,aoi_object *o)
 {
-	if(kn_dlist_empty(&bl->aoi_objs))return;
-	aoi_object *cur = (aoi_object*)kn_dlist_first(&bl->aoi_objs);
-	aoi_object *last = (aoi_object*)kn_dlist_last(&bl->aoi_objs);
-	do{	
+	aoi_object *cur = (aoi_object*)kn_dlist_begin(&bl->aoi_objs);
+	aoi_object *end = (aoi_object*)kn_dlist_end(&bl->aoi_objs);
+	while(cur != end){	
 		if(o != cur){
 			if(o->in_myscope(o,cur)){
 				if(!is_set(o->view_objs,cur->id))
@@ -180,22 +177,19 @@ static inline void block_process_unchange(aoi_map *m,aoi_block *bl,aoi_object *o
 					leave_me(cur,o);
 			}
 		}		
-		if(cur == last)break;
 		cur = (aoi_object *)cur->node.next;
-	}while(1);
+	}
 }
 
 static inline void block_process_leave(aoi_map *m,aoi_block *bl,aoi_object *o)
 {
-	if(kn_dlist_empty(&bl->aoi_objs))return;
-	aoi_object *cur = (aoi_object*)kn_dlist_first(&bl->aoi_objs);
-	aoi_object *last = (aoi_object*)kn_dlist_last(&bl->aoi_objs);
-	do{
+	aoi_object *cur = (aoi_object*)kn_dlist_begin(&bl->aoi_objs);
+	aoi_object *end = (aoi_object*)kn_dlist_end(&bl->aoi_objs);
+	while(cur != end){
 		if(is_set(o->view_objs,cur->id) && !o->in_myscope(o,cur))leave_me(o,cur);
 		if(is_set(cur->view_objs,o->id) && !cur->in_myscope(cur,o))leave_me(cur,o);
-		if(cur == last)break;		
 		cur = (aoi_object *)cur->node.next;
-	}while(1);
+	};
 }
 
 int32_t aoi_moveto(aoi_object *o,int32_t _x,int32_t _y)

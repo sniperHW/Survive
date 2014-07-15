@@ -54,6 +54,7 @@ end
 function map:entermap(plys)
 	print("entermap")
 	print(#plys)
+	print(self)
 	if self.freeidx:len() < #plys then
 		--没有足够的id创建玩家avatar
 		return nil
@@ -67,7 +68,8 @@ function map:entermap(plys)
 				return nil
 			end
 			local gateid = v.gate.id
-			local ply = Avatar.NewPlayer(self.freeidx:pop().v,avatid)
+			local id = self.freeidx:pop().v
+			local ply = Avatar.NewPlayer(id,avatid)
 			ply.gate = {conn=gate.conn,id=gateid}
 			print(ply.gate.conn)
 			ply.nickname = v.nickname
@@ -87,7 +89,8 @@ function map:entermap(plys)
 			wpk_write_uint32(wpk,ply.id)
 			ply:send2gate(wpk)			
 			print(ply)
-			self.avatars[ply.id] = ply
+			self.avatars[id] = ply
+			ply.map = self
 			GameApp.aoi_enter(self.aoi,ply.aoi_obj,ply.pos[1],ply.pos[2])
 		end 
 		return gameids
@@ -98,7 +101,7 @@ function map:leavemap(plyid)
 	local ply = self.avatars[plyid]
 	if ply and ply.avattype == Avatar.type_player then
 		GameApp.aoi_leave(ply.aoi_obj)
-		ply.gate = nil
+		self.avatars[plyid] = nil
 		return true
 	end
 	return false
@@ -110,6 +113,7 @@ end
 
 --将avatar添加到移动处理列表中
 function map:beginMov(avatar)
+	print("map:beginMov")
 	if not self.movingavatar[avatar.id] then
 		self.movingavatar[avatar.id] = avatar
 	end
@@ -126,6 +130,7 @@ end
 
 --处理本地图上的对象移动请求
 function map:process_mov()
+	print("map:process_mov")
 	local stops = {}
 	for k,v in pairs(self.movingavatar) do
 		if v:process_mov() then
@@ -136,6 +141,7 @@ function map:process_mov()
 	for k,v in pairs(stops) do
 		self.movingavatar[v] = nil
 	end
+	return 1 
 end 
 
 return {

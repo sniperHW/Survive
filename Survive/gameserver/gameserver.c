@@ -393,7 +393,7 @@ void reg_game_c_function(lua_State *L){
 	lua_pushcfunction(L, &lua_aoi_enter);
 	lua_settable(L, -3);	
 	
-	lua_pushstring(L, "aoi_leavel");
+	lua_pushstring(L, "aoi_leave");
 	lua_pushcfunction(L, &lua_aoi_leave);
 	lua_settable(L, -3);
 	

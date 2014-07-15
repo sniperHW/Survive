@@ -342,14 +342,16 @@ int lua_timer_callback(kn_timer_t t)//如果返回1继续注册，否则不再注册
 	const char* error = NULL;
 	if((error = CALL_OBJ_FUNC(obj,"on_timeout",1))){
 		//LOG_GAME(LOG_INFO,"error on on_timeout:%s\n",error);
+		printf("error on on_timeout:%s\n",error);
 		return 1;
 	}	
-	return lua_tonumber(L,1);	
+	int ret = lua_tonumber(L,-1);
+	return ret;	
 }
 
 int lua_reg_timer(lua_State *L){
-	luaObject_t obj = create_luaObj(L,1);
-	uint64_t    timeout = (uint64_t)lua_tonumber(L,2); 
+	uint64_t    timeout = (uint64_t)lua_tonumber(L,1); 
+	luaObject_t obj = create_luaObj(L,2);
 	kn_reg_timer(t_proactor,timeout,lua_timer_callback,(void*)obj);
 	return 0;
 }

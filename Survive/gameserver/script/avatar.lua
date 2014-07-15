@@ -143,6 +143,7 @@ end
 
 --处理客户端的移动请求
 function player:mov(x,y)
+	print("player:mov")
 	local path = self.map:findpath(self.pos,{x,y})
 	if path then
 		self.path = {cur=1,path=path}
@@ -246,6 +247,7 @@ function player:process_mov()
 	if self.path.cur == #self.path.path then
 		--到达目的地
 		self.path = nil
+		print("arrive")
 		return true
 	else
 		return false
@@ -254,4 +256,7 @@ end
 
 return {
 	NewPlayer = function (id,avatid) return player:new(id,avatid) end,
+	type_player   = type_player,
+	type_monster  = type_monster,
+	type_pickable = type_pickable,
 } 

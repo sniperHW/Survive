@@ -194,6 +194,8 @@ static void    cb_leave(aoi_object *_self,aoi_object *_other){
 static int lua_create_aoi_obj(lua_State *L){
 	luaObject_t obj = create_luaObj(L,1);
 	aoi_object* o = calloc(1,sizeof(*o));
+	printf("create_aoi_obj:%d\n",lua_gettop(L));
+	o->id = (int)lua_tonumber(L,2);
 	o->in_myscope = in_myscope;
 	o->cb_enter = cb_enter;
 	o->cb_leave = cb_leave;
@@ -340,6 +342,7 @@ static int lua_findpath(lua_State *L){
 	int y2 = lua_tonumber(L,5);
 	kn_dlist path;kn_dlist_init(&path);
 	if(find_path(astar,x1,y1,x2,y2,&path)){
+		int i = 1;
 		lua_newtable(L);
 		AStarNode *n;
 		while((n = (AStarNode*)kn_dlist_pop(&path))){
@@ -348,8 +351,8 @@ static int lua_findpath(lua_State *L){
 			lua_rawseti(L,-2,1);
 			lua_pushinteger(L,n->y);
 			lua_rawseti(L,-2,2);
+			lua_rawseti(L,-2,i++);	
 		}
-		lua_rawseti(L,-2,1);	
 	}else
 		lua_pushnil(L);
 	return 1;

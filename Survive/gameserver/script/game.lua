@@ -111,16 +111,10 @@ local function CS_MOV(_,rpk,conn)
 	if map then
 		print(mapid)
 		local plyid,_ = math.floor(gameid/65536)
-		print("plyid:" .. plyid)
 		local ply = map.avatars[plyid]
-		print(map)
-		print(ply)
-		print(ply.avattype)
-		print(Avatar.type_player)
 		if ply and ply.avattype == Avatar.type_player then
 			local x = rpk_read_uint16(rpk)
 			local y = rpk_read_uint16(rpk)
-			print(x .. " " .. y)
 			ply:mov(x,y)
 		end
 	end

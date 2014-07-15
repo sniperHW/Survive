@@ -139,6 +139,7 @@ int find_path(AStar_t astar,int x,int y,int x1,int y1,kn_dlist *path){
 		if(current_node == to){ 
 			while(current_node)
 			{
+				kn_dlist_remove((kn_dlist_node*)current_node);//可能在close_list中，需要删除
 				if(current_node != from)//当前点无需加入到路径点中
 					kn_dlist_push_front(path,(kn_dlist_node*)current_node);
 				AStarNode *t = current_node;

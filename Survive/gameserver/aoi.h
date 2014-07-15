@@ -40,7 +40,6 @@ struct aoi_map;
 typedef struct aoi_object
 {
 	kn_dlist_node       node;                  
-	aoi_block*          cur_block;//当前所属的管理单元	
 	int32_t             id; 
 	bit_set_t           view_objs;//在当前对象视野内的对象位图      
 	point2D             pos;     

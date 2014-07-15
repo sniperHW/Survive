@@ -346,6 +346,7 @@ int lua_timer_callback(kn_timer_t t)//如果返回1继续注册，否则不再注册
 		return 1;
 	}	
 	int ret = lua_tonumber(L,-1);
+	lua_pop(L,1);
 	return ret;	
 }
 

@@ -32,7 +32,7 @@ function map:init(mapid,maptype)
 	self.freeidx = Que.Queue()
 	self.movingavatar = {}
 	self.avatars = {}
-	for i=1,4096 do
+	for i=1,4095 do
 		self.freeidx:push({v=i,__next=nil})
 	end
 	
@@ -130,7 +130,6 @@ end
 
 --处理本地图上的对象移动请求
 function map:process_mov()
-	print("map:process_mov")
 	local stops = {}
 	for k,v in pairs(self.movingavatar) do
 		if v:process_mov() then

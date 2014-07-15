@@ -153,6 +153,7 @@ static void on_connect(kn_stream_client_t c,kn_stream_conn_t conn,void *ud){
 void GA_NOTIFYGAME(rpacket_t rpk){
 	uint8_t size = rpk_read_uint8(rpk);
 	uint8_t i = 0;
+	printf("NOTIFYGAME:%d\n",size);
 	for( ; i < size; ++i){
 		const char *ip = rpk_read_string(rpk);
 		uint16_t   port = rpk_read_uint16(rpk);

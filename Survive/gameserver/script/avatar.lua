@@ -83,7 +83,8 @@ function player:new(id,avatid)
 	self.speed = 3
 	self.pos = nil
 	self.nickname = ""
-	self.aoi_obj = GameApp.create_aoi_obj(o)
+	print("player:new " .. id) 
+	self.aoi_obj = GameApp.create_aoi_obj(o,self.id)
 	return o	
 end
 
@@ -100,7 +101,6 @@ end
 function player:enter_see(other)
 	print("enter_see")
 	print(self)
-	C.debug()
 	self.view_obj[other.id] = other
 	other.watch_me[self.id] = self	
 	
@@ -143,9 +143,10 @@ end
 
 --处理客户端的移动请求
 function player:mov(x,y)
-	print("player:mov")
+	print("from:" .. self.pos[1] .. "," .. self.pos[2] .. " to " .. x .. "," .. y)
 	local path = self.map:findpath(self.pos,{x,y})
 	if path then
+		print("path size:",#path)
 		self.path = {cur=1,path=path}
 		self.map:beginMov(self)
 		self.lastmovtick = C.systemms()
@@ -156,9 +157,10 @@ function player:mov(x,y)
 		local wpk = new_wpk(64)
 		wpk_write_uint16(wpk,CMD_SC_MOV)
 		wpk_write_uint32(wpk,self.id)
-		wpk_write_uint16(wpk,self.speed)
+		--wpk_write_uint16(wpk,self.speed)
 		wpk_write_uint16(wpk,target[1])
 		wpk_write_uint16(wpk,target[2])	
+		print("from:" .. self.pos[1] .. "," .. self.pos[2] .. " to " .. target[1] .. "," .. target[2])
 		self:send2view(wpk)
 	end
 end
@@ -175,24 +177,24 @@ local south_west = 8
 
 local function direction(old_t,new_t,olddir)	
 	local dir = olddir	
-	if new_t.y == old_t.y then
-		if new_t.x > old_t.x then
+	if new_t[2] == old_t[2] then
+		if new_t[1] > old_t[1] then
 			dir = east
-		elseif new_t.x < old_t.x then
+		elseif new_t[1] < old_t[1] then
 			dir = west
 		end
-	elseif new_t.y > old_t.y then
-		if new_t.x > old_t.x then
+	elseif new_t[2] > old_t[2] then
+		if new_t[1] > old_t[1] then
 			dir = south_east
-		elseif new_t.x < old_t.x then
+		elseif new_t[1] < old_t[1] then
 			dir = south_west
 		else 
 			dir = south
 		end
 	else
-		if new_t.x > old_t.x then
+		if new_t[1] > old_t[1] then
 			dir = north_east
-		elseif new_t.x < old_t.x then
+		elseif new_t[1] < old_t[1] then
 			dir = north_west
 		else 
 			dir = north
@@ -244,7 +246,7 @@ function player:process_mov()
 	self.movmargin = movmargin
 	self.lastmovtick = C.systemms()
 	
-	if self.path.cur == #self.path.path then
+	if self.path.cur > #self.path.path then
 		--到达目的地
 		self.path = nil
 		print("arrive")

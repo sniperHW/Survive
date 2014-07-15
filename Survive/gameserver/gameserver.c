@@ -287,7 +287,7 @@ int readline(FILE * f, char *vptr, unsigned int maxlen){
 			for( ; c < rc; ++c){
 				if(vptr[c] == '\n' && (unsigned int)c < maxlen-1){
 					vptr[c] = '\0';
-					fseek(f,curpos+c+2,SEEK_SET);
+					fseek(f,curpos+c+1,SEEK_SET);
 					return c+1;
 				}
 			}

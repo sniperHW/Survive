@@ -153,8 +153,9 @@ static inline void block_process_enter(aoi_map *m,aoi_block *bl,aoi_object *o)
 	do{
 		if(!is_set(o->view_objs,cur->id) && o->in_myscope(o,cur))enter_me(o,cur);
 		if(!is_set(cur->view_objs,o->id) && cur->in_myscope(cur,o))enter_me(cur,o);
+		if(cur == last)break;
 		cur = (aoi_object *)cur->node.next;
-	}while(cur != last);
+	}while(1);
 }
 
 static inline void block_process_unchange(aoi_map *m,aoi_block *bl,aoi_object *o)
@@ -163,22 +164,25 @@ static inline void block_process_unchange(aoi_map *m,aoi_block *bl,aoi_object *o
 	aoi_object *cur = (aoi_object*)kn_dlist_first(&bl->aoi_objs);
 	aoi_object *last = (aoi_object*)kn_dlist_last(&bl->aoi_objs);
 	do{	
-		if(o->in_myscope(o,cur)){
-			 if(!is_set(o->view_objs,cur->id))
-				enter_me(o,cur);
-		}else{
-			 if(is_set(o->view_objs,cur->id))
-				leave_me(o,cur);
-		}
-		if(cur->in_myscope(cur,o)){
-			 if(!is_set(cur->view_objs,o->id))
-				enter_me(cur,o);
-		}else{
-			 if(is_set(cur->view_objs,o->id))
-				leave_me(cur,o);
+		if(o != cur){
+			if(o->in_myscope(o,cur)){
+				if(!is_set(o->view_objs,cur->id))
+					enter_me(o,cur);
+			}else{
+				if(is_set(o->view_objs,cur->id))
+					leave_me(o,cur);
+			}
+			if(cur->in_myscope(cur,o)){
+				if(!is_set(cur->view_objs,o->id))
+					enter_me(cur,o);
+			}else{
+				if(is_set(cur->view_objs,o->id))
+					leave_me(cur,o);
+			}
 		}		
+		if(cur == last)break;
 		cur = (aoi_object *)cur->node.next;
-	}while(cur != last);
+	}while(1);
 }
 
 static inline void block_process_leave(aoi_map *m,aoi_block *bl,aoi_object *o)
@@ -189,8 +193,9 @@ static inline void block_process_leave(aoi_map *m,aoi_block *bl,aoi_object *o)
 	do{
 		if(is_set(o->view_objs,cur->id) && !o->in_myscope(o,cur))leave_me(o,cur);
 		if(is_set(cur->view_objs,o->id) && !cur->in_myscope(cur,o))leave_me(cur,o);
-		cur = (aoi_object *)cur->node.next;		
-	}while(cur != last);
+		if(cur == last)break;		
+		cur = (aoi_object *)cur->node.next;
+	}while(1);
 }
 
 int32_t aoi_moveto(aoi_object *o,int32_t _x,int32_t _y)

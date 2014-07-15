@@ -33,6 +33,7 @@ static inline AStarNode *get_node(AStar_t astar,int x,int y)
 
 
 AStar_t create_AStar(int xsize,int ysize,int *values){
+	printf("create_AStar\n");
 	AStar_t astar = calloc(1,sizeof(*astar)+sizeof(AStarNode)*xsize*ysize);
 	astar->open_list = minheap_create(xsize*ysize,_less);
 	kn_dlist_init(&astar->close_list);

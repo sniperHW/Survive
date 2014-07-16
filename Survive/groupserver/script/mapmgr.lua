@@ -18,7 +18,9 @@ local maps = {}     --所有map实例
 --返回{game,mapid}
 --如果找不到合适的实例game为运行着最少实例的gameserver,mapid为0
 local function getInstanceByType(type,plycount)
+	print("getInstanceByType:" .. type)
 	local m = maps[type]
+	print(m)
 	if m then
 		for k,v in pairs(m) do
 			if v.plymax - v.plycount >= plycount then
@@ -44,6 +46,7 @@ local function addInstance(game,type,mapid,plymax,plycount)
 	local m = maps[type]
 	if not m then
 		m = {}
+		maps[type] = m
 	end
 	m[mapid] = instance	
 	local g = gamemaps[game]
@@ -52,6 +55,8 @@ local function addInstance(game,type,mapid,plymax,plycount)
 		gamemaps[game] = g
 	end	
 	g[mapid] = instance
+	print("addInstance " .. type .. " " .. mapid)
+	print(maps[type])
 end
 
 local function remInstance(game,type,mapid)

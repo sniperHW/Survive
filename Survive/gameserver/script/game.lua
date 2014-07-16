@@ -19,11 +19,12 @@ end
 
 
 Rpc.RegisterRpcFunction("EnterMap",function (rpcHandle)
-	print("EnterMap")
 	local param = rpcHandle.param
 	local mapid = param[1]
 	local maptype = param[2]
 	local plys = param[3]
+	print("EnterMap " .. mapid .. " " .. maptype)
+	print(plys)
 	local gameids
 	--print("EnterMap1")
 	if mapid == 0 then
@@ -54,7 +55,7 @@ Rpc.RegisterRpcFunction("EnterMap",function (rpcHandle)
 			--TODO 通知group错误的mapid(可能实例已经被销毁)
 			Rpc.RPCResponse(rpcHandle,nil,"instance not found")
 		else
-			gameids = map:entermap(rpk)
+			gameids = map:entermap(plys)
 			if not gameids then
 				--通知group进入地图失败
 				Rpc.RPCResponse(rpcHandle,nil,"failed")

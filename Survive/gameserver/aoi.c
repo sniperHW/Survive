@@ -186,8 +186,8 @@ static inline void block_process_leave(aoi_map *m,aoi_block *bl,aoi_object *o)
 	aoi_object *cur = (aoi_object*)kn_dlist_begin(&bl->aoi_objs);
 	aoi_object *end = (aoi_object*)kn_dlist_end(&bl->aoi_objs);
 	while(cur != end){
-		if(is_set(o->view_objs,cur->id) && !o->in_myscope(o,cur))leave_me(o,cur);
-		if(is_set(cur->view_objs,o->id) && !cur->in_myscope(cur,o))leave_me(cur,o);
+		if(is_set(o->view_objs,cur->id) && o->in_myscope(o,cur))leave_me(o,cur);
+		if(is_set(cur->view_objs,o->id) && cur->in_myscope(cur,o))leave_me(cur,o);
 		cur = (aoi_object *)cur->node.next;
 	};
 }
@@ -251,7 +251,8 @@ int32_t aoi_leave(aoi_object *o)
 	
 	aoi_block **blocks = LEAVE_BLOCKS(m,&o->pos,m->radius);
 	uint32_t i;
-	for(i = 0; blocks[i];++i) block_process_leave(m,blocks[i],o);
+	for(i = 0; blocks[i];++i) 
+		block_process_leave(m,blocks[i],o);
 	//自己离开自己的视野
 	leave_me(o,o);
 	release_id(m->_idmgr,o->id);

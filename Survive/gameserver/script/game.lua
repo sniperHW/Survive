@@ -106,12 +106,14 @@ end)]]--
 local function CS_MOV(_,rpk,conn)
 	print("CS_MOV")
 	local gameid = rpk_reverse_read_uint32(rpk)
-	local mapid = math.fmod(gameid,65536)
+	local mapid,_ = math.floor(gameid/65536)
 	local map = game.maps[mapid]
 	if map then
-		print(mapid)
-		local plyid,_ = math.floor(gameid/65536)
+		print("map:" .. mapid)		
+		local plyid = math.fmod(gameid,65536)
+		print("ply:" .. plyid)
 		local ply = map.avatars[plyid]
+		print(ply)
 		if ply and ply.avattype == Avatar.type_player then
 			local x = rpk_read_uint16(rpk)
 			local y = rpk_read_uint16(rpk)
@@ -123,11 +125,11 @@ end
 local function AGAME_CLIENT_DISCONN(_,rpk,conn)
 	print("client disconn")
 	local gameid = rpk_reverse_read_uint32(rpk)
-	local mapid = math.fmod(gameid,65536)
+	local mapid,_ = math.floor(gameid/65536)
 	local map = game.maps[mapid]
 	print("mapid:" .. mapid)
 	if map then
-		local plyid,_ = math.floor(gameid/65536)
+		local plyid = math.fmod(gameid,65536)
 		print("plyid:" .. plyid)
 		map:leavemap(plyid)
 		--local ply = map.avatars[plyid]

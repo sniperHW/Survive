@@ -46,14 +46,14 @@ end
 local function insertGatePly(ply,gate)
 	local t = gatemgr.con2gate[gate.conn]
 	if t then
-		t.gateplys[ply] = nil
+		t.gateplys[ply.id] = ply
 	end
 end
 
 local function removeGatePly(ply,gate)
 	local t = gatemgr.con2gate[gate.conn]
 	if t then
-		t.gateplys[ply] = ply
+		t.gateplys[ply.id] = nil
 	end
 end
 

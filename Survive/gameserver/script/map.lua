@@ -53,7 +53,6 @@ end
 
 function map:entermap(plys)
 	print("entermap")
-	print(#plys)
 	print(self)
 	if self.freeidx:len() < #plys then
 		--没有足够的id创建玩家avatar
@@ -69,6 +68,7 @@ function map:entermap(plys)
 			end
 			local gateid = v.gate.id
 			local id = self.freeidx:pop().v
+			print("popid:" .. id)
 			local ply = Avatar.NewPlayer(id,avatid)
 			ply.gate = {conn=gate.conn,id=gateid}
 			print(ply.gate.conn)
@@ -76,9 +76,10 @@ function map:entermap(plys)
 			ply.groupid = v.groupid
 			--玩家真实id高16位地图id,低16位玩家id
 			ply.id = self.mapid * 65536 + ply.id
+			print("ply.id:" .. ply.id)	
 			table.insert(gameids,ply.id)
 			--print(v.nickname .. " enter map")			
-			print("gateid " .. gateid.high .. " " .. gateid.low)			
+			--print("gateid " .. gateid.high .. " " .. gateid.low)			
 			ply.pos[1] = 10
 			ply.pos[2] = 10
 			ply.dir = 5
@@ -100,6 +101,7 @@ end
 function map:leavemap(plyid)
 	local ply = self.avatars[plyid]
 	if ply and ply.avattype == Avatar.type_player then
+		print("leavemap")
 		GameApp.aoi_leave(ply.aoi_obj)
 		self.avatars[plyid] = nil
 		return true

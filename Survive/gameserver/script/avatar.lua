@@ -26,12 +26,13 @@ function avatar:new(o)
   o = o or {}   
   setmetatable(o, self)
   self.__index = self
-  self.pos = {}
+  o.pos = {}
   return o
 end
 
 --向可以看到我的对象发消息
 function avatar:send2view(wpk)
+	print("send2view")
 	local gates = {}
 	for k,v in pairs(self.watch_me) do
 		if v.gate then
@@ -71,20 +72,20 @@ function player:new(id,avatid)
 	local o = {}
 	setmetatable(o, self)
 	self.__index = self
-	self.id = id
-	self.avatid = avatid
-	self.avattype = type_player
-	self.see_radius = 5
-	self.view_obj = {}
-	self.watch_me = {}
-	self.gate = nil
-	self.map =  nil
-	self.path = nil
-	self.speed = 3
-	self.pos = nil
-	self.nickname = ""
+	o.id = id
+	o.avatid = avatid
+	o.avattype = type_player
+	o.see_radius = 5
+	o.view_obj = {}
+	o.watch_me = {}
+	o.gate = nil
+	o.map =  nil
+	o.path = nil
+	o.speed = 3
+	o.pos = nil
+	o.nickname = ""
 	print("player:new " .. id) 
-	self.aoi_obj = GameApp.create_aoi_obj(o)
+	o.aoi_obj = GameApp.create_aoi_obj(o)
 	return o	
 end
 
@@ -99,7 +100,7 @@ function player:send2gate(wpk)
 end
 
 function player:enter_see(other)
-	print("enter_see")
+	print(other.id .. " enter " .. self.id)
 	print(self)
 	self.view_obj[other.id] = other
 	other.watch_me[self.id] = self	
@@ -115,7 +116,6 @@ function player:enter_see(other)
 	wpk_write_uint16(wpk,other.pos[2])
 	wpk_write_uint8(wpk,other.dir)
 	self:send2gate(wpk)
-	print("enter_see 1")
 	
 	if other.path then
 		local size = #other.path.path
@@ -128,7 +128,7 @@ function player:enter_see(other)
 		wpk_write_uint16(wpk,target[2])
 		self:send2gate(wpk)
 	end	
-	print("enter_see 2")
+
 end
 
 function player:leave_see(other)
@@ -139,14 +139,15 @@ function player:leave_see(other)
 	wpk_write_uint16(wpk,CMD_SC_LEAVESEE)
 	wpk_write_uint32(wpk,other.id)	
 	self:send2gate(wpk)	
+	print(other.id .. " leave " .. self.id)
 end
 
 --处理客户端的移动请求
 function player:mov(x,y)
-	print("from:" .. self.pos[1] .. "," .. self.pos[2] .. " to " .. x .. "," .. y)
+	--print("from:" .. self.pos[1] .. "," .. self.pos[2] .. " to " .. x .. "," .. y)
 	local path = self.map:findpath(self.pos,{x,y})
 	if path then
-		print("path size:",#path)
+		--print("path size:",#path)
 		self.path = {cur=1,path=path}
 		self.map:beginMov(self)
 		self.lastmovtick = C.systemms()
@@ -160,7 +161,7 @@ function player:mov(x,y)
 		--wpk_write_uint16(wpk,self.speed)
 		wpk_write_uint16(wpk,target[1])
 		wpk_write_uint16(wpk,target[2])	
-		print("from:" .. self.pos[1] .. "," .. self.pos[2] .. " to " .. target[1] .. "," .. target[2])
+		--print("from:" .. self.pos[1] .. "," .. self.pos[2] .. " to " .. target[1] .. "," .. target[2])
 		self:send2view(wpk)
 	end
 end

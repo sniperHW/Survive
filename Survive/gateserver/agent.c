@@ -189,8 +189,10 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 						uint32_t gameid = reverse_read_uint32(_msg->rpk);
 						ply->gameid = gameid;
 						ply->togame = *_msg->game;					
-						printf("CMD_SC_ENTERMAP:%u\n",gameid);
+						printf("%x CMD_SC_ENTERMAP:%u\n",ply,gameid);
 					}
+					if(cmd == CMD_SC_MOV)
+						printf("send:CMD_SC_MOV,%u\n",ply->gameid);
 					kn_stream_conn_send(ply->toclient,wpk_create_by_rpacket(_msg->rpk));
 				}
 			}

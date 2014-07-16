@@ -25,20 +25,20 @@ Rpc.RegisterRpcFunction("EnterMap",function (rpcHandle)
 	local maptype = param[2]
 	local plys = param[3]
 	local gameids
-	print("EnterMap1")
+	--print("EnterMap1")
 	if mapid == 0 then
 		--创建实例
 		mapid = game.freeidx:pop()
 		if not mapid then
-			print("EnterMap2")
+			--print("EnterMap2")
 			--通知group,gameserver繁忙
 			Rpc.RPCResponse(rpcHandle,nil,"busy")
 		else
 			mapid = mapid.v
-			print("EnterMap3")
-			print(mapid)
-			print(maptype)
-			print(plys)
+			--print("EnterMap3")
+			--print(mapid)
+			--print(maptype)
+			--print(plys)
 			local map = Map.NewMap(mapid,maptype)
 			game.maps[mapid] = map
 			gameids = map:entermap(plys)
@@ -48,7 +48,7 @@ Rpc.RegisterRpcFunction("EnterMap",function (rpcHandle)
 			end
 		end
 	else
-		print("EnterMap4")
+		--print("EnterMap4")
 		local map = game.maps[mapid]
 		if not map then
 			--TODO 通知group错误的mapid(可能实例已经被销毁)
@@ -109,11 +109,11 @@ local function CS_MOV(_,rpk,conn)
 	local mapid,_ = math.floor(gameid/65536)
 	local map = game.maps[mapid]
 	if map then
-		print("map:" .. mapid)		
+		--print("map:" .. mapid)		
 		local plyid = math.fmod(gameid,65536)
-		print("ply:" .. plyid)
+		--print("ply:" .. plyid)
 		local ply = map.avatars[plyid]
-		print(ply)
+		--print(ply)
 		if ply and ply.avattype == Avatar.type_player then
 			local x = rpk_read_uint16(rpk)
 			local y = rpk_read_uint16(rpk)
@@ -127,10 +127,10 @@ local function AGAME_CLIENT_DISCONN(_,rpk,conn)
 	local gameid = rpk_reverse_read_uint32(rpk)
 	local mapid,_ = math.floor(gameid/65536)
 	local map = game.maps[mapid]
-	print("mapid:" .. mapid)
+	--print("mapid:" .. mapid)
 	if map then
 		local plyid = math.fmod(gameid,65536)
-		print("plyid:" .. plyid)
+		--print("plyid:" .. plyid)
 		map:leavemap(plyid)
 		--local ply = map.avatars[plyid]
 		--if ply and ply.avattype == Avatar.type_player then

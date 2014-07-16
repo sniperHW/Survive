@@ -31,15 +31,15 @@ function player:new(o)
   o = o or {}   
   setmetatable(o, self)
   self.__index = self
-  self.groupid = 0
-  self.game = nil
-  self.gate = nil
-  self.actname = nil
-  self.chaname = nil
-  self.attr = nil--Attr.NewAttr()
-  self.skill = nil--Skill.NewSkillmgr()
-  self.bag = nil--Bag.NewBag()
-  self.chaid = 0
+  o.groupid = 0
+  o.game = nil
+  o.gate = nil
+  o.actname = nil
+  o.chaname = nil
+  o.attr = nil--Attr.NewAttr()
+  o.skill = nil--Skill.NewSkillmgr()
+  o.bag = nil--Bag.NewBag()
+  o.chaid = 0
   self.status = stat_normal
   return o
 end
@@ -264,7 +264,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 		wpk_write_uint32(wpk,gateid.low)
 		C.send(conn,wpk)
 	else
-		print("here:" .. chaid)
+		--print("here:" .. chaid)
 		ply.gate = {id=gateid,conn = conn}
 		Gate.InsertGatePly(ply,ply.gate)
 		if chaid == 0 then
@@ -277,7 +277,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 			ply.chaid = chaid
 			--从数据库载入角色数据
 			local cmd = "hmget chaid:" .. chaid .. " attr"
-			print(cmd)
+			--print(cmd)
 			local err = Dbmgr.DBCmd(chaid,cmd,{callback = load_chainfo_callback,ply=ply})
 			if err then
 				notifybusy(ply)
@@ -309,7 +309,7 @@ local function CG_CREATE(_,rpk,conn)
 	else
 		--记录日志
 	end
-	print("CG_CREATE3")
+	--print("CG_CREATE3")
 end
 
 local function AG_CLIENT_DISCONN(_,rpk,conn)
@@ -326,11 +326,11 @@ end
 local function CG_ENTERMAP(_,rpk,conn)
 	print("CG_ENTERMAP")
 	local groupid = rpk_read_uint16(rpk)	
-	print(groupid)
+	--print(groupid)
 	local ply = playermgr:getplybyid(groupid)
-	print(ply)
+	--print(ply)
 	if ply and ply.status == stat_playing then
-		print("here")
+		--print("here")
 		local type = 1--rpk_read_uint8(rpk)
 		if MapMgr.EnterMap(ply,type) then
 			ply.status = stat_enteringmap

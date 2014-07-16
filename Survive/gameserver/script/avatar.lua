@@ -32,7 +32,7 @@ end
 
 --向可以看到我的对象发消息
 function avatar:send2view(wpk)
-	print("send2view")
+--	print("send2view")
 	local gates = {}
 	for k,v in pairs(self.watch_me) do
 		if v.gate then
@@ -84,7 +84,7 @@ function player:new(id,avatid)
 	o.speed = 3
 	o.pos = nil
 	o.nickname = ""
-	print("player:new " .. id) 
+	--print("player:new " .. id) 
 	o.aoi_obj = GameApp.create_aoi_obj(o)
 	return o	
 end
@@ -101,7 +101,7 @@ end
 
 function player:enter_see(other)
 	print(other.id .. " enter " .. self.id)
-	print(self)
+	--print(self)
 	self.view_obj[other.id] = other
 	other.watch_me[self.id] = self	
 	

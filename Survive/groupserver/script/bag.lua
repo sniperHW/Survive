@@ -6,7 +6,7 @@ function bag:new(o)
   o = o or {}   
   setmetatable(o, self)
   self.__index = self
-  self.bag = {}
+  o.bag = {}
   return o
 end
 

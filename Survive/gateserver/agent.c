@@ -368,7 +368,7 @@ agent *start_agent(uint8_t idx){
 	agent->t = kn_create_thread(THREAD_JOINABLE);
 	agent->idmgr = new_idmgr(1,4095);
 	agent->server=kn_new_stream_server(agent->p,NULL,NULL);
-	agent->chan = kn_new_channel(kn_thread_getid(agent->t));
+	agent->chan = kn_new_channel();
 	kn_channel_bind(agent->p,agent->chan,on_channel_msg,NULL);
 	kn_thread_start_run(agent->t,service_main,agent);
 	return agent;

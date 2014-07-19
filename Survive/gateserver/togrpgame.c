@@ -223,7 +223,7 @@ int     start_togrpgame(){
 							  on_connect,
 							  on_connect_failed);	
 
-	g_togrpgame->chan = kn_new_channel(kn_thread_getid(g_togrpgame->t));
+	g_togrpgame->chan = kn_new_channel();
 	kn_channel_bind(g_togrpgame->p,g_togrpgame->chan,on_channel_msg,NULL);
 	kn_thread_start_run(g_togrpgame->t,service_main,NULL);
 	return 0;

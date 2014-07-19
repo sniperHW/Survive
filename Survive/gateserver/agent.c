@@ -186,8 +186,11 @@ static void on_channel_msg(kn_channel_t chan, kn_channel_t from,void *msg,void *
 						rpk_dropback(_msg->rpk,sizeof(groupid));
 						printf("CMD_GC_GEGINPLY\n");
 					}else if(cmd == CMD_SC_ENTERMAP){
+						uint16_t groupid = reverse_read_uint16(_msg->rpk);
+						rpk_dropback(_msg->rpk,sizeof(groupid));
 						uint32_t gameid = reverse_read_uint32(_msg->rpk);
 						ply->gameid = gameid;
+						ply->groupid = groupid;
 						ply->togame = *_msg->game;					
 						printf("%x CMD_SC_ENTERMAP:%u\n",ply,gameid);
 					}

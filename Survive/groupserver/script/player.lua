@@ -6,7 +6,7 @@ local Bag = require "script/bag"
 local Skill = require "script/skill"
 local Gate = require "script/gate"
 local MapMgr = require "script/mapmgr"
-
+local Rpc = require "script/rpc"
 
 local player = {
 	groupid,    --在group管理器中的player对象索引
@@ -243,7 +243,17 @@ local function AG_PLYLOGIN(_,rpk,conn)
 			Gate.InsertGatePly(ply,ply.gate)			
 			if ply.status == stat_playing then
 				if ply.game then
+					local gate = Gate.GetGateByConn(conn)	
 					--在gameserver中
+					local param = {ply.game.id,{name=gate.name,id=ply.gate.id}}
+					local r = Rpc.RPCCall(ply.game.conn,"CliReConn",param,{OnRPCResponse=function (_,ret,err)
+							if err then	
+								print("CliReConn error")
+							end
+							end})
+					if not r then
+						print("CliReConn error")
+					end
 				else
 					notifybegply(ply)
 				end

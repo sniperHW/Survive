@@ -24,9 +24,6 @@ function map:new(o)
 end
 
 function map:init(mapid,maptype)
-	--print("map:init")
-	--print(mapid)
-	--print(maptype)
 	self.mapid = mapid
 	self.maptype = maptype
 	self.freeidx = Que.Queue()
@@ -53,7 +50,6 @@ end
 
 function map:entermap(plys)
 	print("entermap")
-	--print(self)
 	if self.freeidx:len() < #plys then
 		--没有足够的id创建玩家avatar
 		return nil
@@ -68,18 +64,13 @@ function map:entermap(plys)
 			end
 			local gateid = v.gate.id
 			local id = self.freeidx:pop().v
-			--print("popid:" .. id)
 			local ply = Avatar.NewPlayer(id,avatid)
 			ply.gate = {conn=gate.conn,id=gateid}
-			--print(ply.gate.conn)
 			ply.nickname = v.nickname
 			ply.groupid = v.groupid
 			--玩家真实id高16位地图id,低16位玩家id
 			ply.id = self.mapid * 65536 + ply.id
-			--print("ply.id:" .. ply.id)	
 			table.insert(gameids,ply.id)
-			--print(v.nickname .. " enter map")			
-			--print("gateid " .. gateid.high .. " " .. gateid.low)			
 			ply.pos[1] = 10
 			ply.pos[2] = 10
 			ply.dir = 5
@@ -88,8 +79,8 @@ function map:entermap(plys)
 			wpk_write_uint16(wpk,CMD_SC_ENTERMAP)
 			wpk_write_uint16(wpk,self.maptype)
 			wpk_write_uint32(wpk,ply.id)
+			wpk_write_uint16(wpk,ply.groupid)
 			ply:send2gate(wpk)			
-			--print(ply)
 			self.avatars[id] = ply
 			ply.map = self
 			GameApp.aoi_enter(self.aoi,ply.aoi_obj,ply.pos[1],ply.pos[2])

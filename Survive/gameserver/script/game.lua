@@ -2,6 +2,7 @@ local Map = require "script/map"
 local Que = require "script/queue"
 local Avatar = require "script/avatar"
 local Rpc = require "script/rpc"
+local Gate = require "script/gate"
 
 local game = {
 	maps,
@@ -73,7 +74,7 @@ Rpc.RegisterRpcFunction("LeaveMap",function (rpcHandle)
 	if map then
 		local plyid = rpk_read_uint16(rpk)
 		if map:leavemap(plyid) then
-			Rpc.rpcResponse(rpcHandle,mapid,nil)
+			Rpc.RPCResponse(rpcHandle,mapid,nil)
 			if map.plycount == 0 then
 				--没有玩家了，销毁地图
 				map:clear()
@@ -81,27 +82,40 @@ Rpc.RegisterRpcFunction("LeaveMap",function (rpcHandle)
 				game.maps[mapid] = nil				
 			end
 		else
-			Rpc.rpcResponse(rpcHandle,nil,"failed")
+			Rpc.RPCResponse(rpcHandle,nil,"failed")
 		end
 	else
-		Rpc.rpcResponse(rpcHandle,nil,"failed")
+		Rpc.RPCResponse(rpcHandle,nil,"failed")
 	end	
 end)
 
---[[
-Rpc.RegisterRpcFunction("DestroyMap",function (rpcHandle)
+
+Rpc.RegisterRpcFunction("CliReConn",function (rpcHandle)
 	local param = rpcHandle.param
-	local mapid = param[1]
+	local gameid = param[1]
+	local mapid,_ = math.floor(gameid/65536)
 	local map = game.maps[mapid]
 	if map then
-		map:clear()
-		game.que:push({v=mapid,__next=nil})
-		game.maps[mapid] = nil
-		rpcResponse(rpcHandle,mapid,nil)
+		local plyid = math.fmod(gameid,65536)
+		local ply = map.avatars[plyid]
+		print(plyid)
+		if ply and ply.avattype == Avatar.type_player then
+			local gate = Gate.GetGateByName(param[2].name)
+			if not gate then
+				Rpc.RPCResponse(rpcHandle,nil,"failed")
+				return
+			end
+			ply.gate = {conn=gate.conn,id=param[2].id}
+			ply:reconn()
+			Rpc.RPCResponse(rpcHandle,nil,nil)	
+		else
+			Rpc.RPCResponse(rpcHandle,nil,"failed")
+		end
+	
 	else
-		rpcResponse(rpcHandle,nil,"failed")
-	end	
-end)]]--
+		Rpc.RPCResponse(rpcHandle,nil,"failed")
+	end
+end)
 
 
 local function CS_MOV(_,rpk,conn)
@@ -131,12 +145,12 @@ local function AGAME_CLIENT_DISCONN(_,rpk,conn)
 	--print("mapid:" .. mapid)
 	if map then
 		local plyid = math.fmod(gameid,65536)
-		--print("plyid:" .. plyid)
-		map:leavemap(plyid)
-		--local ply = map.avatars[plyid]
-		--if ply and ply.avattype == Avatar.type_player then
-		--	ply.gate = nil
-		--end		
+		print("plyid:" .. plyid)
+		--map:leavemap(plyid)
+		local ply = map.avatars[plyid]
+		if ply and ply.avattype == Avatar.type_player then
+			ply.gate = nil
+		end		
 	end	
 end
 

@@ -52,7 +52,7 @@ enum{
 	//game <-> group
 
 	CMD_GAMEG_BEGIN = 800,
-	CMD_GAMEG_LOGIN,     //gameserver进程登陆到group 
+	CMD_GAMEG_LOGIN,                  //gameserver进程登陆到group 
 	CMD_GAMEG_END,
 
 	CMD_GGAME_BEGIN = 900,

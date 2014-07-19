@@ -32,7 +32,6 @@ end
 
 --鍚戝彲浠ョ湅鍒版垜鐨勫璞″彂娑堟伅
 function avatar:send2view(wpk)
---	print("send2view")
 	local gates = {}
 	for k,v in pairs(self.watch_me) do
 		if v.gate then
@@ -101,7 +100,6 @@ end
 
 function player:enter_see(other)
 	print(other.id .. " enter " .. self.id)
-	--print(self)
 	self.view_obj[other.id] = other
 	other.watch_me[self.id] = self	
 	
@@ -144,10 +142,8 @@ end
 
 --澶勭悊瀹㈡埛绔殑绉诲姩璇锋眰
 function player:mov(x,y)
-	--print("from:" .. self.pos[1] .. "," .. self.pos[2] .. " to " .. x .. "," .. y)
 	local path = self.map:findpath(self.pos,{x,y})
 	if path then
-		--print("path size:",#path)
 		self.path = {cur=1,path=path}
 		self.map:beginMov(self)
 		self.lastmovtick = C.systemms()
@@ -161,11 +157,45 @@ function player:mov(x,y)
 		--wpk_write_uint16(wpk,self.speed)
 		wpk_write_uint16(wpk,target[1])
 		wpk_write_uint16(wpk,target[2])	
-		--print("from:" .. self.pos[1] .. "," .. self.pos[2] .. " to " .. target[1] .. "," .. target[2])
 		self:send2view(wpk)
 	end
 end
 
+--客户端连接断开后重连上来
+function player:reconn(maptype)
+	local wpk = new_wpk(64)
+	wpk_write_uint16(wpk,CMD_SC_ENTERMAP)
+	wpk_write_uint16(wpk,maptype)
+	wpk_write_uint32(wpk,self.id)
+	wpk_write_uint16(wpk,self.groupid)
+	self:send2gate(wpk)			
+	--发视野信息
+	for k,v in pairs(self.view_obj) do
+		local wpk = new_wpk(1024)
+		wpk_write_uint16(wpk,CMD_SC_ENTERSEE)
+		wpk_write_uint32(wpk,v.id)
+		wpk_write_uint8(wpk,v.avattype)
+		wpk_write_uint16(wpk,v.avatid)
+		wpk_write_string(wpk,"test")--other.nickname)
+		wpk_write_uint16(wpk,v.pos[1])
+		wpk_write_uint16(wpk,v.pos[2])
+		wpk_write_uint8(wpk,v.dir)
+		self:send2gate(wpk)
+	
+		if v.path then
+			local size = #v.path.path
+			local target = v.path.path[size]
+			local wpk = new_wpk(64)
+			wpk_write_uint16(wpk,CMD_SC_MOV)
+			wpk_write_uint32(wpk,v.id)
+			--wpk_write_uint16(wpk,other.speed)
+			wpk_write_uint16(wpk,target[1])
+			wpk_write_uint16(wpk,target[2])
+			self:send2gate(wpk)
+		end		
+	end
+
+end
 
 local north = 1
 local south = 2

@@ -159,6 +159,7 @@ function player:mov(x,y)
 		wpk_write_uint16(wpk,target[2])	
 		self:send2view(wpk)
 	else
+		print("mov failed")
 		local wpk = new_wpk(64)
 		wpk_write_uint16(wpk,CMD_SC_MOV_FAILED)
 		self:send2gate(wpk)			

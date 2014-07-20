@@ -22,6 +22,8 @@ void mov(kn_stream_conn_t conn){
 	wpk_write_uint16(wpk,CMD_CS_MOV);
 	wpk_write_uint16(wpk,x);
 	wpk_write_uint16(wpk,y);
+	printf("%d\n",x);
+	printf("%d\n",y);
 	kn_stream_conn_send(conn,wpk);	
 }
 
@@ -50,7 +52,8 @@ static int  on_packet(kn_stream_conn_t conn,rpacket_t rpk){
 			mov(conn);
 		}
 	}else if(cmd == CMD_SC_MOV_ARRI || cmd == CMD_SC_MOV_FAILED){
-		mov(comm);
+		if(cmd == CMD_SC_MOV_FAILED) printf("mov failed\n");
+		mov(conn);
 	}
 	return 1;
 }
@@ -81,11 +84,9 @@ static void on_connect_failed(kn_stream_client_t client,kn_sockaddr *addr,int er
 int main(int argc,char **argv)
 {	
 	
-	const char *ip = argv[1];
-	uint16_t    port = atoi(argv[2]);
 	const char *actprefix   = argv[3];
-	int         beg = atoi(argv[5]);
-	int         end = atoi(argv[6]);
+	int         beg = atoi(argv[4]);
+	int         end = atoi(argv[5]);
 	
 	int         size = end-beg+1;
 	actname     = calloc(size,sizeof(*actname));

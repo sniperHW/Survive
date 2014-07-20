@@ -21,6 +21,8 @@ enum{
 	CMD_SC_ENTERSEE,
 	CMD_SC_LEAVESEE,
 	CMD_SC_MOV,
+	CMD_SC_MOV_ARRI,
+	CMD_SC_MOV_FAILED,
 	CMD_SC_END,
 
 	//client <-> group

@@ -158,6 +158,10 @@ function player:mov(x,y)
 		wpk_write_uint16(wpk,target[1])
 		wpk_write_uint16(wpk,target[2])	
 		self:send2view(wpk)
+	else
+		local wpk = new_wpk(64)
+		wpk_write_uint16(wpk,CMD_SC_MOV_FAILED)
+		self:send2gate(wpk)			
 	end
 end
 
@@ -281,6 +285,9 @@ function player:process_mov()
 		--到达目的地
 		self.path = nil
 		print("arrive")
+		local wpk = new_wpk(64)
+		wpk_write_uint16(wpk,CMD_SC_MOV_ARRI)
+		self:send2gate(wpk)		
 		return true
 	else
 		return false

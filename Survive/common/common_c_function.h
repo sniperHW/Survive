@@ -406,7 +406,15 @@ void reg_common_c_function(lua_State *L){
 	
 	lua_pushstring(L, "CMD_SC_MOV");
 	lua_pushinteger(L, CMD_SC_MOV);
-	lua_settable(L, -3);	
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_SC_MOV_ARRI");
+	lua_pushinteger(L, CMD_SC_MOV_ARRI);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "CMD_SC_MOV_FAILED");
+	lua_pushinteger(L, CMD_SC_MOV_FAILED);
+	lua_settable(L, -3);			
 
 	//client <-> group
 

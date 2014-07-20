@@ -2,3 +2,9 @@
 
 
 [详细介绍](https://github.com/sniperHW/Survive/blob/master/Survive/doc/README.md)
+
+[简单的测试客户端](https://github.com/sniperHW/MyCocos2dxTest/tree/master/TiledMap)
+
+[机器人测试程序](https://github.com/sniperHW/Survive/blob/master/testclient.c)
+
+

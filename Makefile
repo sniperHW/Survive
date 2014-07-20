@@ -75,6 +75,11 @@ testclient:\
 	kendynet.a
 	$(CC) $(CFLAGS) -o testclient $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
 	
+testpacket:\
+	testpacket.c\
+	kendynet.a
+	$(CC) $(CFLAGS) -o testpacket $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
+
 buildscript:
 	cp Survive/commonscript/dbmgr.lua Survive/groupserver/script
 	cp Survive/commonscript/queue.lua Survive/groupserver/script

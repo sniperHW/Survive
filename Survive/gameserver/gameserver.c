@@ -477,8 +477,9 @@ int main(int argc,char **argv){
 	if(!init())
 		return 0;
 
-	while(!stop)
-		kn_proactor_run(t_proactor,50);
+	while(!stop){
+		kn_proactor_run(t_proactor,100);
+	}
 
 	return 0;	
 }

@@ -3,7 +3,6 @@ local Game = require "script/game"
 local Avatar = require "script/avatar"
 local Dbmgr = require "script/dbmgr"
 local Rpc = require "script/rpc"
---local MapConfig = require "script/mapconfig"
 
 --注册各模块的消息处理函数
 function reghandler()

@@ -142,6 +142,12 @@ end
 
 --处理客户端的移动请求
 function player:mov(x,y)
+	--[[local wpk = new_wpk(64)
+	wpk_write_uint16(wpk,CMD_SC_MOV_ARRI)
+	self:send2gate(wpk)		
+	if true then
+		return
+	end]]--
 	local path = self.map:findpath(self.pos,{x,y})
 	if path then
 		self.path = {cur=1,path=path}
@@ -158,6 +164,7 @@ function player:mov(x,y)
 		wpk_write_uint16(wpk,target[1])
 		wpk_write_uint16(wpk,target[2])	
 		self:send2view(wpk)
+		--self:send2gate(wpk)			
 	else
 		print("mov failed")
 		local wpk = new_wpk(64)

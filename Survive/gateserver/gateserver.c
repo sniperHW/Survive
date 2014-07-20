@@ -76,8 +76,9 @@ int main(int argc,char **argv){
 	LOG_GATE(LOG_INFO,"gateserver start success\n");
 
 
-	while(!stop)
-		kn_proactor_run(p,50);
+	while(!stop){
+		kn_proactor_run(p,100);
+	}	
 		
 	//for(i=0;i < MAX_AGENT; ++i)
 	//	stop_agent(agents[i]);

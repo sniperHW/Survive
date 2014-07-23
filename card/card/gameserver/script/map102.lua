@@ -1,4 +1,4 @@
-return={
+return {
 MapId=102,MapStar=1,RolePos=16,TotalGold=0,TotalTreaBox=0,StoryId=1102,byCount=40,
 MapInfo={{PointMoved=0,PointBlocked=0,ObjectId=0,TileId=6},
 {PointMoved=0,PointBlocked=0,ObjectId=0,TileId=6},

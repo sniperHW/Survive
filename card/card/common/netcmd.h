@@ -51,7 +51,7 @@ enum{
 	CSID_FIGHT_RESULT        = 2116,
 	CSID_MAP_REWARD          = 2117,
 	CSID_MAPFINISHED_REQ     = 2118,
-	
+	DUMMY_ON_CLI_DISCONNECTED = 65535,	
 
 };
 #endif

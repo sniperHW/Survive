@@ -17,7 +17,7 @@ int loadconfig(){
 	}
 
 	//监听
-	obj = GETGLOBAL_OBJECT(L,"gate");
+	luaObject_t obj = GETGLOBAL_OBJECT(L,"gate");
 	g_config->lgateip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
 	g_config->lgateport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
 	release_luaObj(obj);

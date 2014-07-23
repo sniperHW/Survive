@@ -152,6 +152,12 @@ int lua_syslog(lua_State *L){
 	return 0;
 }
 
+int lua_conn_close(lua_State *L){
+	kn_stream_conn_t conn = lua_touserdata(L,1);
+	kn_stream_conn_close(conn);
+	return 0;
+}
+
 int lua_send(lua_State *L){
 /*
 	luaObject_t o = create_luaObj(L,1);
@@ -382,7 +388,7 @@ void reg_common_c_function(lua_State *L){
 	REGISTER_CONST(L,DGID_NO_USER_ACK);
 	REGISTER_CONST(L,GDID_CREATE_ROLE_REQ);
 	REGISTER_CONST(L,DGID_CREATE_ROLE_ACK);
-	REGISTER_CONST(L,GDID_UPDATE_USER_INFO_REQ);,		
+	REGISTER_CONST(L,GDID_UPDATE_USER_INFO_REQ);		
 	REGISTER_CONST(L,CSID_LOGIN_REQ);
 	REGISTER_CONST(L,CSID_CREATE_ROLE_REQ);
 	REGISTER_CONST(L,CSID_RECONNECT_REQ);
@@ -396,7 +402,7 @@ void reg_common_c_function(lua_State *L){
 	REGISTER_CONST(L,CSID_ENTERMAP_ACK);
 	REGISTER_CONST(L,CSID_MOVETEST_REQ );
 	REGISTER_CONST(L,CSID_MAPPOINT_INFO);
-	REGISTER_CONST(L,CSID_MOVETEST_ACK;
+	REGISTER_CONST(L,CSID_MOVETEST_ACK);
 	REGISTER_CONST(L,CSID_ENTERFIGHT_REQ);
 	REGISTER_CONST(L,CSID_FIGHT_FRAME_DATA);
 	REGISTER_CONST(L,CSID_ENTERFIGHT_ACK);
@@ -409,6 +415,7 @@ void reg_common_c_function(lua_State *L){
 	REGISTER_CONST(L,CSID_FIGHT_RESULT);
 	REGISTER_CONST(L,CSID_MAP_REWARD);
 	REGISTER_CONST(L,CSID_MAPFINISHED_REQ);		
+	REGISTER_CONST(L,DUMMY_ON_CLI_DISCONNECTED);		
 		
 	lua_pushstring(L,"rpk_read_uint8");
 	lua_pushcfunction(L,&lua_rpk_read_uint8);
@@ -492,13 +499,6 @@ void reg_common_c_function(lua_State *L){
     
 	lua_newtable(L);
 		
-	lua_pushstring(L,"initwordfilter");
-	lua_pushcfunction(L,&lua_initwordfilter);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L,"isvaildword");
-	lua_pushcfunction(L,&lua_isvaildword);
-	lua_settable(L, -3);		
 	
 	lua_pushstring(L,"systemms");
 	lua_pushcfunction(L,&lua_systemms);
@@ -510,6 +510,10 @@ void reg_common_c_function(lua_State *L){
 
 	lua_pushstring(L,"send");
 	lua_pushcfunction(L,&lua_send);
+	lua_settable(L, -3);
+
+	lua_pushstring(L,"close");
+	lua_pushcfunction(L,&lua_conn_close);
 	lua_settable(L, -3);
 
 	//redis

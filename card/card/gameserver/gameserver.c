@@ -9,7 +9,7 @@
 
 IMP_LOG(gamelog);
 
-#define MAXCMD 65535
+#define MAXCMD 65536
 static cmd_handler_t handler[MAXCMD] = {NULL};
 
 __thread kn_proactor_t t_proactor = NULL;
@@ -51,17 +51,6 @@ static void on_new_cli(kn_stream_server_t server,kn_stream_conn_t conn){
 		kn_stream_conn_close(conn);
 	}
 }
-
-
-static int  cb_timer(kn_timer_t timer)//如果返回1继续注册，否则不再注册
-{
-	kn_sockaddr grpaddr;
-	kn_addr_init_in(&grpaddr,kn_to_cstr(g_config->groupip),g_config->groupport);		
-	kn_stream_connect(c,NULL,&grpaddr,NULL);
-	free(timer);
-	return 0;
-}
-
 
 int reg_cmd_handler(lua_State *L){
 	uint16_t cmd = lua_tonumber(L,1);
@@ -158,6 +147,7 @@ int main(int argc,char **argv){
 		return 0;
 	}
 
+	printf("%d\n",stop);
 	if(!init())
 		return 0;
 

@@ -2,6 +2,7 @@ local Map = require "script/map"
 local Que = require "script/queue"
 local Avatar = require "script/avatar"
 local Cjson = require "cjson"
+local Dbmgr = require "script/dbmgr"
 
 
 local function load_login_callback(self,error,result)
@@ -20,7 +21,9 @@ local function load_login_callback(self,error,result)
 	
 	local key = result[1]
 	local role = result[2]
-	
+	print("-----------------")
+	print(self.key)
+	print(key)
 	if self.key ~= key then
 		print("error3")
 		self.ply:on_error()
@@ -29,6 +32,7 @@ local function load_login_callback(self,error,result)
 	
 	if not role then
 		--通知创建角色
+		print("notify_create")
 		self.ply:notify_create()
 		return 
 	end	
@@ -40,8 +44,11 @@ end
 
 
 local function CMD_LOGIN(_,rpk,conn)
-	local usrid = rpk_read_uint16(rpk);
+	local usrid = rpk_read_uint32(rpk);
 	local key = rpk_read_string(rpk);
+	print("CMD_LOGIN")
+	print(usrid)
+	print(key)
 	if Avatar.GetPlyByConn(conn) then
 		return
 	end
@@ -52,15 +59,16 @@ local function CMD_LOGIN(_,rpk,conn)
 	--向redis请求用户数据	
 	local player = Avatar.NewPlayer(conn,usrid)
 	local cmd = "hmget usrid:" .. usrid .. " key" .. " role" .. " card" .. " map" .. " mapstory"
-	local err = Dbmgr.DBCmd(usrid,cmd,{callback = load_login_callback,ply=ply,key=key})
+	local err = Dbmgr.DBCmd(usrid,cmd,{callback = load_login_callback,ply=player,key=key})
 	if err then
 		C.close(conn)
 		return
 	end
-	ply.status = stat_loading	
+	player.status = stat_loading	
 end
 
 local function CREATE_ROLE(_,rpk,conn)
+	print("CREATE_ROLE")
 	local player = Avatar.GetPlyByConn(conn)
 	if not player then
 		C.close(conn)
@@ -72,17 +80,16 @@ end
 
 
 local function CLIENT_DISCONN(_,rpk,conn)
+	print("CLIENT_DISCONN")
 	Avatar.DestryPlayer(Avatar.GetPlyByConn(conn))
 end
 
 
 
 local function reg_cmd_handler()
-	game_init()
 	C.reg_cmd_handler(CSID_LOGIN_REQ,{handle=CMD_LOGIN})
 	C.reg_cmd_handler(CSID_CREATE_ROLE_REQ,{handle=CREATE_ROLE})
-	C.reg_cmd_handler(
-	C.reg_cmd_handler(CMD_CLIENT_DISCONN,{handle=CLIENT_DISCONN})	
+	C.reg_cmd_handler(DUMMY_ON_CLI_DISCONNECTED,{handle=CLIENT_DISCONN})	
 end
 
 return {

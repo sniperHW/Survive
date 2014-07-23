@@ -1,4 +1,5 @@
 local Cjson = require "cjson"
+local Dbmgr = require "script/dbmgr"
 stat_normal  = 1
 stat_loading = 2
 stat_playing = 3
@@ -31,7 +32,7 @@ end
 function player:notify_create()
 	if self.status ~= stat_destroy then	
 		local wpk = new_wpk(64)
-		wpk_write_uint16(wpk,CSID_LOGIN_REQ)
+		wpk_write_uint16(wpk,SCID_LOGIN_ACK)
 		wpk_write_uint16(wpk,ERROR_STATUS_LOGIN_NOROLE)
 		wpk_write_uint32(wpk,0)
 		C.send(self.conn,wpk)
@@ -42,7 +43,7 @@ end
 function player:notify_login_success()
 	if self.status ~= stat_destroy then	
 		local wpk = new_wpk(64)
-		wpk_write_uint16(wpk,CSID_LOGIN_REQ)
+		wpk_write_uint16(wpk,SCID_LOGIN_ACK)
 		wpk_write_uint16(wpk,ERROR_STATUS_SUCCESS)
 		wpk_write_uint32(wpk,0)
 		C.send(self.conn,wpk)
@@ -128,6 +129,7 @@ local function DestryPlayer(player)
 	if not player then
 		return
 	end
+	print("DestryPlayer")
 	id2player[player.id] = nil
 	conn2player[player.conn] = nil
 	player.status = stat_destroy

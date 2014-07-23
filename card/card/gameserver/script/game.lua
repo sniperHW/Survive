@@ -4,6 +4,9 @@ local Avatar = require "script/avatar"
 local Cjson = require "cjson"
 local Dbmgr = require "script/dbmgr"
 
+local map101 = require "script/map101"
+local map102 = require "script/map102"
+local map103 = require "script/map103"
 
 local function load_login_callback(self,error,result)
 	print("load_login_callback")
@@ -84,6 +87,29 @@ local function CLIENT_DISCONN(_,rpk,conn)
 	Avatar.DestryPlayer(Avatar.GetPlyByConn(conn))
 end
 
+local function SendMapReward(conn)
+
+end
+
+local function SendMapInfo(conn,mapinfo)	
+	local wpk = new_wpk(4096)
+	wpk_write_uint16(wpk,CSID_MAP_INFO)
+	wpk_write_uint16(wpk,mapinfo.MapId)
+	wpk_write_uint16(wpk,mapinfo.MapStar)
+	wpk_write_uint16(wpk,mapinfo.RolePos)
+	wpk_write_uint32(wpk,mapinfo.TotalGold)
+	wpk_write_uint32(wpk,mapinfo.TotalTreaBox)
+	wpk_write_uint16(wpk,mapinfo.StoryId)
+	wpk_write_uint8(wpk,mapinfo.byCount)
+	for i=1,80 do
+		wpk_write_uint8(wpk,mapinfo.MapInfo[i].PointMoved)
+		wpk_write_uint8(wpk,mapinfo.MapInfo[i].PointBlocked)
+		wpk_write_uint16(wpk,mapinfo.MapInfo[i].ObjectId)
+		wpk_write_uint16(wpk,mapinfo.MapInfo[i].TileId)		
+	end
+	C.send(conn,wpk)
+end
+
 local function ENTERMAP_REQ(_,rpk,conn)
 	print("ENTERMAP_REQ")
 	local mapid = rpk_read_uint32(rpk)
@@ -94,7 +120,19 @@ local function ENTERMAP_REQ(_,rpk,conn)
 		C.close(conn)
 		return
 	end
-
+	
+	SendMapReward(conn)
+	
+	local mapinfo
+	if mapid == 101 then
+		mapinfo = map101
+	elseif mapid == 102 then
+		mapinfo = map102
+	else
+		mapinfo = map103
+	end
+	SendMapInfo(conn,mapinfo)
+	
 	local wpk = new_wpk(64)
 	wpk_write_uint16(wpk,CSID_ENTERMAP_ACK)
 	wpk_write_uint16(wpk,0)

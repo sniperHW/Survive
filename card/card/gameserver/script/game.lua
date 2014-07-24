@@ -172,8 +172,6 @@ local function PREFIGHT_REQ(_,rpk,conn)
 	local wpk = new_wpk(64)
 	wpk_write_uint16(wpk,CSID_PREFIGHT_INFO)
 	local fightinfo = require "script/fightinfo"
-	print("here")
-	print(CSID_PREFIGHT_INFO)
 	wpk_write_uint16(wpk,fightinfo.StoryId)
 	wpk_write_uint8(wpk,#fightinfo.astTeam1)
 	for i = 1,#fightinfo.astTeam1 do
@@ -201,6 +199,76 @@ local function PREFIGHT_REQ(_,rpk,conn)
 	print("here1")			
 end
 
+local function ENTERFIGHT_REQ(_,rpk,conn)
+	print("ENTERFIGHT_REQ")
+	local ply = Avatar.GetPlyByConn(conn)
+	if not ply then
+		C.close(conn)
+		return
+	end
+	local wpk = new_wpk(64)
+	wpk_write_uint16(wpk,CSID_FIGHT_FRAME_DATA)
+	local fightinfo = require "script/fightframe"
+	wpk_write_uint8(wpk,fightinfo.FightInfo.FightEnd)
+	wpk_write_uint8(wpk,#fightinfo.FightInfo.astTeam1)
+	for i = 1,#fightinfo.FightInfo.astTeam1 do
+		wpk_write_uint32(wpk,fightinfo.FightInfo.astTeam1[i].CardUId)
+		wpk_write_uint16(wpk,fightinfo.FightInfo.astTeam1[i].CardId)
+		wpk_write_uint16(wpk,fightinfo.FightInfo.astTeam1[i].CardLvl)
+		wpk_write_uint16(wpk,fightinfo.FightInfo.astTeam1[i].CurrentHP)
+		wpk_write_uint8(wpk,fightinfo.FightInfo.astTeam1[i].byLive)
+		wpk_write_uint16(wpk,fightinfo.FightInfo.astTeam1[i].MaxHP)
+	end	
+	wpk_write_uint8(wpk,#fightinfo.FightInfo.astTeam2)
+	for i = 1,#fightinfo.FightInfo.astTeam2 do
+		wpk_write_uint32(wpk,fightinfo.FightInfo.astTeam2[i].CardUId)
+		wpk_write_uint16(wpk,fightinfo.FightInfo.astTeam2[i].CardId)
+		wpk_write_uint16(wpk,fightinfo.FightInfo.astTeam2[i].CardLvl)
+		wpk_write_uint16(wpk,fightinfo.FightInfo.astTeam2[i].CurrentHP)
+		wpk_write_uint8(wpk,fightinfo.FightInfo.astTeam2[i].byLive)
+		wpk_write_uint16(wpk,fightinfo.FightInfo.astTeam2[i].MaxHP)
+	end
+	
+	wpk_write_uint16(wpk,#fightinfo.astFrameInfo);
+	for i = 1,#fightinfo.astFrameInfo do
+		wpk_write_uint8(wpk,fightinfo.astFrameInfo[i].type)
+		if fightinfo.astFrameInfo[i].type == 0 then
+			wpk_write_uint32(wpk,fightinfo.astFrameInfo[i].PlayerCardUId)
+			wpk_write_uint16(wpk,fightinfo.astFrameInfo[i].PlayerCardId)
+			wpk_write_uint32(wpk,fightinfo.astFrameInfo[i].RobotCardUId)
+			wpk_write_uint16(wpk,fightinfo.astFrameInfo[i].RobotCardId)
+		elseif fightinfo.astFrameInfo[i].type == 1 then
+			wpk_write_uint16(wpk,fightinfo.astFrameInfo[i].SkillId)
+			wpk_write_uint16(wpk,fightinfo.astFrameInfo[i].FromRace)
+			wpk_write_uint32(wpk,fightinfo.astFrameInfo[i].FromCardUId)
+			wpk_write_uint16(wpk,fightinfo.astFrameInfo[i].FromCardId)
+			wpk_write_uint8(wpk,#fightinfo.astFrameInfo[i].astTargetCards)
+			for j = 1,#fightinfo.astFrameInfo[i].astTargetCards do
+				wpk_write_uint16(wpk,fightinfo.astFrameInfo[i].astTargetCards[j].Race)
+				wpk_write_uint32(wpk,fightinfo.astFrameInfo[i].astTargetCards[j].CardUId)
+				wpk_write_uint16(wpk,fightinfo.astFrameInfo[i].astTargetCards[j].CardId)
+				wpk_write_uint32(wpk,fightinfo.astFrameInfo[i].astTargetCards[j].Value)
+				wpk_write_uint16(wpk,fightinfo.astFrameInfo[i].astTargetCards[j].CurrentHP)
+				wpk_write_uint8(wpk,fightinfo.astFrameInfo[i].astTargetCards[j].byLive)
+				wpk_write_uint16(wpk,fightinfo.astFrameInfo[i].astTargetCards[j].MaxHP)
+			end			
+		else
+			wpk_write_uint16(wpk,fightinfo.astFrameInfo[i].SkillId)
+			wpk_write_uint8(wpk,#fightinfo.astFrameInfo[i].astSkillEffs)
+			for j = 1,#fightinfo.astFrameInfo[i].astSkillEffs do
+				wpk_write_uint32(wpk,fightinfo.astFrameInfo[i].astSkillEffs[j].EffType)
+				wpk_write_uint32(wpk,fightinfo.astFrameInfo[i].astSkillEffs[j].EffValue)
+			end
+		end
+	end	
+	C.send(conn,wpk)
+	
+	wpk = new_wpk(64)
+	wpk_write_uint16(wpk,CSID_ENTERFIGHT_ACK)
+	wpk_write_uint16(wpk,0)
+	C.send(conn,wpk)
+end	
+
 
 
 local function reg_cmd_handler()
@@ -209,7 +277,8 @@ local function reg_cmd_handler()
 	C.reg_cmd_handler(CSID_CREATE_ROLE_REQ,{handle=CREATE_ROLE})
 	C.reg_cmd_handler(DUMMY_ON_CLI_DISCONNECTED,{handle=CLIENT_DISCONN})
 	C.reg_cmd_handler(CSID_ENTERMAP_REQ,{handle=ENTERMAP_REQ})
-	C.reg_cmd_handler(CSID_PREFIGHT_REQ,{handle=PREFIGHT_REQ})		
+	C.reg_cmd_handler(CSID_PREFIGHT_REQ,{handle=PREFIGHT_REQ})
+	C.reg_cmd_handler(CSID_ENTERFIGHT_REQ,{handle=ENTERFIGHT_REQ})			
 end
 
 return {

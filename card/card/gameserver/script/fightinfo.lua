@@ -1,0 +1,12 @@
+return {StoryId=0,
+astTeam1={{CardUId=36,CardId=1,CardLvl=0,CurrentHP=800,byLive=1,MaxHP=800},
+{CardUId=37,CardId=2,CardLvl=0,CurrentHP=800,byLive=1,MaxHP=800},
+{CardUId=38,CardId=3,CardLvl=0,CurrentHP=800,byLive=1,MaxHP=800},
+{CardUId=39,CardId=4,CardLvl=0,CurrentHP=800,byLive=1,MaxHP=800},
+{CardUId=40,CardId=5,CardLvl=0,CurrentHP=800,byLive=1,MaxHP=800},
+},astTeam2={{CardUId=36,CardId=1,CardLvl=0,CurrentHP=800,byLive=1,MaxHP=800},
+{CardUId=37,CardId=2,CardLvl=0,CurrentHP=800,byLive=1,MaxHP=800},
+{CardUId=38,CardId=3,CardLvl=0,CurrentHP=800,byLive=1,MaxHP=800},
+{CardUId=39,CardId=4,CardLvl=0,CurrentHP=800,byLive=1,MaxHP=800},
+{CardUId=40,CardId=5,CardLvl=0,CurrentHP=800,byLive=1,MaxHP=800},
+}}

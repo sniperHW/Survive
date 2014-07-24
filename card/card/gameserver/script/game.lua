@@ -154,6 +154,42 @@ local function MOVETEST_REQ(_,rpk,conn)
 	C.send(conn,wpk)	
 end
 
+local function PREFIGHT_REQ(_,rpk,conn)
+	local ply = Avatar.GetPlyByConn(conn)
+	if not ply then
+		C.close(conn)
+		return
+	end
+	
+	local wpk = new_wpk(64)
+	wpk_write_uint16(wpk,CSID_PREFIGHT_INFO)
+	local fightinfo = require "script/fightinfo"
+	wpk_write_uint16(wpk,fightinfo.StoryId)
+	wpk_write_uint8(wpk,#fightinfo.astTeam1)
+	for i = 1,#fightinfo.astTeam1 do
+		wpk_write_uint32(wpk,fightinfo.astTeam1[i].CardUId)
+		wpk_write_uint16(wpk,fightinfo.astTeam1[i].CardId)
+		wpk_write_uint16(wpk,fightinfo.astTeam1[i].CardLvl)		
+		wpk_write_uint16(wpk,fightinfo.astTeam1[i].CurrentHP)
+		wpk_write_uint8(wpk,fightinfo.astTeam1[i].byLive)
+		wpk_write_uint16(wpk,fightinfo.astTeam1[i].MaxHP)			
+	end
+	wpk_write_uint8(wpk,#fightinfo.astTeam2)
+	for i = 1,#fightinfo.astTeam2 do
+		wpk_write_uint32(wpk,fightinfo.astTeam2[i].CardUId)
+		wpk_write_uint16(wpk,fightinfo.astTeam2[i].CardId)
+		wpk_write_uint16(wpk,fightinfo.astTeam2[i].CardLvl)		
+		wpk_write_uint16(wpk,fightinfo.astTeam2[i].CurrentHP)
+		wpk_write_uint8(wpk,fightinfo.astTeam2[i].byLive)
+		wpk_write_uint16(wpk,fightinfo.astTeam2[i].MaxHP)			
+	end		
+	C.send(conn,wpk)
+	local wpk1 = new_wpk(64)
+	wpk_write_uint16(wpk1,CSID_PREFIGHT_ACK)
+	wpk_write_uint16(wpk1,0)
+	C.send(conn,wpk1)			
+end
+
 
 
 local function reg_cmd_handler()
@@ -161,7 +197,8 @@ local function reg_cmd_handler()
 	C.reg_cmd_handler(CSID_LOGIN_REQ,{handle=CMD_LOGIN})
 	C.reg_cmd_handler(CSID_CREATE_ROLE_REQ,{handle=CREATE_ROLE})
 	C.reg_cmd_handler(DUMMY_ON_CLI_DISCONNECTED,{handle=CLIENT_DISCONN})
-	C.reg_cmd_handler(CSID_ENTERMAP_REQ,{handle=ENTERMAP_REQ})	
+	C.reg_cmd_handler(CSID_ENTERMAP_REQ,{handle=ENTERMAP_REQ})
+	C.reg_cmd_handler(CSID_PREFIGHT_REQ,{handle=PREFIGHT_REQ})		
 end
 
 return {

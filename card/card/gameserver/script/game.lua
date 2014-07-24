@@ -138,10 +138,6 @@ local function ENTERMAP_REQ(_,rpk,conn)
 	wpk_write_uint16(wpk,0)
 	C.send(conn,wpk)
 	
-	wpk = new_wpk(64)
-	wpk_write_uint16(wpk,CSID_MAPPOINT_INFO)
-	wpk_write_uint16(wpk,8)
-	C.send(conn,wpk)	
 end
 
 
@@ -157,9 +153,16 @@ local function MOVETEST_REQ(_,rpk,conn)
 	wpk_write_uint16(wpk,CSID_MOVETEST_ACK)
 	wpk_write_uint16(wpk,0)
 	C.send(conn,wpk)	
+	if mapidx == 19 then
+		wpk = new_wpk(64)
+		wpk_write_uint16(wpk,CSID_MAPPOINT_INFO)
+		wpk_write_uint16(wpk,8)
+		C.send(conn,wpk)
+	end	
 end
 
 local function PREFIGHT_REQ(_,rpk,conn)
+	print("PREFIGHE_REQ")
 	local ply = Avatar.GetPlyByConn(conn)
 	if not ply then
 		C.close(conn)
@@ -169,6 +172,8 @@ local function PREFIGHT_REQ(_,rpk,conn)
 	local wpk = new_wpk(64)
 	wpk_write_uint16(wpk,CSID_PREFIGHT_INFO)
 	local fightinfo = require "script/fightinfo"
+	print("here")
+	print(CSID_PREFIGHT_INFO)
 	wpk_write_uint16(wpk,fightinfo.StoryId)
 	wpk_write_uint8(wpk,#fightinfo.astTeam1)
 	for i = 1,#fightinfo.astTeam1 do
@@ -189,10 +194,11 @@ local function PREFIGHT_REQ(_,rpk,conn)
 		wpk_write_uint16(wpk,fightinfo.astTeam2[i].MaxHP)			
 	end		
 	C.send(conn,wpk)
-	local wpk1 = new_wpk(64)
-	wpk_write_uint16(wpk1,CSID_PREFIGHT_ACK)
-	wpk_write_uint16(wpk1,0)
-	C.send(conn,wpk1)			
+	wpk = new_wpk(64)
+	wpk_write_uint16(wpk,CSID_PREFIGHT_ACK)
+	wpk_write_uint16(wpk,0)
+	C.send(conn,wpk)
+	print("here1")			
 end
 
 

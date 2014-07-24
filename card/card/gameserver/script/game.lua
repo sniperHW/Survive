@@ -170,7 +170,7 @@ local function PREFIGHT_REQ(_,rpk,conn)
 	
 	local wpk = new_wpk(64)
 	wpk_write_uint16(wpk,CSID_PREFIGHT_INFO)
-	local fightinfo = ply.map.fightinfo--require "script/fightinfo"
+	local fightinfo = ply.map.fightinfo
 	wpk_write_uint16(wpk,fightinfo.StoryId)
 	wpk_write_uint8(wpk,#fightinfo.astTeam1)
 	for i = 1,#fightinfo.astTeam1 do
@@ -207,7 +207,7 @@ local function ENTERFIGHT_REQ(_,rpk,conn)
 	end
 	local wpk = new_wpk(64)
 	wpk_write_uint16(wpk,CSID_FIGHT_FRAME_DATA)
-	local fightinfo = ply.map.fightframe--require "script/fightframe"
+	local fightinfo = ply.map.fightframe
 	wpk_write_uint8(wpk,fightinfo.FightInfo.FightEnd)
 	wpk_write_uint8(wpk,#fightinfo.FightInfo.astTeam1)
 	for i = 1,#fightinfo.FightInfo.astTeam1 do

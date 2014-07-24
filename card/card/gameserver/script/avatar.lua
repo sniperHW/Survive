@@ -10,6 +10,7 @@ local player = {
 	id,
 	role,
 	status,
+	map,
 }
 
 local id2player = {}

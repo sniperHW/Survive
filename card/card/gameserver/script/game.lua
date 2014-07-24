@@ -123,15 +123,14 @@ local function ENTERMAP_REQ(_,rpk,conn)
 	
 	SendMapReward(conn)
 	
-	local mapinfo
 	if mapid == 101 then
-		mapinfo = map101
+		ply.map = map101
 	elseif mapid == 102 then
-		mapinfo = map102
+		ply.map = map102
 	else
-		mapinfo = map103
+		ply.map = map103
 	end
-	SendMapInfo(conn,mapinfo)
+	SendMapInfo(conn,ply.map.map)
 	
 	local wpk = new_wpk(64)
 	wpk_write_uint16(wpk,CSID_ENTERMAP_ACK)
@@ -171,7 +170,7 @@ local function PREFIGHT_REQ(_,rpk,conn)
 	
 	local wpk = new_wpk(64)
 	wpk_write_uint16(wpk,CSID_PREFIGHT_INFO)
-	local fightinfo = require "script/fightinfo"
+	local fightinfo = ply.map.fightinfo--require "script/fightinfo"
 	wpk_write_uint16(wpk,fightinfo.StoryId)
 	wpk_write_uint8(wpk,#fightinfo.astTeam1)
 	for i = 1,#fightinfo.astTeam1 do
@@ -208,7 +207,7 @@ local function ENTERFIGHT_REQ(_,rpk,conn)
 	end
 	local wpk = new_wpk(64)
 	wpk_write_uint16(wpk,CSID_FIGHT_FRAME_DATA)
-	local fightinfo = require "script/fightframe"
+	local fightinfo = ply.map.fightframe--require "script/fightframe"
 	wpk_write_uint8(wpk,fightinfo.FightInfo.FightEnd)
 	wpk_write_uint8(wpk,#fightinfo.FightInfo.astTeam1)
 	for i = 1,#fightinfo.FightInfo.astTeam1 do

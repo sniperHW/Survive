@@ -140,8 +140,24 @@ local function ENTERMAP_REQ(_,rpk,conn)
 end
 
 
+local function MOVETEST_REQ(_,rpk,conn)
+	local ply = Avatar.GetPlyByConn(conn)
+	if not ply then
+		C.close(conn)
+		return
+	end
+	
+	local mapidx = rpk_read_uint32(rpk)
+	local wpk = new_wpk(64)
+	wpk_write_uint16(wpk,CSID_MOVETEST_ACK)
+	wpk_write_uint16(wpk,0)
+	C.send(conn,wpk)	
+end
+
+
 
 local function reg_cmd_handler()
+	C.reg_cmd_handler(CSID_MOVETEST_REQ,{handle=MOVETEST_REQ})
 	C.reg_cmd_handler(CSID_LOGIN_REQ,{handle=CMD_LOGIN})
 	C.reg_cmd_handler(CSID_CREATE_ROLE_REQ,{handle=CREATE_ROLE})
 	C.reg_cmd_handler(DUMMY_ON_CLI_DISCONNECTED,{handle=CLIENT_DISCONN})

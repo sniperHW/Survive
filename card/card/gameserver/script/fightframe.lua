@@ -10,7 +10,7 @@ FightEnd=0,astTeam1={{CardUId=11,CardId=1,CardLvl=0,CurrentHP=800,byLive=1,MaxHP
 {CardUId=19,CardId=9,CardLvl=0,CurrentHP=550,byLive=1,MaxHP=550},
 {CardUId=20,CardId=10,CardLvl=0,CurrentHP=550,byLive=1,MaxHP=550},
 }},astFrameInfo={
-{type=0,PlayerCardUId=11,PlayerCardId=0,RobotCardUId=16,RobotCardId=0},},
+{type=0,PlayerCardUId=11,PlayerCardId=0,RobotCardUId=16,RobotCardId=0},
 {type=1,SkillId=5,FromRace=1,FromCardUId=16,FromCardId=6,astTargetCards={
 {Race=0,CardUId=11,CardId=1,Value=-201,CurrentHP=599,byLive=1,MaxHP=800},}
 },
@@ -77,4 +77,4 @@ FightEnd=0,astTeam1={{CardUId=11,CardId=1,CardLvl=0,CurrentHP=800,byLive=1,MaxHP
 {Race=1,CardUId=16,CardId=6,Value=-143,CurrentHP=245,byLive=1,MaxHP=750},
 {Race=1,CardUId=18,CardId=8,Value=-118,CurrentHP=419,byLive=1,MaxHP=750},
 {Race=1,CardUId=19,CardId=9,Value=-66,CurrentHP=156,byLive=1,MaxHP=550},
-{Race=1,CardUId=20,CardId=10,Value=-66,CurrentHP=0,byLive=0,MaxHP=550},}}}
+{Race=1,CardUId=20,CardId=10,Value=-66,CurrentHP=0,byLive=0,MaxHP=550},}}}}

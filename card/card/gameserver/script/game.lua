@@ -137,6 +137,11 @@ local function ENTERMAP_REQ(_,rpk,conn)
 	wpk_write_uint16(wpk,CSID_ENTERMAP_ACK)
 	wpk_write_uint16(wpk,0)
 	C.send(conn,wpk)
+	
+	wpk = new_wpk(64)
+	wpk_write_uint16(wpk,CSID_MAPPOINT_INFO)
+	wpk_write_uint16(wpk,8)
+	C.send(conn,wpk)	
 end
 
 

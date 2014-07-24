@@ -365,50 +365,20 @@ void reg_game_c_function(lua_State *L){
 		lua_pushvalue(L,-1);
 		lua_setglobal(L,"GameApp");
 	}
-		
-	lua_pushstring(L, "create_astar");
-	lua_pushcfunction(L, &lua_create_astar);
-	lua_settable(L, -3);		
-	
-	lua_pushstring(L, "findpath");
-	lua_pushcfunction(L, &lua_findpath);
-	lua_settable(L, -3);	
-	
-	lua_pushstring(L, "create_aoimap");
-	lua_pushcfunction(L, &lua_create_aoimap);
-	lua_settable(L, -3);	
-	
-	lua_pushstring(L, "destroy_aoimap");
-	lua_pushcfunction(L, &lua_destroy_aoimap);
-	lua_settable(L, -3);	
-	
-	lua_pushstring(L, "create_aoi_obj");
-	lua_pushcfunction(L, &lua_create_aoi_obj);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "destroy_aoi_obj");
-	lua_pushcfunction(L, &lua_destroy_aoi_obj);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "aoi_enter");
-	lua_pushcfunction(L, &lua_aoi_enter);
-	lua_settable(L, -3);	
-	
-	lua_pushstring(L, "aoi_leave");
-	lua_pushcfunction(L, &lua_aoi_leave);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "aoi_moveto");
-	lua_pushcfunction(L, &lua_aoi_moveto);
-	lua_settable(L, -3);			
 
-	lua_pushstring(L, "send2grp");
-	lua_pushcfunction(L, &lua_send2grp);
-	lua_settable(L, -3);
+	REGISTER_FUNCTION("create_astar",&lua_create_astar);
+	REGISTER_FUNCTION("findpath",&lua_findpath);			
+	REGISTER_FUNCTION("create_aoimap",&lua_create_aoimap);
+	REGISTER_FUNCTION("destroy_aoimap",&lua_destroy_aoimap);			
+	
+	REGISTER_FUNCTION("create_aoi_obj",&lua_create_aoi_obj);
+	REGISTER_FUNCTION("destroy_aoi_obj",&lua_destroy_aoi_obj);	
+	REGISTER_FUNCTION("aoi_enter",&lua_aoi_enter);
+	REGISTER_FUNCTION("aoi_leave",&lua_aoi_leave);		
+	REGISTER_FUNCTION("aoi_moveto",&lua_aoi_moveto);		
+	REGISTER_FUNCTION("send2grp",&lua_send2grp);		
+	REGISTER_FUNCTION("gamelog",&lua_gamelog);
 
-	lua_pushstring(L, "gamelog");
-	lua_pushcfunction(L, lua_gamelog);
-	lua_settable(L, -3);
 
 	lua_pop(L,1);
 }

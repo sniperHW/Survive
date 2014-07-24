@@ -110,14 +110,9 @@ void reg_group_c_function(lua_State *L){
 		lua_pushvalue(L,-1);
 		lua_setglobal(L,"GroupApp");
 	}
-
-	lua_pushstring(L, "reg_cmd_handler");
-	lua_pushcfunction(L, reg_cmd_handler);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "grouplog");
-	lua_pushcfunction(L, lua_grouplog);
-	lua_settable(L, -3);
+	
+	REGISTER_FUNCTION("reg_cmd_handler",&reg_cmd_handler);
+	REGISTER_FUNCTION("grouplog",&lua_grouplog);			
 
 	lua_pop(L,1);
 }

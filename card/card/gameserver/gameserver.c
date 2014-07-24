@@ -86,10 +86,8 @@ void reg_game_c_function(lua_State *L){
 		lua_pushvalue(L,-1);
 		lua_setglobal(L,"GameApp");
 	}
-		
-	lua_pushstring(L, "gamelog");
-	lua_pushcfunction(L, lua_gamelog);
-	lua_settable(L, -3);
+	
+	REGISTER_FUNCTION("gamelog",&lua_gamelog);	
 
 	lua_pop(L,1);
 }

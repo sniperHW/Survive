@@ -377,6 +377,12 @@ int reg_cmd_handler(lua_State *L);
 		lua_settable(L, -3);\
 }while(0)
 
+#define REGISTER_FUNCTION(NAME,FUNC) do{\
+	lua_pushstring(L,NAME);\
+	lua_pushcfunction(L,FUNC);\
+	lua_settable(L, -3);\
+}while(0)	
+
 void reg_common_c_function(lua_State *L){
 	
 	lua_getglobal(L,"_G");
@@ -427,141 +433,55 @@ void reg_common_c_function(lua_State *L){
 	//end of netcmd
 	REGISTER_CONST(L,LOG_INFO);	
 	REGISTER_CONST(L,LOG_ERROR);
-			
-	lua_pushstring(L,"rpk_read_uint8");
-	lua_pushcfunction(L,&lua_rpk_read_uint8);
-	lua_settable(L, -3);
 
-	lua_pushstring(L,"rpk_read_uint16");
-	lua_pushcfunction(L,&lua_rpk_read_uint16);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"rpk_read_uint32");
-	lua_pushcfunction(L,&lua_rpk_read_uint32);
-	lua_settable(L, -3);
-
-
-	lua_pushstring(L,"rpk_read_double");
-	lua_pushcfunction(L,&lua_rpk_read_double);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"rpk_read_string");
-	lua_pushcfunction(L,&lua_rpk_read_string);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"rpk_reverse_read_uint8");
-	lua_pushcfunction(L,&lua_rpk_reverse_read_uint8);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"rpk_reverse_read_uint16");
-	lua_pushcfunction(L,&lua_rpk_reverse_read_uint16);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"rpk_reverse_read_uint32");
-	lua_pushcfunction(L,&lua_rpk_reverse_read_uint32);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"rpk_reverse_read_double");
-	lua_pushcfunction(L,&lua_rpk_reverse_read_double);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"rpk_dropback");
-	lua_pushcfunction(L,&lua_rpk_dropback);
-	lua_settable(L, -3);
 	
-	lua_pushstring(L,"new_wpk");
-	lua_pushcfunction(L,&lua_new_wpk);
-	lua_settable(L, -3);
+			
+	REGISTER_FUNCTION("rpk_read_uint8",&lua_rpk_read_uint8);	
+	REGISTER_FUNCTION("rpk_read_uint16",&lua_rpk_read_uint16);	
+	REGISTER_FUNCTION("rpk_read_uint32",&lua_rpk_read_uint32);	
+	REGISTER_FUNCTION("rpk_read_double",&lua_rpk_read_double);
+	REGISTER_FUNCTION("rpk_read_string",&lua_rpk_read_string);		
 
-	lua_pushstring(L,"new_wpk_by_rpk");
-	lua_pushcfunction(L,&lua_new_wpk_by_rpk);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"new_wpk_by_wpk");
-	lua_pushcfunction(L,&lua_new_wpk_by_wpk);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"destroy_wpk");
-	lua_pushcfunction(L,&lua_destroy_wpk);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"wpk_write_uint8");
-	lua_pushcfunction(L,&lua_wpk_write_uint8);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"wpk_write_uint16");
-	lua_pushcfunction(L,&lua_wpk_write_uint16);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"wpk_write_uint32");
-	lua_pushcfunction(L,&lua_wpk_write_uint32);
-	lua_settable(L, -3);
+	REGISTER_FUNCTION("rpk_reverse_read_uint8",&lua_rpk_reverse_read_uint8);
+	REGISTER_FUNCTION("rpk_reverse_read_uint16",&lua_rpk_reverse_read_uint16);
+	REGISTER_FUNCTION("rpk_reverse_read_uint32",&lua_rpk_reverse_read_uint32);
+	REGISTER_FUNCTION("rpk_reverse_read_double",&lua_rpk_reverse_read_double);				
 
 
-	lua_pushstring(L,"wpk_write_double");
-	lua_pushcfunction(L,&lua_wpk_write_double);
-	lua_settable(L, -3);
+	REGISTER_FUNCTION("rpk_dropback",&lua_rpk_dropback);	
+	REGISTER_FUNCTION("new_wpk",&lua_new_wpk);
+	REGISTER_FUNCTION("new_wpk_by_rpk",&lua_new_wpk_by_rpk);	
+	REGISTER_FUNCTION("new_wpk_by_wpk",&lua_new_wpk_by_wpk);
+	REGISTER_FUNCTION("destroy_wpk",&lua_destroy_wpk);
 
-	lua_pushstring(L,"wpk_write_string");
-	lua_pushcfunction(L,&lua_wpk_write_string);
-	lua_settable(L, -3);
+
+	REGISTER_FUNCTION("wpk_write_uint8",&lua_wpk_write_uint8);
+	REGISTER_FUNCTION("wpk_write_uint16",&lua_wpk_write_uint16);
+	REGISTER_FUNCTION("wpk_write_uint32",&lua_wpk_write_uint32);	
+	REGISTER_FUNCTION("wpk_write_double",&lua_wpk_write_double);
+	REGISTER_FUNCTION("wpk_write_string",&lua_wpk_write_string);	
 
 	lua_pop(L,1);
     
 	lua_newtable(L);
 		
-	lua_pushstring(L,"initwordfilter");
-	lua_pushcfunction(L,&lua_initwordfilter);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L,"isvaildword");
-	lua_pushcfunction(L,&lua_isvaildword);
-	lua_settable(L, -3);		
-	
-	lua_pushstring(L,"systemms");
-	lua_pushcfunction(L,&lua_systemms);
-	lua_settable(L, -3);
+	REGISTER_FUNCTION("initwordfilter",&lua_initwordfilter);
+	REGISTER_FUNCTION("isvaildword",&lua_isvaildword);
+	REGISTER_FUNCTION("systemms",&lua_systemms);
+	REGISTER_FUNCTION("syslog",&lua_syslog);			
 
-	lua_pushstring(L,"syslog");
-	lua_pushcfunction(L,&lua_syslog);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"send");
-	lua_pushcfunction(L,&lua_send);
-	lua_settable(L, -3);
+	REGISTER_FUNCTION("send",&lua_send);
 
 	//redis
-	lua_pushstring(L,"redis_connect");
-	lua_pushcfunction(L,&lua_redis_connect);
-	lua_settable(L, -3);
+	REGISTER_FUNCTION("redis_connect",&lua_redis_connect);	
+	REGISTER_FUNCTION("redis_close",&lua_redis_close);
+	REGISTER_FUNCTION("redisCommand",&lua_redisCommand);		
 
-	lua_pushstring(L,"redis_close");
-	lua_pushcfunction(L,&lua_redis_close);
-	lua_settable(L, -3);
-
-	lua_pushstring(L,"redisCommand");
-	lua_pushcfunction(L,&lua_redisCommand);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L,"db_initfinish");
-	lua_pushcfunction(L,&on_db_initfinish);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L,"reg_timer");
-	lua_pushcfunction(L,&lua_reg_timer);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L,"del_timer");
-	lua_pushcfunction(L,&lua_del_timer);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "reg_cmd_handler");
-	lua_pushcfunction(L, &reg_cmd_handler);
-	lua_settable(L, -3);			
-		
-	lua_pushstring(L, "debug");
-	lua_pushcfunction(L, &lua_break);
-	lua_settable(L, -3);			
+	REGISTER_FUNCTION("db_initfinish",&on_db_initfinish);		
+	REGISTER_FUNCTION("reg_timer",&lua_reg_timer);	
+	REGISTER_FUNCTION("del_timer",&lua_del_timer);	
+	REGISTER_FUNCTION("reg_cmd_handler",&reg_cmd_handler);	
+	REGISTER_FUNCTION("debug",&lua_break);
 	
 	lua_setglobal(L,"C");
 }

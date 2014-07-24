@@ -371,6 +371,12 @@ int lua_break(lua_State *L){
 
 int reg_cmd_handler(lua_State *L);
 
+#define REGISTER_CONST(L,N) do{\
+		lua_pushstring(L, #N);\
+		lua_pushinteger(L, N);\
+		lua_settable(L, -3);\
+}while(0)
+
 void reg_common_c_function(lua_State *L){
 	
 	lua_getglobal(L,"_G");
@@ -383,135 +389,45 @@ void reg_common_c_function(lua_State *L){
 	}
 	
 	//client <-> agent
-	lua_pushstring(L, "CMD_CA_LOGIN");
-	lua_pushinteger(L, CMD_CA_LOGIN);
-	lua_settable(L, -3);
+	REGISTER_CONST(L,CMD_CA_LOGIN);
 	
 	//client <-> game
-	lua_pushstring(L, "CMD_CS_MOV");
-	lua_pushinteger(L, CMD_CS_MOV);
-	lua_settable(L, -3);	
-	
-	lua_pushstring(L, "CMD_SC_ENTERMAP");
-	lua_pushinteger(L, CMD_SC_ENTERMAP);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "CMD_SC_ENTERSEE");
-	lua_pushinteger(L, CMD_SC_ENTERSEE);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_SC_LEAVESEE");
-	lua_pushinteger(L, CMD_SC_LEAVESEE);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_SC_MOV");
-	lua_pushinteger(L, CMD_SC_MOV);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_SC_MOV_ARRI");
-	lua_pushinteger(L, CMD_SC_MOV_ARRI);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_SC_MOV_FAILED");
-	lua_pushinteger(L, CMD_SC_MOV_FAILED);
-	lua_settable(L, -3);			
-
+	REGISTER_CONST(L,CMD_CS_MOV);	
+	REGISTER_CONST(L,CMD_SC_ENTERMAP);	
+	REGISTER_CONST(L,CMD_SC_ENTERSEE);	
+	REGISTER_CONST(L,CMD_SC_LEAVESEE);
+	REGISTER_CONST(L,CMD_SC_MOV);	
+	REGISTER_CONST(L,CMD_SC_MOV_ARRI);				
+	REGISTER_CONST(L,CMD_SC_MOV_FAILED);	
 	//client <-> group
-
-	lua_pushstring(L, "CMD_CG_CREATE");
-	lua_pushinteger(L, CMD_CG_CREATE);
-	lua_settable(L, -3);
-
-
-	lua_pushstring(L, "CMD_CG_ENTERMAP");
-	lua_pushinteger(L, CMD_CG_ENTERMAP);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "CMD_GC_CREATE");
-	lua_pushinteger(L, CMD_GC_CREATE);
-	lua_settable(L, -3);
-	
-
-	lua_pushstring(L, "CMD_GC_BEGINPLY");
-	lua_pushinteger(L, CMD_GC_BEGINPLY);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_GC_ERROR");
-	lua_pushinteger(L, CMD_GC_ERROR);
-	lua_settable(L, -3);
-
+	REGISTER_CONST(L,CMD_CG_CREATE);	
+	REGISTER_CONST(L,CMD_CG_ENTERMAP);
+	REGISTER_CONST(L,CMD_GC_CREATE);		
+	REGISTER_CONST(L,CMD_GC_BEGINPLY);	
+	REGISTER_CONST(L,CMD_GC_ERROR);
 	//gate <-> group
-	lua_pushstring(L, "CMD_AG_LOGIN");
-	lua_pushinteger(L, CMD_AG_LOGIN);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_AG_PLYLOGIN");
-	lua_pushinteger(L, CMD_AG_PLYLOGIN);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_AG_CLIENT_DISCONN");
-	lua_pushinteger(L, CMD_AG_CLIENT_DISCONN);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_GA_NOTIFYGAME");
-	lua_pushinteger(L, CMD_GA_NOTIFYGAME);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "CMD_GA_BUSY");
-	lua_pushinteger(L, CMD_GA_BUSY);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_GA_PLY_INVAILD");
-	lua_pushinteger(L, CMD_GA_PLY_INVAILD);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_GA_CREATE");
-	lua_pushinteger(L, CMD_GA_CREATE);
-	lua_settable(L, -3);
-
+	REGISTER_CONST(L,CMD_AG_LOGIN);	
+	REGISTER_CONST(L,CMD_AG_PLYLOGIN);		
+	REGISTER_CONST(L,CMD_AG_CLIENT_DISCONN);	
+	REGISTER_CONST(L,CMD_GA_NOTIFYGAME);
+	REGISTER_CONST(L,CMD_GA_BUSY);	
+	REGISTER_CONST(L,CMD_GA_PLY_INVAILD);	
+	REGISTER_CONST(L,CMD_GA_CREATE);	
 	//game <-> group
-	lua_pushstring(L, "CMD_GAMEG_LOGIN");
-	lua_pushinteger(L, CMD_GAMEG_LOGIN);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "CMD_AGAME_LOGIN");
-	lua_pushinteger(L, CMD_AGAME_LOGIN);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "CMD_AGAME_CLIENT_DISCONN");
-	lua_pushinteger(L, CMD_AGAME_CLIENT_DISCONN);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "CMD_GAMEA_LOGINRET");
-	lua_pushinteger(L, CMD_GAMEA_LOGINRET);
-	lua_settable(L, -3);
-
+	REGISTER_CONST(L,CMD_GAMEG_LOGIN);
+	REGISTER_CONST(L,CMD_AGAME_LOGIN);	
+	REGISTER_CONST(L,CMD_AGAME_CLIENT_DISCONN);
+	REGISTER_CONST(L,CMD_GAMEA_LOGINRET);
 	//dummy cmd
-	lua_pushstring(L, "DUMMY_ON_GATE_DISCONNECTED");
-	lua_pushinteger(L,DUMMY_ON_GATE_DISCONNECTED);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "DUMMY_ON_GAME_DISCONNECTED");
-	lua_pushinteger(L,DUMMY_ON_GAME_DISCONNECTED);
-	lua_settable(L, -3);
+	REGISTER_CONST(L,DUMMY_ON_GATE_DISCONNECTED);
+	REGISTER_CONST(L,DUMMY_ON_GAME_DISCONNECTED);	
 	//rpc
-	lua_pushstring(L, "CMD_RPC_CALL");
-	lua_pushinteger(L,CMD_RPC_CALL);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "CMD_RPC_RESPONSE");
-	lua_pushinteger(L,CMD_RPC_RESPONSE);
-	lua_settable(L, -3);
+	REGISTER_CONST(L,CMD_RPC_CALL);	
+	REGISTER_CONST(L,CMD_RPC_RESPONSE);
 	//end of netcmd
-	
-	lua_pushstring(L, "LOG_INFO");
-	lua_pushinteger(L, LOG_INFO);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "LOG_ERROR");
-	lua_pushinteger(L, LOG_ERROR);
-	lua_settable(L, -3);
-	
+	REGISTER_CONST(L,LOG_INFO);	
+	REGISTER_CONST(L,LOG_ERROR);
+			
 	lua_pushstring(L,"rpk_read_uint8");
 	lua_pushcfunction(L,&lua_rpk_read_uint8);
 	lua_settable(L, -3);

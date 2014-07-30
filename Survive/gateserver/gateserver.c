@@ -48,6 +48,7 @@ static void sig_int(int sig){
 }
 
 int main(int argc,char **argv){
+	kn_net_open();		
 	LOG_GATE(LOG_INFO,"begin start gateserver\n");
 	if(loadconfig() != 0){
 		return 0;

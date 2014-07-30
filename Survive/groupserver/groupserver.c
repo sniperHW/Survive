@@ -118,6 +118,7 @@ void reg_group_c_function(lua_State *L){
 }
 
 static lua_State *init(){
+	kn_net_open();		
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
 	//注册C函数，常量到lua

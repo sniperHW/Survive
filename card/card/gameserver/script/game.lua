@@ -1,4 +1,3 @@
-local Map = require "script/map"
 local Que = require "script/queue"
 local Avatar = require "script/avatar"
 local Cjson = require "cjson"

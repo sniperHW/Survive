@@ -2,8 +2,7 @@
 #define _CMDHANDLER_H
 
 #include <stdint.h>
-#include "kn_string.h"
-#include "lua/lua_util.h"
+#include "lua_util.h"
 
 struct rpacket;
 enum{
@@ -15,7 +14,7 @@ typedef struct cmd_handler{
 	uint8_t _type;
 	union{
 		void (*_fn)(struct rpacket*,void *);//for C function
-		luaObject_t obj;                    //for lua function
+		luaTabRef_t *obj;                    //for lua function
 	};
 }*cmd_handler_t;
 

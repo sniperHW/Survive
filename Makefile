@@ -1,43 +1,36 @@
 CFLAGS = -g -Wall -fno-strict-aliasing -std=gnu99 -rdynamic
-LDFLAGS = -lpthread -lrt -lm -ltcmalloc
+LDFLAGS = -lpthread -lrt -lm -ltcmalloc -llua5.2
 SHARED = -fPIC --shared
 CC = gcc
-INCLUDE =  -I../KendyNet/include -I./Survive -I../KendyNet
+INCLUDE =  -I./KendyNet/include -I./Survive -I./deps -I/usr/include/lua5.2
 
 kendynet.a: \
-		   ../KendyNet/src/kn_connector.c \
-		   ../KendyNet/src/kn_epoll.c \
-		   ../KendyNet/src/kn_except.c \
-		   ../KendyNet/src/kn_proactor.c \
-		   ../KendyNet/src/kn_ref.c \
-		   ../KendyNet/src/kn_acceptor.c \
-		   ../KendyNet/src/kn_fd.c \
-		   ../KendyNet/src/kn_datasocket.c \
-		   ../KendyNet/src/kendynet.c \
-		   ../KendyNet/src/kn_time.c \
-		   ../KendyNet/src/kn_thread.c\
-		   ../KendyNet/src/buffer.c\
-		   ../KendyNet/src/kn_string.c\
-		   ../KendyNet/src/wpacket.c\
-		   ../KendyNet/src/rpacket.c\
-		   ../KendyNet/src/kn_timer.c\
-		   ../KendyNet/src/kn_stream_conn.c\
-		   ../KendyNet/src/kn_stream_conn_server.c\
-		   ../KendyNet/src/kn_stream_conn_client.c\
-		   ../KendyNet/src/minheap.c\
-		   ../KendyNet/src/hash_map.c\
-		   ../KendyNet/src/rbtree.c\
-		   ../KendyNet/src/spinlock.c\
-		   ../KendyNet/src/obj_allocator.c\
-		   ../KendyNet/src/log.c\
-		   ../KendyNet/src/redisconn.c\
-		   ../KendyNet/src/tls.c\
-		   ../KendyNet/src/lua_util.c\
-		   ../KendyNet/src/kn_timerfd.c\
-		   ../KendyNet/src/kn_channel.c
-		$(CC) $(CFLAGS) -c $^ $(INCLUDE) $(DEFINE)
-		ar -rc kendynet.a *.o
-		rm -f *.o
+		   ./KendyNet/src/kn_epoll.c \
+		   ./KendyNet/src/kn_timerfd.c \
+		   ./KendyNet/src/kn_timer.c \
+		   ./KendyNet/src/kn_time.c \
+		   ./KendyNet/src/redisconn.c\
+		   ./KendyNet/src/kn_chr_dev.c\
+		   ./KendyNet/src/kn_refobj.c \
+		   ./KendyNet/src/rpacket.c \
+		   ./KendyNet/src/wpacket.c \
+		   ./KendyNet/src/packet.c \
+		   ./KendyNet/src/kn_socket.c \
+		   ./KendyNet/src/kn_refobj.c \
+		   ./KendyNet/src/stream_conn.c \
+		   ./KendyNet/src/kn_thread.c \
+		   ./KendyNet/src/kn_thread_mailbox.c \
+		   ./KendyNet/src/hash_map.c \
+		   ./KendyNet/src/kn_except.c \
+		   ./KendyNet/src/lookup8.c \
+		   ./KendyNet/src/spinlock.c \
+		   ./KendyNet/src/log.c \
+		   ./KendyNet/src/kn_string.c \
+		   ./KendyNet/src/minheap.c \
+		   ./KendyNet/src/buffer.c
+		   $(CC) $(CFLAGS) -c $^ $(INCLUDE) $(DEFINE)
+	ar -rc kendynet.a *.o
+	rm -f *.o
 
 gateserverd:\
 	Survive/common/netcmd.h\
@@ -46,9 +39,8 @@ gateserverd:\
 	Survive/gateserver/config.c\
 	Survive/gateserver/togrpgame.c\
 	kendynet.a
-	$(CC) $(CFLAGS) -o gateserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
+	$(CC) $(CFLAGS) -o gateserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua5.2 -ldl -lm
 	mv gateserverd Survive/gateserver
-
 
 groupserverd:\
 	Survive/common/netcmd.h\
@@ -57,7 +49,7 @@ groupserverd:\
 	Survive/groupserver/config.c\
 	Survive/common/wordfilter.c\
 	kendynet.a
-	$(CC) $(CFLAGS) -o groupserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
+	$(CC) $(CFLAGS) -o groupserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua5.2 -ldl -lm
 	mv groupserverd Survive/groupserver
 
 gameserverd:\
@@ -67,18 +59,18 @@ gameserverd:\
 	Survive/common/wordfilter.c\
 	Survive/gameserver/gameserver.c\
 	kendynet.a
-	$(CC) $(CFLAGS) -o gameserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
+	$(CC) $(CFLAGS) -o gameserverd $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua5.2 -ldl -lm
 	mv gameserverd Survive/gameserver
 	
 testclient:\
 	testclient.c\
 	kendynet.a
-	$(CC) $(CFLAGS) -o testclient $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
+	$(CC) $(CFLAGS) -o testclient $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -ldl -lm
 	
 testpacket:\
 	testpacket.c\
 	kendynet.a
-	$(CC) $(CFLAGS) -o testpacket $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -llua -ldl -lm
+	$(CC) $(CFLAGS) -o testpacket $^ libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -ldl -lm
 
 buildscript:
 	cp Survive/commonscript/dbmgr.lua Survive/groupserver/script

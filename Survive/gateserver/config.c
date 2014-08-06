@@ -1,5 +1,5 @@
 #include "config.h"
-#include "lua/lua_util.h"
+#include "lua_util.h"
 #include "gateserver.h"
 
 config* g_config = NULL;
@@ -17,23 +17,30 @@ int loadconfig(){
 	}
 	
 	//连接group
-	luaObject_t obj = GETGLOBAL_OBJECT(L,"togrp");
+	//luaObject_t obj = GETGLOBAL_OBJECT(L,"togrp");
+	
+	lua_getglobal(L,"togrp");
+	luaTabRef_t obj = create_luaTabRef(L,-1);	
 	g_config->groupip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
 	g_config->groupport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
-	release_luaObj(obj);
+	release_luaTabRef(&obj);
 
 	//连接redis
-	obj = GETGLOBAL_OBJECT(L,"toredis");
+
+	lua_getglobal(L,"toredis");
+	obj = create_luaTabRef(L,-1);	
 	g_config->redisip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
 	g_config->redisport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
-	release_luaObj(obj);
+	release_luaTabRef(&obj);
 
 	//监听客户端
-	obj = GETGLOBAL_OBJECT(L,"toclient");
+	lua_getglobal(L,"toclient");
+	obj = create_luaTabRef(L,-1);		
 	g_config->toclientip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
 	g_config->toclientport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
-	release_luaObj(obj);
-	g_config->agentcount = GETGLOBAL_NUMBER(L,"agentcount");
+	release_luaTabRef(&obj);
+	lua_getglobal(L,"agentcount");
+	g_config->agentcount = lua_tointeger(L,-1);
 	lua_close(L);
 	return 0;
 }

@@ -1,9 +1,8 @@
 #include "kendynet.h"
 #include "gameserver.h"
 #include "config.h"
-#include "lua/lua_util.h"
-#include "kn_stream_conn_server.h"
-#include "kn_stream_conn_client.h"
+#include "lua_util.h"
+#include "stream_conn.h"
 #include "common/netcmd.h"
 #include "common/cmdhandler.h"
 #include "astar.h"
@@ -15,18 +14,18 @@ IMP_LOG(gamelog);
 #define MAXCMD 65535
 static cmd_handler_t handler[MAXCMD] = {NULL};
 
-static kn_stream_client_t c;
-static kn_stream_conn_t   togrp;
+static stream_conn_t   togrp;
 
-__thread kn_proactor_t t_proactor = NULL;
+__thread engine_t t_engine = NULL;
 
-static int on_gate_packet(kn_stream_conn_t conn,rpacket_t rpk){
+static int on_gate_packet(stream_conn_t conn,packet_t pk){
+	rpacket_t rpk = (rpacket_t)pk;
 	uint16_t cmd = rpk_read_uint16(rpk);	
 	printf("gate_packet:%u\n",cmd);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
 		const char *error = NULL;
-		if((error = CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
+		if((error = CallLuaTabFunc2(*handler[cmd]->obj,"handle",0,
 						  lua_pushlightuserdata(L,rpk),
 						  lua_pushlightuserdata(L,conn)))){
 			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
@@ -36,34 +35,33 @@ static int on_gate_packet(kn_stream_conn_t conn,rpacket_t rpk){
 	return 1;
 }
 
-static void on_gate_disconnected(kn_stream_conn_t conn,int err){
+static void on_gate_disconnected(stream_conn_t conn,int err){
 	uint16_t cmd = DUMMY_ON_GATE_DISCONNECTED;
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
 		const char *error = NULL;
-		if((error = CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
+		if((error = CallLuaTabFunc2(*handler[cmd]->obj,"handle",0,
 						  lua_pushnil(L),lua_pushlightuserdata(L,conn)))){
 			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
 		}
-	}	
-}
-
-static void on_new_gate(kn_stream_server_t server,kn_stream_conn_t conn){
-	if(0 == kn_stream_server_bind(server,conn,0,65536,
-				      on_gate_packet,on_gate_disconnected,
-				      0,NULL,0,NULL)){
-	}else{
-		kn_stream_conn_close(conn);
 	}
 }
 
 
-static int on_group_packet(kn_stream_conn_t con,rpacket_t rpk){
+static void on_new_gate(handle_t s,void *_){
+	stream_conn_t gate = new_stream_conn(s,65536,RPACKET);
+	if(0 != stream_conn_associate(t_engine,gate,on_gate_packet,on_gate_disconnected))
+		stream_conn_close(gate);
+}
+
+
+static int on_group_packet(stream_conn_t con,packet_t pk){
+	rpacket_t rpk = (rpacket_t)pk;
 	uint16_t cmd = rpk_read_uint16(rpk);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
 		const char *error = NULL;
-		if((error = CALL_OBJ_FUNC2(handler[cmd]->obj,"handle",0,
+		if((error = CallLuaTabFunc2(*handler[cmd]->obj,"handle",0,
 						  lua_pushlightuserdata(L,rpk),
 						  lua_pushlightuserdata(L,con)))){
 			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
@@ -74,63 +72,68 @@ static int on_group_packet(kn_stream_conn_t con,rpacket_t rpk){
 }
 
 
+struct recon_ctx{
+	handle_t     sock;
+	kn_sockaddr  addr;
+	void (*cb_connect)(handle_t,int,void*,kn_sockaddr*);
+};
+
 static int  cb_timer(kn_timer_t timer)//如果返回1继续注册，否则不再注册
 {
-	kn_sockaddr grpaddr;
-	kn_addr_init_in(&grpaddr,kn_to_cstr(g_config->groupip),g_config->groupport);		
-	kn_stream_connect(c,NULL,&grpaddr,NULL);
-	free(timer);
+	struct recon_ctx *recon = (struct recon_ctx*)kn_timer_getud(timer);
+	kn_sock_connect(t_engine,recon->sock,&recon->addr,NULL,recon->cb_connect,NULL);
+	free(recon);
 	return 0;
 }
 
-static void on_group_connect_failed(kn_stream_client_t _,kn_sockaddr *addr,int err,void *ud)
-{
-	(void)_;
-	(void)addr;
-	(void)err;
-	(void)ud;
-	kn_reg_timer(t_proactor,5000,cb_timer,NULL);
-	printf("connect to group failed,retry after 5 sec\n");
-}
-
-static void on_group_disconnected(kn_stream_conn_t conn,int err){
-	(void)conn;
-	(void)err; 
+static void cb_connect_group(handle_t s,int err,void *ud,kn_sockaddr *addr);
+static void on_group_disconnected(stream_conn_t c,int err){
 	togrp = NULL;
-	kn_reg_timer(t_proactor,5000,cb_timer,NULL);	
+	struct recon_ctx *recon = calloc(1,sizeof(*recon));
+	recon->sock = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+	recon->cb_connect = cb_connect_group;
+	recon->addr = *kn_sock_addrpeer(stream_conn_gethandle(c));
+	kn_reg_timer(t_engine,5000,cb_timer,recon);	
 }
 
-static void on_group_connect(kn_stream_client_t _,kn_stream_conn_t conn,void *ud){
-	(void)_;
-	if(0 == kn_stream_client_bind(c,conn,0,65536,on_group_packet,on_group_disconnected,
-						  0,NULL,0,NULL)){	
+static void cb_connect_group(handle_t s,int err,void *ud,kn_sockaddr *addr)
+{
+	if(err == 0){
+		//success
+		stream_conn_t conn = new_stream_conn(s,65536,RPACKET);
+		stream_conn_associate(t_engine,conn,on_group_packet,on_group_disconnected);		
 		togrp = conn;		
-		wpacket_t wpk = NEW_WPK(64);
+		wpacket_t wpk = wpk_create(64);
 		wpk_write_uint16(wpk,CMD_GAMEG_LOGIN);
 		wpk_write_string(wpk,"game1");
 		wpk_write_string(wpk,kn_to_cstr(g_config->lgateip));
 		wpk_write_uint16(wpk,g_config->lgateport);
-		kn_stream_conn_send(conn,wpk);		
+		stream_conn_send(conn,(packet_t)wpk);		
 		printf("connect to group success\n");
 	}else{
-		kn_stream_conn_close(conn);		
-		LOG_GAME(LOG_ERROR,"on_group_connect failed\n");
+		kn_close_sock(s);
+		//failed
+		struct recon_ctx *recon = calloc(1,sizeof(*recon));
+		recon->sock = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+		recon->addr = *addr;
+		recon->cb_connect = cb_connect_group;
+		kn_reg_timer(t_engine,5000,cb_timer,recon);
 	}
 }
 
-
 int reg_cmd_handler(lua_State *L){
 	uint16_t cmd = lua_tonumber(L,1);
-	luaObject_t obj = create_luaObj(L,2);
+	luaTabRef_t obj = create_luaTabRef(L,2);
 	if(!handler[cmd]){
 		printf("reg cmd %d\n",cmd);
 		cmd_handler_t h = calloc(1,sizeof(*h));
 		h->_type = FN_LUA;
-		h->obj = obj;
+		h->obj = calloc(1,sizeof(*h->obj));
+		*h->obj = obj;
 		handler[cmd] = h;
 		lua_pushboolean(L,1);
 	}else{
-		release_luaObj(obj);
+		release_luaTabRef(&obj);
 		lua_pushboolean(L,0);
 	}
 	return 1;
@@ -138,11 +141,11 @@ int reg_cmd_handler(lua_State *L){
 
 
 static int lua_send2grp(lua_State *L){
-	wpacket_t wpk = lua_touserdata(L,1);
+	packet_t wpk = lua_touserdata(L,1);
 	if(!togrp){
-		wpk_destroy(wpk);
+		destroy_packet(wpk);
 	}else{
-		kn_stream_conn_send(togrp,wpk);
+		stream_conn_send(togrp,wpk);
 	}
 	return 0;
 }
@@ -170,29 +173,30 @@ static uint8_t in_myscope(aoi_object *_self,aoi_object *_other){
 }
 
 static void    cb_enter(aoi_object *_self,aoi_object *_other){
-	luaObject_t self = (luaObject_t)_self->ud;
-	luaObject_t other = (luaObject_t)_other->ud;
+	luaTabRef_t* self = (luaTabRef_t*)_self->ud;
+	luaTabRef_t* other = (luaTabRef_t*)_other->ud;
 	lua_State *L = self->L;
 	const char *error = NULL;
-	if((error = CALL_OBJ_FUNC1(self,"enter_see",0,
-					  PUSH_LUAOBJECT(L,other)))){
+	if((error = CallLuaTabFunc1(*self,"enter_see",0,
+					  PushLuaTabRef(L,*other)))){
 		LOG_GAME(LOG_INFO,"error on enter_see:%s\n",error);
 	}		
 }
 
 static void    cb_leave(aoi_object *_self,aoi_object *_other){
-	luaObject_t self = (luaObject_t)_self->ud;
-	luaObject_t other = (luaObject_t)_other->ud;
+	luaTabRef_t* self = (luaTabRef_t*)_self->ud;
+	luaTabRef_t* other = (luaTabRef_t*)_other->ud;
 	lua_State *L = self->L;
 	const char *error = NULL;
-	if((error = CALL_OBJ_FUNC1(self,"leave_see",0,
-					  PUSH_LUAOBJECT(L,other)))){
+	if((error = CallLuaTabFunc1(*self,"leave_see",0,
+					  PushLuaTabRef(L,*other)))){
 		LOG_GAME(LOG_INFO,"error on leave_see:%s\n",error);
 	}		
 }
 
 static int lua_create_aoi_obj(lua_State *L){
-	luaObject_t obj = create_luaObj(L,1);
+	luaTabRef_t *obj = calloc(1,sizeof(*obj));	
+	*obj = create_luaTabRef(L,1);
 	aoi_object* o = calloc(1,sizeof(*o));
 	o->in_myscope = in_myscope;
 	o->cb_enter = cb_enter;
@@ -207,7 +211,8 @@ static int lua_destroy_aoi_obj(lua_State *L){
 	aoi_object* o = lua_touserdata(L,1);
 	if(o->map) aoi_leave(o);
 	del_bitset(o->view_objs);
-	release_luaObj((luaObject_t)o->ud);
+	release_luaTabRef((luaTabRef_t*)o->ud);
+	free(o->ud);
 	free(o);
 	return 0;
 }
@@ -402,55 +407,56 @@ static lua_State *init(){
 	}
 
 	//注册lua消息处理器
-	if(CALL_LUA_FUNC(L,"reghandler",0)){
-		const char * error = lua_tostring(L, -1);
-		lua_pop(L,1);
+	const char *error = NULL;
+	if((error = LuaCall0(L,"reghandler",1))){
 		LOG_GAME(LOG_INFO,"error on reghandler:%s\n",error);
 		printf("error on handler.lua:%s\n",error);
 		lua_close(L); 
-	}
+	}	
+	
 	return L;
 }
 
-static volatile int stop = 0;
 static void sig_int(int sig){
-	stop = 1;
+	kn_stop_engine(t_engine);
 }
 
 int on_db_initfinish(lua_State *_){
 	(void)_;
 	printf("on_db_initfinish\n");
 	//启动监听
-	kn_sockaddr lgateserver;
-	kn_addr_init_in(&lgateserver,kn_to_cstr(g_config->lgateip),g_config->lgateport);
-	kn_new_stream_server(t_proactor,&lgateserver,on_new_gate);
+	{
+		kn_sockaddr gate_local;
+		kn_addr_init_in(&gate_local,kn_to_cstr(g_config->lgateip),g_config->lgateport);	
+		handle_t l = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+		if(0 != kn_sock_listen(t_engine,l,&gate_local,on_new_gate,NULL)){
+			printf("create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->lgateip),g_config->lgateport);
+			LOG_GAME(LOG_INFO,"create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->lgateip),g_config->lgateport);	
+			exit(0);
+		}
+	}
+
 
 	//连接group
-	c = kn_new_stream_client(t_proactor,
-			on_group_connect,
-			on_group_connect_failed);
-
-	kn_sockaddr grpaddr;
-	kn_addr_init_in(&grpaddr,kn_to_cstr(g_config->groupip),g_config->groupport);
-	kn_stream_connect(c,NULL,&grpaddr,NULL);
+	{
+		kn_sockaddr group_addr;
+		kn_addr_init_in(&group_addr,kn_to_cstr(g_config->groupip),g_config->groupport);	
+		handle_t l = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+		kn_sock_connect(t_engine,l,&group_addr,NULL,cb_connect_group,NULL);		
+	}
 	return 0;
 } 
 
 int main(int argc,char **argv){
-	kn_net_open();	
+	signal(SIGPIPE,SIG_IGN);	
 	signal(SIGINT,sig_int);
-	t_proactor = kn_new_proactor();
+	t_engine = kn_new_engine();
 	if(loadconfig() != 0){
 		return 0;
 	}
-
 	if(!init())
 		return 0;
-
-	while(!stop){
-		kn_proactor_run(t_proactor,100);
-	}
-
+	kn_engine_run(t_engine);
 	return 0;	
 }
 

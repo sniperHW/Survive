@@ -2,8 +2,9 @@
 #define _GATEPLAYER_H
 
 #include "kn_string.h"
-#include "kn_ref.h"
+#include "kn_refobj.h"
 #include "common/agentsession.h"
+#include "stream_conn.h"
 
 typedef enum{
 	ply_init = 1,             //连接建立，等待玩家输入用户名密码  
@@ -16,9 +17,9 @@ typedef enum{
 
 
 typedef struct agentplayer{
-	kn_ref           ref;
+	refobj           ref;
 	agentsession     agentsession;
-	kn_stream_conn_t toclient;
+	stream_conn_t    toclient;
 	ident            togame;
 	uint32_t         gameid;
 	uint32_t         groupid;

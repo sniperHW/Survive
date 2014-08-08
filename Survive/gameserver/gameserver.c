@@ -18,18 +18,38 @@ static stream_conn_t   togrp;
 
 __thread engine_t t_engine = NULL;
 
+
+static inline int call_lua_handler(luaTabRef_t *obj,uint16_t cmd,stream_conn_t conn,rpacket_t rpk){
+		lua_State *L = obj->L;
+		//get lua handle function
+		lua_rawgeti(L,LUA_REGISTRYINDEX, obj->rindex);
+		lua_pushinteger(L,cmd);
+		lua_gettable(L,-2);
+		lua_remove(L,-2);		
+		//push arg
+		if(rpk) 
+			lua_pushlightuserdata(L,rpk);
+		else 
+			lua_pushnil(L);
+		if(conn) 
+			lua_pushlightuserdata(L,conn);
+		else
+			lua_pushnil(L);
+		return lua_pcall(L,2,0,0);
+}
+
+
 static int on_gate_packet(stream_conn_t conn,packet_t pk){
 	rpacket_t rpk = (rpacket_t)pk;
 	uint16_t cmd = rpk_read_uint16(rpk);	
 	printf("gate_packet:%u\n",cmd);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
-		const char *error = NULL;
-		if((error = CallLuaTabFunc2(*handler[cmd]->obj,"handle",0,
-						  lua_pushlightuserdata(L,rpk),
-						  lua_pushlightuserdata(L,conn)))){
-			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
-			printf("error on handle[%u]:%s\n",cmd,error);
+		if(call_lua_handler(handler[cmd]->obj,cmd,conn,rpk)){
+				const char *err = lua_tostring(L,1);
+				lua_pop(L,1);
+				LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,err);
+				printf("error on handle[%u]:%s\n",cmd,err);				
 		}
 	}
 	return 1;
@@ -39,10 +59,11 @@ static void on_gate_disconnected(stream_conn_t conn,int err){
 	uint16_t cmd = DUMMY_ON_GATE_DISCONNECTED;
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
-		const char *error = NULL;
-		if((error = CallLuaTabFunc2(*handler[cmd]->obj,"handle",0,
-						  lua_pushnil(L),lua_pushlightuserdata(L,conn)))){
-			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
+		if(call_lua_handler(handler[cmd]->obj,cmd,conn,NULL)){
+				const char *err = lua_tostring(L,1);
+				lua_pop(L,1);
+				LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,err);
+				printf("error on handle[%u]:%s\n",cmd,err);				
 		}
 	}
 }
@@ -55,17 +76,16 @@ static void on_new_gate(handle_t s,void *_){
 }
 
 
-static int on_group_packet(stream_conn_t con,packet_t pk){
+static int on_group_packet(stream_conn_t conn,packet_t pk){
 	rpacket_t rpk = (rpacket_t)pk;
 	uint16_t cmd = rpk_read_uint16(rpk);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
-		const char *error = NULL;
-		if((error = CallLuaTabFunc2(*handler[cmd]->obj,"handle",0,
-						  lua_pushlightuserdata(L,rpk),
-						  lua_pushlightuserdata(L,con)))){
-			LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
-			printf("error on handle[%u]:%s\n",cmd,error);
+		if(call_lua_handler(handler[cmd]->obj,cmd,conn,rpk)){
+				const char *err = lua_tostring(L,1);
+				lua_pop(L,1);
+				LOG_GAME(LOG_INFO,"error on handle[%u]:%s\n",cmd,err);
+				printf("error on handle[%u]:%s\n",cmd,err);				
 		}
 	}
 	return 1;
@@ -177,7 +197,7 @@ static void    cb_enter(aoi_object *_self,aoi_object *_other){
 	luaTabRef_t* other = (luaTabRef_t*)_other->ud;
 	lua_State *L = self->L;
 	const char *error = NULL;
-	if((error = CallLuaTabFunc1(*self,"enter_see",0,
+	if((error = CallLuaTabFunc1(NULL,*self,"enter_see",0,
 					  PushLuaTabRef(L,*other)))){
 		LOG_GAME(LOG_INFO,"error on enter_see:%s\n",error);
 	}		
@@ -188,7 +208,7 @@ static void    cb_leave(aoi_object *_self,aoi_object *_other){
 	luaTabRef_t* other = (luaTabRef_t*)_other->ud;
 	lua_State *L = self->L;
 	const char *error = NULL;
-	if((error = CallLuaTabFunc1(*self,"leave_see",0,
+	if((error = CallLuaTabFunc1(NULL,*self,"leave_see",0,
 					  PushLuaTabRef(L,*other)))){
 		LOG_GAME(LOG_INFO,"error on leave_see:%s\n",error);
 	}		
@@ -412,7 +432,15 @@ static lua_State *init(){
 		LOG_GAME(LOG_INFO,"error on reghandler:%s\n",error);
 		printf("error on handler.lua:%s\n",error);
 		lua_close(L); 
-	}	
+	}
+	
+	int ret = lua_toboolean(L,1);
+	lua_pop(L,1);
+	if(!ret){
+		LOG_GAME(LOG_ERROR,"reghandler failed\n");
+		printf("reghandler failed\n");
+		return NULL;
+	}		
 	
 	return L;
 }

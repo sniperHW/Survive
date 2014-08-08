@@ -118,7 +118,9 @@ Rpc.RegisterRpcFunction("CliReConn",function (rpcHandle)
 end)
 
 
-local function CS_MOV(_,rpk,conn)
+local game_net_handler = {}
+
+game_net_handler[CMD_CS_MOV] = function (rpk,conn)
 	print("CS_MOV")
 	local gameid = rpk_reverse_read_uint32(rpk)
 	local mapid,_ = math.floor(gameid/65536)
@@ -137,7 +139,7 @@ local function CS_MOV(_,rpk,conn)
 	end
 end
 
-local function AGAME_CLIENT_DISCONN(_,rpk,conn)
+game_net_handler[CMD_AGAME_CLIENT_DISCONN] =  function (rpk,conn)
 	print("client disconn")
 	local gameid = rpk_reverse_read_uint32(rpk)
 	local mapid,_ = math.floor(gameid/65536)
@@ -157,8 +159,8 @@ end
 
 local function reg_cmd_handler()
 	game_init()
-	C.reg_cmd_handler(CMD_CS_MOV,{handle=CS_MOV})
-	C.reg_cmd_handler(CMD_AGAME_CLIENT_DISCONN,{handle=AGAME_CLIENT_DISCONN})	
+	C.reg_cmd_handler(CMD_CS_MOV,game_net_handler)
+	C.reg_cmd_handler(CMD_AGAME_CLIENT_DISCONN,game_net_handler)	
 end
 
 return {

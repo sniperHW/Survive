@@ -13,16 +13,35 @@ IMP_LOG(grouplog);
 static cmd_handler_t handler[MAXCMD] = {NULL};
 __thread engine_t t_engine = NULL;
 
-static void process_cmd(uint16_t cmd,stream_conn_t con,rpacket_t rpk){
+static inline int call_lua_handler(luaTabRef_t *obj,uint16_t cmd,stream_conn_t conn,rpacket_t rpk){
+		lua_State *L = obj->L;
+		//get lua handle function
+		lua_rawgeti(L,LUA_REGISTRYINDEX, obj->rindex);
+		lua_pushinteger(L,cmd);
+		lua_gettable(L,-2);
+		lua_remove(L,-2);		
+		//push arg
+		if(rpk) 
+			lua_pushlightuserdata(L,rpk);
+		else 
+			lua_pushnil(L);
+		if(conn) 
+			lua_pushlightuserdata(L,conn);
+		else
+			lua_pushnil(L);
+		return lua_pcall(L,2,0,0);
+}
+
+
+static void process_cmd(uint16_t cmd,stream_conn_t conn,rpacket_t rpk){
 	//printf("process_cmd:%d\n",cmd);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
-		const char *error = NULL;
-		if((error = CallLuaTabFunc2(*handler[cmd]->obj,"handle",0,
-						  lua_pushlightuserdata(L,rpk),
-						  lua_pushlightuserdata(L,con)))){
-			LOG_GROUP(LOG_INFO,"error on handle[%u]:%s\n",cmd,error);
-			printf("error on handle[%u]:%s\n",cmd,error);
+		if(call_lua_handler(handler[cmd]->obj,cmd,conn,rpk)){
+				const char *err = lua_tostring(L,1);
+				lua_pop(L,1);
+				LOG_GROUP(LOG_INFO,"error on handle[%u]:%s\n",cmd,err);
+				printf("error on handle[%u]:%s\n",cmd,err);				
 		}
 	}else{
 		printf("unknow cmd %d\n",cmd);
@@ -136,7 +155,9 @@ static lua_State *init(){
 		lua_close(L); 
 	}
 	
-	if(!lua_toboolean(L,1)){
+	int ret = lua_toboolean(L,1);
+	lua_pop(L,1);
+	if(!ret){
 		LOG_GROUP(LOG_ERROR,"reghandler failed\n");
 		printf("reghandler failed\n");
 		return NULL;

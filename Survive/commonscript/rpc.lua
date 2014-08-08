@@ -40,8 +40,9 @@ local function registerRpcFunction(name,func)
 	rpc_function[name] = func
 end
 
+local rpc_net_handler = {}
 
-local function RPC_CALL(_,rpk,conn)
+rpc_net_handler[CMD_RPC_CALL] = function (rpk,conn)
 	local funcname = rpk_read_string(rpk)
 	print("RPC_CALL:" .. funcname)
 	local rpcHandle = Cjson.decode(rpk_read_string(rpk))
@@ -59,7 +60,7 @@ local function RPC_CALL(_,rpk,conn)
 	end
 end
 
-local function	RPC_RESPONSE(_,rpk,conn)
+rpc_net_handler[CMD_RPC_RESPONSE] = function (rpk,conn)
 	local response = Cjson.decode(rpk_read_string(rpk))
 	local conn_pending_rpc = pending_rpc[conn]
 	if conn_pending_rpc then
@@ -82,8 +83,8 @@ end
 
 local function reg_cmd_handler()
 	print("rpc reg_cmd_handler")
-	C.reg_cmd_handler(CMD_RPC_CALL,{handle=RPC_CALL})
-	C.reg_cmd_handler(CMD_RPC_RESPONSE,{handle=RPC_RESPONSE})
+	C.reg_cmd_handler(CMD_RPC_CALL,rpc_net_handler)
+	C.reg_cmd_handler(CMD_RPC_RESPONSE,rpc_net_handler)
 end
 
 return {

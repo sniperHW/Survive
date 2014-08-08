@@ -217,8 +217,9 @@ function load_chainfo_callback(self,error,result)
 	notifybegply(ply)
 end
 
+local player_net_handler = {}
 
-local function AG_PLYLOGIN(_,rpk,conn)
+player_net_handler[CMD_AG_PLYLOGIN] = function (rpk,conn)
 	local actname = rpk_read_string(rpk)
 	local chaid = rpk_read_uint32(rpk)
 	local gateid = {}
@@ -298,7 +299,7 @@ local function AG_PLYLOGIN(_,rpk,conn)
 	end
 end
 
-local function CG_CREATE(_,rpk,conn)
+player_net_handler[CMD_CG_CREATE] = function (rpk,conn)
 	local chaname = rpk_read_string(rpk)
 	print("CG_CREATE:" .. chaname)
 	local groupid = rpk_read_uint32(rpk)	
@@ -322,7 +323,7 @@ local function CG_CREATE(_,rpk,conn)
 	--print("CG_CREATE3")
 end
 
-local function AG_CLIENT_DISCONN(_,rpk,conn)
+player_net_handler[CMD_AG_CLIENT_DISCONN] = function (rpk,conn)
 	local groupid = rpk_read_uint16(rpk)	
 	local ply = playermgr:getplybyid(groupid)
 	if ply then
@@ -333,7 +334,7 @@ local function AG_CLIENT_DISCONN(_,rpk,conn)
 end
 
 
-local function CG_ENTERMAP(_,rpk,conn)
+player_net_handler[CMD_CG_ENTERMAP] = function (rpk,conn)
 	print("CG_ENTERMAP")
 	local groupid = rpk_read_uint16(rpk)	
 	--print(groupid)
@@ -349,10 +350,10 @@ local function CG_ENTERMAP(_,rpk,conn)
 end
 
 local function reg_cmd_handler()
-	C.reg_cmd_handler(CMD_AG_PLYLOGIN,{handle=AG_PLYLOGIN})
-	C.reg_cmd_handler(CMD_CG_CREATE,{handle=CG_CREATE})
-	C.reg_cmd_handler(CMD_AG_CLIENT_DISCONN,{handle=AG_CLIENT_DISCONN})
-	C.reg_cmd_handler(CMD_CG_ENTERMAP,{handle=CG_ENTERMAP})
+	C.reg_cmd_handler(CMD_AG_PLYLOGIN,player_net_handler)
+	C.reg_cmd_handler(CMD_CG_CREATE,player_net_handler)
+	C.reg_cmd_handler(CMD_AG_CLIENT_DISCONN,player_net_handler)
+	C.reg_cmd_handler(CMD_CG_ENTERMAP,player_net_handler)
 end
 
 return {

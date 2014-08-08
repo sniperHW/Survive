@@ -170,7 +170,7 @@ extern __thread engine_t t_engine;
 static inline void lua_on_redis_connected(redisconn_t conn,int err,void *ud){
 	luaTabRef_t *obj = (luaTabRef_t*)ud;
 	const char *error;
-	if((error = CallLuaTabFunc2((*obj),"on_connect",0,
+	if((error = CallLuaTabFunc2(NULL,(*obj),"on_connect",0,
 				   lua_pushlightuserdata(obj->L,conn),
 				   lua_pushinteger(obj->L,err)))){
 		SYS_LOG(LOG_ERROR,"on_redis_connected:%s\n",error);
@@ -182,7 +182,7 @@ static inline void lua_on_redis_connected(redisconn_t conn,int err,void *ud){
 static inline void lua_on_redis_disconnected(redisconn_t conn,void *ud){
 	luaTabRef_t *obj = (luaTabRef_t*)ud;
 	const char *error;
-	if((error = CallLuaTabFunc1((*obj),"on_disconnect",0,
+	if((error = CallLuaTabFunc1(NULL,(*obj),"on_disconnect",0,
 			  lua_pushlightuserdata(obj->L,conn)))){
 		SYS_LOG(LOG_ERROR,"on_redis_disconnected:%s\n",error);
 	}	
@@ -237,17 +237,17 @@ void redis_command_cb(redisconn_t conn,struct redisReply* reply,void *pridata)
 	luaTabRef_t *obj = (luaTabRef_t*)pridata;
 	const char * error;
 	if(!reply || reply->type == REDIS_REPLY_NIL){
-		if((error = CallLuaTabFunc2((*obj),"callback",0,lua_pushnil(obj->L),lua_pushnil(obj->L)))){
+		if((error = CallLuaTabFunc2(NULL,(*obj),"callback",0,lua_pushnil(obj->L),lua_pushnil(obj->L)))){
 			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
 			printf("redis_command_cb:%s\n",error);
 		}				
 	}else if(reply->type == REDIS_REPLY_ERROR){
-		if((error = CallLuaTabFunc2((*obj),"callback",0,lua_pushstring(obj->L,reply->str),lua_pushnil(obj->L)))){
+		if((error = CallLuaTabFunc2(NULL,(*obj),"callback",0,lua_pushstring(obj->L,reply->str),lua_pushnil(obj->L)))){
 			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
 			printf("redis_command_cb:%s\n",error);
 		}			
 	}else{
-		if((error = CallLuaTabFunc2((*obj),"callback",0,lua_pushnil(obj->L),build_resultset(reply,obj->L)))){
+		if((error = CallLuaTabFunc2(NULL,(*obj),"callback",0,lua_pushnil(obj->L),build_resultset(reply,obj->L)))){
 			SYS_LOG(LOG_ERROR,"redis_command_cb:%s\n",error);
 			printf("redis_command_cb:%s\n",error);
 		}			
@@ -316,7 +316,7 @@ int lua_timer_callback(kn_timer_t t)//如果返回1继续注册，否则不再注册
 	luaTabRef_t *obj = (luaTabRef_t*)kn_timer_getud(t);
 	lua_State *L = obj->L;
 	const char* error = NULL;
-	if((error = CallLuaTabFunc0((*obj),"on_timeout",1))){
+	if((error = CallLuaTabFunc0(NULL,(*obj),"on_timeout",1))){
 		//LOG_GAME(LOG_INFO,"error on on_timeout:%s\n",error);
 		printf("error on on_timeout:%s\n",error);
 		return 1;

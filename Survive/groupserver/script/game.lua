@@ -25,7 +25,10 @@ local function on_gate_login(gate)
 	C.send(gate.conn,wpk)
 end
 
-local function game_login(_,rpk,conn)
+
+local game_net_handler = {}
+
+game_net_handler[CMD_GAMEG_LOGIN] =  function (rpk,conn)
 	print("game_login")
 	local name = rpk_read_string(rpk)
 	if gamemgr.con2game[conn] == nil and gamemgr.name2game[name] == nil then
@@ -48,7 +51,7 @@ local function game_login(_,rpk,conn)
 	end
 end
 
-local function game_disconnected(_,rpk,conn)
+game_net_handler[DUMMY_ON_GAME_DISCONNECTED] =  function (rpk,conn)
 	if gamemgr.con2game[conn] then
 		local game = gamemgr.con2game[conn]
 		gamemgr.con2game[conn] = nil
@@ -62,8 +65,8 @@ local function game_disconnected(_,rpk,conn)
 end
 
 local function reg_cmd_handler()
-	C.reg_cmd_handler(CMD_GAMEG_LOGIN,{handle=game_login})
-	C.reg_cmd_handler(DUMMY_ON_GAME_DISCONNECTED,{handle=game_disconnected})
+	C.reg_cmd_handler(CMD_GAMEG_LOGIN,game_net_handler)
+	C.reg_cmd_handler(DUMMY_ON_GAME_DISCONNECTED,game_net_handler)
 end
 
 

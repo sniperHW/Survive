@@ -5,8 +5,9 @@ local gatemgr = {
 	name2gate = {}
 }
 
+local gate_net_handler = {}
 
-local function gate_login(_,rpk,conn)
+gate_net_handler[CMD_AG_LOGIN] =  function (rpk,conn)
 	local name = rpk_read_string(rpk)
 	if gatemgr.con2gate[conn] == nil and gatemgr.name2gate[name] == nil then
 		local gate = {conn=conn,name=name,gateplys={}}
@@ -18,7 +19,7 @@ local function gate_login(_,rpk,conn)
 	end
 end
 
-local function gate_disconnected(_,rpk,conn)
+gate_net_handler[DUMMY_ON_GATE_DISCONNECTED] =  function (rpk,conn)
 	print("gate_disconnected")
 	if gatemgr.con2gate[conn] then
 		local gate = gatemgr.con2gate[conn]
@@ -34,8 +35,8 @@ end
 
 local function reg_cmd_handler()
 	print("gate reg_cmd_handler")
-	C.reg_cmd_handler(CMD_AG_LOGIN,{handle=gate_login})
-	C.reg_cmd_handler(DUMMY_ON_GATE_DISCONNECTED,{handle=gate_disconnected})
+	C.reg_cmd_handler(CMD_AG_LOGIN,gate_net_handler)
+	C.reg_cmd_handler(DUMMY_ON_GATE_DISCONNECTED,gate_net_handler)
 end
 
 

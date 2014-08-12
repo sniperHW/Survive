@@ -13,4 +13,4 @@ toclient={
 	port = 8010
 }
 
-agentcount = 1
+agentcount = 3

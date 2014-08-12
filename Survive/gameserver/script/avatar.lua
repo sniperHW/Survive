@@ -1,24 +1,24 @@
-local type_player   = 1    --玩家
-local type_monster  = 2    --怪物
-local type_pickable = 3    --地上可拾取物
+local type_player   = 1    
+local type_monster  = 2   
+local type_pickable = 3
 
 local avatar ={
-	id,            --对象索引
-	avatid,        --模型id
-	avattype,      --avatar类型
+	id,            
+	avatid,        
+	avattype,      --player/monster/pickable
 	pos,
 	aoi_obj,
-	see_radius,    --可视距离
-	view_obj,      --在自己视野内的对象
-	watch_me,      --可以看到我的对象
+	see_radius,   
+	view_obj,      
+	watch_me,      
 	gate,
-	map,           --所在地图对象
+	map,          
 	path,
-	speed,         --移动速度
-	lastmovtick,   --上次执行process_mov的时间  
-	movmargin,     --可用于执行process_mov的剩余时间(毫秒)
-	dir,           --当前朝向 
-	nickname,      --昵称
+	speed,         
+	lastmovtick,   
+	movmargin,     
+	dir,           
+	nickname,      
 	groupid,                 
 }
 
@@ -30,8 +30,11 @@ function avatar:new(o)
   return o
 end
 
---向可以看到我的对象发消息
+
 function avatar:send2view(wpk)
+	--将玩家分组,同gateserver同agent的玩家为一组,发送一个统一的包
+	
+	--首先按gate分组	
 	local gates = {}
 	for k,v in pairs(self.watch_me) do
 		if v.gate then
@@ -47,14 +50,31 @@ function avatar:send2view(wpk)
 	end
 	
 	for k,v in pairs(gates) do
-		local w = new_wpk_by_wpk(wpk)
+		--按aid分组
+		local groups = {}
 		local plys = v.plys
 		for k1,v1 in pairs(plys) do
-			wpk_write_uint32(w,v1.gate.id.high)
-			wpk_write_uint32(w,v1.gate.id.low)
+			local aid = bit32.band(0x7,v1.gate.id.high)
+			local t
+			if not groups[aid] then
+				t = {}
+				groups[aid] = t
+			else
+				t = groups[aid]
+			end
+			table.insert(t,v1)	
 		end
-		wpk_write_uint32(w,#plys)
-		C.send(v.conn,w)
+		
+		for k1,v1 in pairs(groups) do
+			local w = new_wpk_by_wpk(wpk)
+			for k2,v2 in pairs(v1) do
+				wpk_write_uint32(w,v2.gate.id.high)
+				wpk_write_uint32(w,v2.gate.id.low)
+			end
+			wpk_write_uint32(w,#v1)
+			wpk_write_uint32(w,k1)
+			C.send(v.conn,w)
+		end
 	end
 	destroy_wpk(wpk)
 end
@@ -95,6 +115,7 @@ function player:send2gate(wpk)
 	wpk_write_uint32(wpk,self.gate.id.high)
 	wpk_write_uint32(wpk,self.gate.id.low)
 	wpk_write_uint32(wpk,1)
+	wpk_write_uint32(wpk,self.gate.id.high)	
 	C.send(self.gate.conn,wpk)	
 end
 
@@ -103,7 +124,7 @@ function player:enter_see(other)
 	self.view_obj[other.id] = other
 	other.watch_me[self.id] = self	
 	
-	--通告客户端	
+
 	local wpk = new_wpk(1024)
 	wpk_write_uint16(wpk,CMD_SC_ENTERSEE)
 	wpk_write_uint32(wpk,other.id)
@@ -132,7 +153,7 @@ end
 function player:leave_see(other)
 	self.view_obj[other.id] = nil
 	other.watch_me[self.id] = nil
-	--通告客户端		
+
 	local wpk = new_wpk(64)
 	wpk_write_uint16(wpk,CMD_SC_LEAVESEE)
 	wpk_write_uint32(wpk,other.id)	
@@ -140,7 +161,7 @@ function player:leave_see(other)
 	print(other.id .. " leave " .. self.id)
 end
 
---处理客户端的移动请求
+
 function player:mov(x,y)
 	--[[local wpk = new_wpk(64)
 	wpk_write_uint16(wpk,CMD_SC_MOV_ARRI)
@@ -154,7 +175,7 @@ function player:mov(x,y)
 		self.map:beginMov(self)
 		self.lastmovtick = C.systemms()
 		self.movmargin = 0
-		--将移动请求广播到视野
+
 		local size = #self.path.path
 		local target = self.path.path[size]
 		local wpk = new_wpk(64)
@@ -173,7 +194,7 @@ function player:mov(x,y)
 	end
 end
 
---�ͻ������ӶϿ�����������
+
 function player:reconn(maptype)
 	local wpk = new_wpk(64)
 	wpk_write_uint16(wpk,CMD_SC_ENTERMAP)
@@ -181,7 +202,7 @@ function player:reconn(maptype)
 	wpk_write_uint32(wpk,self.id)
 	wpk_write_uint16(wpk,self.groupid)
 	self:send2gate(wpk)			
-	--����Ұ��Ϣ
+
 	for k,v in pairs(self.view_obj) do
 		local wpk = new_wpk(1024)
 		wpk_write_uint16(wpk,CMD_SC_ENTERSEE)
@@ -279,7 +300,7 @@ function player:process_mov()
 			self.pos = node
 			cur = cur + 1
 			movmargin = movmargin - elapse;			
-			--更新aoi
+
 			GameApp.aoi_moveto(self.aoi_obj,node[1],node[2])
 		else
 			break	
@@ -290,7 +311,7 @@ function player:process_mov()
 	self.lastmovtick = C.systemms()
 	
 	if self.path.cur > #self.path.path then
-		--到达目的地
+
 		self.path = nil
 		print("arrive")
 		local wpk = new_wpk(64)

@@ -2,7 +2,7 @@
 #include "config.h"
 #include "chanmsg.h"
 #include "gateserver.h"
-#include "togrpgame.h"
+#include "toinner.h"
 
 /*
 *  八核心服务器
@@ -17,24 +17,24 @@ IMP_LOG(gatelog);
 
 
 void forward_agent(packet_t rpk,stream_conn_t conn){
-	struct chanmsg_rpacket *msg = calloc(1,sizeof(*msg));
-	msg->chanmsg.msgtype = PACKET;
-	msg->rpk = (packet_t)rpk_copy_create(rpk);
-	if(conn){
-		msg->game = calloc(1,sizeof(ident));
-		*msg->game = make_ident((refobj*)conn);	
-	}
-	int i = 0; 
-	for(; i < MAX_AGENT; ++i){
-		if(agents[i]){
-			mail2toagent(agents[i],msg,chanmsg_rpacket_destroy);
-		}
+	uint32_t aid = reverse_read_uint32((rpacket_t)rpk);
+	rpk_dropback((rpacket_t)rpk,sizeof(aid));
+	aid &= 0x7;
+	printf("forward aid:%d\n",aid);
+	if(agents[aid]){
+		struct chanmsg_rpacket *msg = calloc(1,sizeof(*msg));
+		msg->chanmsg.msgtype = PACKET;
+		msg->rpk = (packet_t)rpk_copy_create(rpk);
+		if(conn){
+			msg->game = calloc(1,sizeof(ident));
+			*msg->game = make_ident((refobj*)conn);	
+		}			
+		mail2toagent(agents[aid],msg,chanmsg_rpacket_destroy);		
 	}
 }
 
 static void on_new_client(handle_t s,void *_){
 	(void)_;
-	printf("on_new_client\n");
 	//随机选择一个agent将conn交给他处理
 	uint8_t idx = rand()%g_config->agentcount;
 	struct chanmsg_newclient *msg = calloc(1,sizeof(*msg));
@@ -70,7 +70,7 @@ int main(int argc,char **argv){
 		
 		exit(0);
 	}
-	start_togrpgame();
+	start_toinner();
 	LOG_GATE(LOG_INFO,"gateserver start success\n");
 	kn_engine_run(e);
 	return 0;

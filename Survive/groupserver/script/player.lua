@@ -53,11 +53,11 @@ end
 function player:send2gate(wpk)
 	if not self.gate then
 		return
-	end
-	
+	end	
 	wpk_write_uint32(wpk,self.gate.id.high)
 	wpk_write_uint32(wpk,self.gate.id.low)
 	wpk_write_uint32(wpk,1)
+	wpk_write_uint32(wpk,self.gate.id.high)	
 	C.send(self.gate.conn,wpk)	
 end
 
@@ -324,12 +324,20 @@ player_net_handler[CMD_CG_CREATE] = function (rpk,conn)
 end
 
 player_net_handler[CMD_AG_CLIENT_DISCONN] = function (rpk,conn)
+	--客户端连接断开
 	local groupid = rpk_read_uint16(rpk)	
 	local ply = playermgr:getplybyid(groupid)
 	if ply then
 		print("ply " .. ply.actname .. " disconnect")
 		Gate.RemoveGatePly(ply.gate,ply)
 		ply.gate = nil
+		--如果有game,通知它客户端连接断开
+		if ply.game then
+			local wpk = new_wpk()
+			wpk_write_uint16(wpk,CMD_GGAME_CLIDISCONNECTED)
+			wpk_write_uint32(wpk,ply.game.id)
+			C.send(ply.game.conn,wpk)	
+		end
 	end
 end
 
@@ -349,11 +357,16 @@ player_net_handler[CMD_CG_ENTERMAP] = function (rpk,conn)
 	end
 end
 
+player_net_handler[DUMMY_ON_CHAT_CONNECTED] = function (rpk,conn)
+	--将所有玩家信息发送到chatserver
+end
+
 local function reg_cmd_handler()
 	C.reg_cmd_handler(CMD_AG_PLYLOGIN,player_net_handler)
 	C.reg_cmd_handler(CMD_CG_CREATE,player_net_handler)
 	C.reg_cmd_handler(CMD_AG_CLIENT_DISCONN,player_net_handler)
 	C.reg_cmd_handler(CMD_CG_ENTERMAP,player_net_handler)
+	C.reg_cmd_handler(DUMMY_ON_CHAT_CONNECTED,player_net_handler)
 end
 
 return {

@@ -2,7 +2,7 @@
 #include "common/cmdhandler.h"
 #include "common/netcmd.h"
 #include "gateplayer.h"
-#include "togrpgame.h"
+#include "toinner.h"
 #include "kn_thread.h"
 #include "config.h"
 #include "gateserver.h"
@@ -64,18 +64,18 @@ static void forward_game(stream_conn_t con,packet_t rpk){
 		msg->chanmsg.msgtype = FORWARD_GAME;
 		msg->game = ply->togame;
 		msg->wpk = (packet_t)wpk;
-		mail2togrpgame(msg,chanmsg_forward_game_destroy);
+		mail2inner(msg,chanmsg_forward_game_destroy);
 	}
 }
 
-
+/*
 static void send2_game(ident game,packet_t wpk){
 	struct chanmsg_forward_game *msg = calloc(1,sizeof(*msg));
 	msg->chanmsg.msgtype = FORWARD_GAME;
 	msg->game = game;
 	msg->wpk = (packet_t)wpk;
-	mail2togrpgame(msg,chanmsg_forward_game_destroy);
-}
+	mail2inner(msg,chanmsg_forward_game_destroy);
+}*/
 
 static void forward_group(stream_conn_t con,packet_t rpk){
 	agentplayer_t ply = (agentplayer_t)stream_conn_getud(con);
@@ -85,7 +85,7 @@ static void forward_group(stream_conn_t con,packet_t rpk){
 		struct chanmsg_forward_group *msg = calloc(1,sizeof(*msg));
 		msg->chanmsg.msgtype = FORWARD_GROUP;
 		msg->wpk = (packet_t)wpk;
-		mail2togrpgame(msg,chanmsg_forward_group_destroy);
+		mail2inner(msg,chanmsg_forward_group_destroy);
 		printf("forward_group groupid:%d\n",ply->groupid);
 	}
 }
@@ -94,7 +94,7 @@ static void send2_group(packet_t wpk){
 	struct chanmsg_forward_group *msg = calloc(1,sizeof(*msg));
 	msg->chanmsg.msgtype = FORWARD_GROUP;
 	msg->wpk = (packet_t)wpk;
-	mail2togrpgame(msg,chanmsg_forward_group_destroy);	
+	mail2inner(msg,chanmsg_forward_group_destroy);	
 }
 
 
@@ -102,7 +102,7 @@ static void send2_group(packet_t wpk){
 static int on_packet(stream_conn_t con,packet_t pk){
 	rpacket_t rpk = (rpacket_t)pk;
 	uint16_t cmd = rpk_peek_uint16(rpk);
-	printf("process %u\n",cmd);
+	//printf("process %u\n",cmd);
 	if(cmd > CMD_CA_BEGIN && cmd < CMD_CA_END){
 		rpk_read_uint16(rpk);
 		if(handler[cmd]->_fn) handler[cmd]->_fn(rpk,con);
@@ -126,14 +126,14 @@ static void on_disconnected(stream_conn_t conn,int err){
 			wpk_write_uint32(wpk,player->groupid);
 			send2_group((packet_t)wpk);
 		}
-		if(player->gameid){
+/*		if(player->gameid){
 			//通知gameserver player的连接断开
 			wpacket_t wpk = wpk_create(64);
 			wpk_write_uint16(wpk,CMD_AGAME_CLIENT_DISCONN);
 			wpk_write_uint32(wpk,player->gameid);
 			send2_game(player->togame,(packet_t)wpk);	
 			printf("send CMD_AGAME_CLIENT_DISCONN:%u\n",player->gameid);
-		}
+		}*/
 		player->groupid = player->gameid = 0;
 		make_empty_ident(&player->togame); 
 		player->state = ply_destroy;
@@ -146,7 +146,7 @@ static void on_mail(kn_thread_mailbox_t *_,void *msg)
 {
 	(void)_;
 	if(((struct chanmsg*)msg)->msgtype == NEWCLIENT){
-		printf("on_mail newclient\n");
+		printf("on_mail newclient,agentid:%d\n",t_agent->idx);
 		struct chanmsg_newclient *_msg = (struct chanmsg_newclient*)msg;
 		agentplayer_t player = new_agent_player(_msg->conn);
 		if(player){
@@ -161,6 +161,8 @@ static void on_mail(kn_thread_mailbox_t *_,void *msg)
 		struct chanmsg_rpacket *_msg = (struct chanmsg_rpacket*)msg;
 		rpacket_t rpk = (rpacket_t)_msg->rpk;
 		uint16_t cmd = rpk_peek_uint16(rpk);
+		if(t_agent->idx == 0)
+			printf("agent on mail:%d\n",cmd);
 		if((cmd >= CMD_GA_BEGIN && cmd < CMD_GA_END) ||
 		   (cmd >= CMD_GAMEA_BEGIN && cmd < CMD_GAMEA_END))
 		{
@@ -194,9 +196,8 @@ static void on_mail(kn_thread_mailbox_t *_,void *msg)
 						ply->togame = *_msg->game;					
 						printf("%x CMD_SC_ENTERMAP:%u\n",ply,gameid);
 					}
-					if(cmd == CMD_SC_MOV)
-						printf("send:CMD_SC_MOV,%u\n",ply->gameid);
-					   stream_conn_send(ply->toclient,(packet_t)wpk_copy_create(_msg->rpk));
+					if(cmd == CMD_SC_MOV) printf("send:CMD_SC_MOV,%u\n",ply->gameid);
+					stream_conn_send(ply->toclient,(packet_t)wpk_copy_create(_msg->rpk));
 				}
 			}
 			destroy_packet((packet_t)tmp);

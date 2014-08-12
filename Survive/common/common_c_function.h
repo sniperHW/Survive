@@ -171,7 +171,7 @@ static inline void lua_on_redis_connected(redisconn_t conn,int err,void *ud){
 	luaTabRef_t *obj = (luaTabRef_t*)ud;
 	const char *error;
 	if((error = CallLuaTabFunc2(NULL,(*obj),"on_connect",0,
-				   lua_pushlightuserdata(obj->L,conn),
+				   (conn ? lua_pushlightuserdata(obj->L,conn):lua_pushnil(obj->L)),
 				   lua_pushinteger(obj->L,err)))){
 		SYS_LOG(LOG_ERROR,"on_redis_connected:%s\n",error);
 		release_luaTabRef(obj);
@@ -399,15 +399,19 @@ void reg_common_c_function(lua_State *L){
 	REGISTER_CONST(L,CMD_GA_CREATE);	
 	//game <-> group
 	REGISTER_CONST(L,CMD_GAMEG_LOGIN);
+	REGISTER_CONST(L,CMD_GGAME_CLIDISCONNECTED);
 	REGISTER_CONST(L,CMD_AGAME_LOGIN);	
-	REGISTER_CONST(L,CMD_AGAME_CLIENT_DISCONN);
+	//REGISTER_CONST(L,CMD_AGAME_CLIENT_DISCONN);
 	REGISTER_CONST(L,CMD_GAMEA_LOGINRET);
 	//dummy cmd
 	REGISTER_CONST(L,DUMMY_ON_GATE_DISCONNECTED);
-	REGISTER_CONST(L,DUMMY_ON_GAME_DISCONNECTED);	
+	REGISTER_CONST(L,DUMMY_ON_GAME_DISCONNECTED);
+	REGISTER_CONST(L,DUMMY_ON_CHAT_CONNECTED);
+	REGISTER_CONST(L,DUMMY_ON_DAEMON_DISCONNECTED);	
 	//rpc
 	REGISTER_CONST(L,CMD_RPC_CALL);	
 	REGISTER_CONST(L,CMD_RPC_RESPONSE);
+	
 	//end of netcmd
 	REGISTER_CONST(L,LOG_INFO);	
 	REGISTER_CONST(L,LOG_ERROR);

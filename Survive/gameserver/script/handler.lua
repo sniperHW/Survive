@@ -3,9 +3,11 @@ local Game = require "script/game"
 local Avatar = require "script/avatar"
 local Dbmgr = require "script/dbmgr"
 local Rpc = require "script/rpc"
+local Cjson = require "cjson"
 
 --注册各模块的消息处理函数
-function reghandler()
+function reghandler(dbconfig)
+	dbconfig = Cjson.decode(dbconfig)
 	Gate.RegHandler()
 	Game.RegHandler()
 	Rpc.RegHandler()
@@ -15,5 +17,5 @@ function reghandler()
 			   mapdef.radius,mapdef.toleft[1],mapdef.toleft[2],mapdef.bottomright[1],mapdef.bottomright[2])	
 --]]	
 	
-	return Dbmgr.Init()	
+	return Dbmgr.Init(dbconfig)	
 end

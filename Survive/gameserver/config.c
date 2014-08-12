@@ -19,15 +19,15 @@ int loadconfig(){
 	//连接group
 	lua_getglobal(L,"togrp");
 	luaTabRef_t obj = create_luaTabRef(L,-1);	
-	g_config->groupip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
-	g_config->groupport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
+	g_config->groupip = kn_new_string(LuaTabRefGet(obj,"ip",const char*,lua_tostring));
+	g_config->groupport = LuaTabRefGet(obj,"port",uint16_t,lua_tonumber);
 	release_luaTabRef(&obj);
 
 	//监听gate
 	lua_getglobal(L,"gate");
 	obj = create_luaTabRef(L,-1);
-	g_config->lgateip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
-	g_config->lgateport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
+	g_config->lgateip = kn_new_string(LuaTabRefGet(obj,"ip",const char*,lua_tostring));
+	g_config->lgateport = LuaTabRefGet(obj,"port",uint16_t,lua_tonumber);
 	release_luaTabRef(&obj);
 
 	lua_close(L);

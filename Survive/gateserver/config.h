@@ -16,6 +16,8 @@ typedef struct config{
 	uint16_t    toclientport;
 	kn_string_t redisip;
 	uint16_t    redisport;
+	kn_string_t tochatip;
+	uint16_t    tochatport;	
 }config;
 
 extern config* g_config;

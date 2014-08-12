@@ -24,22 +24,23 @@ local function on_redis_connect(self,conn,err)
 			C.db_initfinish()
 		end
 	else
-		C.redis_connect(self.ip,self.port,self)	
+		local s = self
+		print("connect to failed " .. s.v.ip .. ":" .. s.v.port .. " failed try after 5 sec")
+		C.reg_timer(5000,{on_timeout = function (_)
+											C.redis_connect(s.v.ip,s.v.port,s)	
+										return 0				
+									 end})
 	end
 end
 
 local function on_redis_disconnect(self,conn)
 	self.conn = nil
-	C.redis_connect(self.ip,self.port,self)		
+	C.redis_connect(self.v.ip,self.v.port,self)		
 end
 
 
-local function init()
-	dbmgr.hash = {}
-	dbmgr.hash[1] = {ip="127.0.0.1",port=6379}
-	--dbmgr.hash[2] = {ip="127.0.0.1",port=6378}
-	--dbmgr.hash[3] = {ip="127.0.0.1",port=6377}
-	--dbmgr.hash[4] = {ip="127.0.0.1",port=6376}	
+local function init(dbconfig)
+	dbmgr.hash = dbconfig
 	for k,v in pairs(dbmgr.hash) do
 		if not C.redis_connect(v.ip,v.port,{v=v,on_connect = on_redis_connect,
 						on_disconnect = on_redis_disconnect}) then
@@ -56,7 +57,12 @@ local function dbcmd(hashkey,cmd,callback)
 	--if not dbmgr.hash[key] then
 	--	return "invaild hashkey"
 	--end
-	local key = 1	
+	local key = 1
+	if hashkey == "deploydb" then
+		key = hashkey
+	else
+		key = "" .. key
+	end	
 	local conn = dbmgr.hash[key].conn
 	if conn then
 		if C.redisCommand(conn,cmd,callback) then

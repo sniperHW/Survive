@@ -15,10 +15,9 @@ typedef struct config{
 	//对gateserver连接的监听
 	kn_string_t lgateip;
 	uint16_t    lgateport;
-	//chatserver
-	kn_string_t lchatip;
-	uint16_t    lchatport;
-	
+	//对groupserver的连接监听
+	kn_string_t lgroupip;
+	uint16_t    lgroupport;
 }config;
 
 extern config* g_config;

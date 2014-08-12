@@ -21,23 +21,23 @@ int loadconfig(){
 	
 	lua_getglobal(L,"togrp");
 	luaTabRef_t obj = create_luaTabRef(L,-1);	
-	g_config->groupip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
-	g_config->groupport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
+	g_config->groupip = kn_new_string(LuaTabRefGet(obj,"ip",const char*,lua_tostring));
+	g_config->groupport = LuaTabRefGet(obj,"port",uint16_t,lua_tonumber);
 	release_luaTabRef(&obj);
 
 	//连接redis
 
 	lua_getglobal(L,"toredis");
 	obj = create_luaTabRef(L,-1);	
-	g_config->redisip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
-	g_config->redisport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
+	g_config->redisip = kn_new_string(LuaTabRefGet(obj,"ip",const char*,lua_tostring));
+	g_config->redisport = LuaTabRefGet(obj,"port",uint16_t,lua_tonumber);
 	release_luaTabRef(&obj);
 
 	//监听客户端
 	lua_getglobal(L,"toclient");
 	obj = create_luaTabRef(L,-1);		
-	g_config->toclientip = kn_new_string(GET_OBJ_FIELD(obj,"ip",const char*,lua_tostring));
-	g_config->toclientport = GET_OBJ_FIELD(obj,"port",uint16_t,lua_tonumber);
+	g_config->toclientip = kn_new_string(LuaTabRefGet(obj,"ip",const char*,lua_tostring));
+	g_config->toclientport = LuaTabRefGet(obj,"port",uint16_t,lua_tonumber);
 	release_luaTabRef(&obj);
 	lua_getglobal(L,"agentcount");
 	g_config->agentcount = lua_tointeger(L,-1);

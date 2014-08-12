@@ -195,9 +195,6 @@ void reg_group_c_function(lua_State *L){
 	lua_pop(L,1);
 }
 
-//应由命令行传入
-const char *db_config = "{\"deploydb\":{\"ip\":\"127.0.0.1\",\"port\":6379},\"1\":{\"ip\":\"127.0.0.1\",\"port\":6379}}";
-
 static lua_State *init(){
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
@@ -218,7 +215,7 @@ static lua_State *init(){
 
 	//注册lua消息处理器
 	const char *error = NULL;
-	if((error = LuaCall1(L,"reghandler",1,lua_pushstring(L,db_config)))){
+	if((error = LuaCall0(L,"reghandler",1))){
 		LOG_GROUP(LOG_INFO,"error on reghandler:%s\n",error);
 		printf("error on reghandler:%s\n",error);
 		lua_close(L); 

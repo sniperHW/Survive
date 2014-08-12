@@ -58,6 +58,7 @@ enum{
 	CMD_GAMEG_END,
 
 	CMD_GGAME_BEGIN = 900,
+	CMD_GGAME_CLIDISCONNECTED,
 	//CMD_GGAME_ENTERMAP,
 	//CMD_GGAME_LEAVEMAP,
 	//CMD_GGAME_DESTROYMAP,
@@ -67,7 +68,7 @@ enum{
 
 	CMD_AGAME_BEGIN = 1000,
 	CMD_AGAME_LOGIN,                 //gateserver进程登陆到game 
-	CMD_AGAME_CLIENT_DISCONN,        //客户端连接断开   
+	//CMD_AGAME_CLIENT_DISCONN,        //客户端连接断开   
 	CMD_AGAME_END,
 
 	CMD_GAMEA_BEGIN = 1100,
@@ -77,28 +78,14 @@ enum{
 	//dummy cmd
 	DUMMY_ON_GATE_DISCONNECTED = 1200,
 	DUMMY_ON_GAME_DISCONNECTED,
+	DUMMY_ON_CHAT_CONNECTED,
+	DUMMY_ON_DAEMON_DISCONNECTED,
 	
 	//rpc
 	CMD_RPC_CALL = 1300,
 	CMD_RPC_RESPONSE,
+		
 };
-
-
-
-/*enum{
-	//客户端到服务端
-	CMD_CS_BEGPLY = 1,//玩家请求进入地图场景,
-	CMD_CS_MOV,       //主角移动
-
-	//服务端到客户端
-	CMD_SC_BEGPLY,    //通知玩家进入地图场景成功，可以创建地图和主角
-	CMD_SC_ENTERSEE,  //对象进入主角视野
-	CMD_SC_LEVSEE,    //对象离开主角视野
-	CMD_SC_ENDPLY,    //主角离开场景地图
-	CMD_SC_MOV,       //对象移动
-
-};*/
-
 
 
 

@@ -15,6 +15,7 @@ IMP_LOG(gamelog);
 static cmd_handler_t handler[MAXCMD] = {NULL};
 
 static stream_conn_t   togrp;
+static stream_conn_t   tochat;
 
 __thread engine_t t_engine = NULL;
 
@@ -106,6 +107,7 @@ static int  cb_timer(kn_timer_t timer)//如果返回1继续注册，否则不再注册
 	return 0;
 }
 
+//to group
 static void cb_connect_group(handle_t s,int err,void *ud,kn_sockaddr *addr);
 static void on_group_disconnected(stream_conn_t c,int err){
 	togrp = NULL;
@@ -140,6 +142,51 @@ static void cb_connect_group(handle_t s,int err,void *ud,kn_sockaddr *addr)
 		kn_reg_timer(t_engine,5000,cb_timer,recon);
 	}
 }
+
+//to chat
+static void cb_connect_chat(handle_t s,int err,void *ud,kn_sockaddr *addr);
+static void on_chat_disconnected(stream_conn_t c,int err){
+	tochat = NULL;
+	struct recon_ctx *recon = calloc(1,sizeof(*recon));
+	recon->sock = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+	recon->cb_connect = cb_connect_chat;
+	recon->addr = *kn_sock_addrpeer(stream_conn_gethandle(c));
+	kn_reg_timer(t_engine,5000,cb_timer,recon);	
+}
+
+static int on_chat_packet(stream_conn_t conn,packet_t pk){
+	((void)conn);
+	((void)pk);
+	return 1;
+}
+
+static void cb_connect_chat(handle_t s,int err,void *ud,kn_sockaddr *addr)
+{
+	if(err == 0){
+		//success
+		tochat = new_stream_conn(s,65536,RPACKET);
+		stream_conn_associate(t_engine,tochat,on_chat_packet,on_chat_disconnected);					
+		printf("connect to chat success\n");
+	}else{
+		kn_close_sock(s);
+		//failed
+		struct recon_ctx *recon = calloc(1,sizeof(*recon));
+		recon->sock = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+		recon->addr = *addr;
+		recon->cb_connect = cb_connect_chat;
+		kn_reg_timer(t_engine,5000,cb_timer,recon);
+	}
+}
+
+static int lua_send2chat(lua_State *L){
+	wpacket_t wpk = lua_touserdata(L,1);
+	if(0 == stream_conn_send(tochat,(packet_t)wpk))
+		lua_pushboolean(L,1);
+	else
+		lua_pushboolean(L,0);
+	return 1;	
+}
+
 
 int reg_cmd_handler(lua_State *L){
 	uint16_t cmd = lua_tonumber(L,1);
@@ -403,10 +450,14 @@ void reg_game_c_function(lua_State *L){
 	REGISTER_FUNCTION("aoi_moveto",&lua_aoi_moveto);		
 	REGISTER_FUNCTION("send2grp",&lua_send2grp);		
 	REGISTER_FUNCTION("gamelog",&lua_gamelog);
+	REGISTER_FUNCTION("send2chat",&lua_send2chat);	
 
 
 	lua_pop(L,1);
 }
+
+//应由命令行传入
+const char *db_config = "{\"deploydb\":{\"ip\":\"127.0.0.1\",\"port\":6379},\"1\":{\"ip\":\"127.0.0.1\",\"port\":6379}}";
 
 static lua_State *init(){
 	lua_State *L = luaL_newstate();
@@ -428,7 +479,7 @@ static lua_State *init(){
 
 	//注册lua消息处理器
 	const char *error = NULL;
-	if((error = LuaCall0(L,"reghandler",1))){
+	if((error = LuaCall1(L,"reghandler",1,lua_pushstring(L,db_config)))){
 		LOG_GAME(LOG_INFO,"error on reghandler:%s\n",error);
 		printf("error on handler.lua:%s\n",error);
 		lua_close(L); 
@@ -452,7 +503,7 @@ static void sig_int(int sig){
 int on_db_initfinish(lua_State *_){
 	(void)_;
 	printf("on_db_initfinish\n");
-	//启动监听
+	//listen gate
 	{
 		kn_sockaddr gate_local;
 		kn_addr_init_in(&gate_local,kn_to_cstr(g_config->lgateip),g_config->lgateport);	
@@ -465,13 +516,22 @@ int on_db_initfinish(lua_State *_){
 	}
 
 
-	//连接group
+	//connect group
 	{
 		kn_sockaddr group_addr;
 		kn_addr_init_in(&group_addr,kn_to_cstr(g_config->groupip),g_config->groupport);	
 		handle_t l = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
 		kn_sock_connect(t_engine,l,&group_addr,NULL,cb_connect_group,NULL);		
 	}
+
+	//connect chat
+	/*{
+		kn_sockaddr chat_addr;
+		kn_addr_init_in(&chat_addr,kn_to_cstr(g_config->chatip),g_config->chatport);	
+		handle_t l = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+		kn_sock_connect(t_engine,l,&chat_addr,NULL,cb_connect_chat,NULL);		
+	}*/	
+	
 	return 0;
 } 
 

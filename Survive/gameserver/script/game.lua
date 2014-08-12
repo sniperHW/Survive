@@ -139,7 +139,7 @@ game_net_handler[CMD_CS_MOV] = function (rpk,conn)
 	end
 end
 
-game_net_handler[CMD_AGAME_CLIENT_DISCONN] =  function (rpk,conn)
+game_net_handler[CMD_GGAME_CLIDISCONNECTED] =  function (rpk,conn)
 	print("client disconn")
 	local gameid = rpk_reverse_read_uint32(rpk)
 	local mapid,_ = math.floor(gameid/65536)
@@ -160,7 +160,7 @@ end
 local function reg_cmd_handler()
 	game_init()
 	C.reg_cmd_handler(CMD_CS_MOV,game_net_handler)
-	C.reg_cmd_handler(CMD_AGAME_CLIENT_DISCONN,game_net_handler)	
+	C.reg_cmd_handler(CMD_GGAME_CLIDISCONNECTED,game_net_handler)	
 end
 
 return {

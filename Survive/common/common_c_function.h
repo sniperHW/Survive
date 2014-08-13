@@ -359,7 +359,20 @@ int reg_cmd_handler(lua_State *L);
 	lua_pushstring(L,NAME);\
 	lua_pushcfunction(L,FUNC);\
 	lua_settable(L, -3);\
-}while(0)	
+}while(0)
+
+
+#define GAMESERVER  1
+#define GATESERVER  2
+#define GROUPSERVER 3
+
+
+int lua_set_conn_type(lua_State *L){
+	stream_conn_t conn = lua_touserdata(L,1);
+	int type = lua_tointeger(L,2);
+	stream_conn_setud(conn,(void*)type);
+	return 0;
+}	
 
 void reg_common_c_function(lua_State *L){
 	
@@ -371,6 +384,10 @@ void reg_common_c_function(lua_State *L){
 		lua_pushvalue(L,-1);
 		lua_setglobal(L,"_G");
 	}
+	
+	REGISTER_CONST(L,GAMESERVER);
+	REGISTER_CONST(L,GATESERVER);
+	REGISTER_CONST(L,GROUPSERVER);
 	
 	//client <-> agent
 	REGISTER_CONST(L,CMD_CA_LOGIN);
@@ -453,7 +470,7 @@ void reg_common_c_function(lua_State *L){
 	REGISTER_FUNCTION("syslog",&lua_syslog);			
 
 	REGISTER_FUNCTION("send",&lua_send);
-
+	REGISTER_FUNCTION("set_conn_type",&lua_set_conn_type);
 	//redis
 	REGISTER_FUNCTION("redis_connect",&lua_redis_connect);	
 	REGISTER_FUNCTION("redis_close",&lua_redis_close);

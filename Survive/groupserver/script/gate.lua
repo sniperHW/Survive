@@ -8,6 +8,7 @@ local gatemgr = {
 local gate_net_handler = {}
 
 gate_net_handler[CMD_AG_LOGIN] =  function (rpk,conn)
+	C.set_conn_type(conn,GATESERVER)
 	local name = rpk_read_string(rpk)
 	if gatemgr.con2gate[conn] == nil and gatemgr.name2gate[name] == nil then
 		local gate = {conn=conn,name=name,gateplys={}}

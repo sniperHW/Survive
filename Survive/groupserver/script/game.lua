@@ -30,6 +30,7 @@ local game_net_handler = {}
 
 game_net_handler[CMD_GAMEG_LOGIN] =  function (rpk,conn)
 	print("game_login")
+	C.set_conn_type(conn,GAMESERVER)
 	local name = rpk_read_string(rpk)
 	if gamemgr.con2game[conn] == nil and gamemgr.name2game[name] == nil then
 		--game监听gate的ip和port

@@ -8,7 +8,7 @@ toredis={
 	port = 6379
 }
 
-toclient={
+listen={
 	ip = "192.168.0.87",
 	port = 8010
 }

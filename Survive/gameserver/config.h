@@ -10,8 +10,8 @@ typedef enum{
 
 typedef struct config{
 	//对gateserver连接的监听
-	kn_string_t lgateip;
-	uint16_t    lgateport;
+	kn_string_t listenip;
+	uint16_t    listenport;
 	//groupserver服务器
 	kn_string_t groupip;
 	uint16_t    groupport;

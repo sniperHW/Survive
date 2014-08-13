@@ -9,12 +9,8 @@ typedef enum{
 }remoteServerType;
 
 typedef struct config{
-	//对gameserver连接的监听
-	kn_string_t lgameip;
-	uint16_t    lgameport;
-	//对gateserver连接的监听
-	kn_string_t lgateip;
-	uint16_t    lgateport;
+	kn_string_t listenip;
+	uint16_t    listenport;
 	//chatserver
 	kn_string_t lchatip;
 	uint16_t    lchatport;

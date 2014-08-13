@@ -48,42 +48,28 @@ static void process_cmd(uint16_t cmd,stream_conn_t conn,rpacket_t rpk){
 	}
 }
 
-//to gameserver
-static int on_game_packet(stream_conn_t conn,packet_t pk){
+
+static void on_disconnected(stream_conn_t conn,int err){
+	int type = (int)stream_conn_getud(conn);
+	if(type == GAMESERVER)
+		process_cmd(DUMMY_ON_GAME_DISCONNECTED,conn,NULL);
+	else if(type == GATESERVER)
+		process_cmd(DUMMY_ON_GATE_DISCONNECTED,conn,NULL);
+}
+
+
+static int on_packet(stream_conn_t conn,packet_t pk){
 	rpacket_t rpk = (rpacket_t)pk;
 	uint16_t cmd = rpk_read_uint16(rpk);
 	process_cmd(cmd,conn,rpk);
 	return 1;
 }
 
-static void on_game_disconnected(stream_conn_t conn,int err){
-	process_cmd(DUMMY_ON_GAME_DISCONNECTED,conn,NULL);
-}
 
-
-static void on_new_game(handle_t s,void *_){
-	stream_conn_t game = new_stream_conn(s,65536,RPACKET);
-	if(0 != stream_conn_associate(t_engine,game,on_game_packet,on_game_disconnected))
-		stream_conn_close(game);
-}
-
-//to gateserver
-static int on_gate_packet(stream_conn_t conn,packet_t pk){
-	rpacket_t rpk = (rpacket_t)pk;
-	uint16_t cmd = rpk_read_uint16(rpk);
-	process_cmd(cmd,conn,rpk);
-	return 1;
-}
-
-static void on_gate_disconnected(stream_conn_t conn,int err){
-	process_cmd(DUMMY_ON_GATE_DISCONNECTED,NULL,NULL);
-}
-
-
-static void on_new_gate(handle_t s,void *_){
-	stream_conn_t gate = new_stream_conn(s,65536,RPACKET);
-	if(0 != stream_conn_associate(t_engine,gate,on_gate_packet,on_gate_disconnected))
-		stream_conn_close(gate);
+static void on_new_connection(handle_t s,void *_){
+	stream_conn_t conn = new_stream_conn(s,65536,RPACKET);
+	if(0 != stream_conn_associate(t_engine,conn,on_packet,on_disconnected))
+		stream_conn_close(conn);
 }
 
 struct recon_ctx{
@@ -238,30 +224,14 @@ int on_db_initfinish(lua_State *_){
 	printf("on_db_initfinish\n");
 	(void)_;
 	//启动监听
-	{
-		//监听gameserver的连接
-		kn_sockaddr game_local;
-		kn_addr_init_in(&game_local,kn_to_cstr(g_config->lgameip),g_config->lgameport);	
-		handle_t l = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
-		if(0 != kn_sock_listen(t_engine,l,&game_local,on_new_game,NULL)){
-			printf("create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->lgameip),g_config->lgameport);
-			LOG_GROUP(LOG_INFO,"create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->lgameip),g_config->lgameport);	
-			exit(0);
-		}
+	kn_sockaddr local;
+	kn_addr_init_in(&local,kn_to_cstr(g_config->listenip),g_config->listenport);	
+	handle_t l = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+	if(0 != kn_sock_listen(t_engine,l,&local,on_new_connection,NULL)){
+		printf("create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->listenip),g_config->listenport);
+		LOG_GROUP(LOG_INFO,"create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->listenip),g_config->listenport);	
+		exit(0);
 	}
-	
-	{
-		//监听gateserver的连接		
-		kn_sockaddr gate_local;
-		kn_addr_init_in(&gate_local,kn_to_cstr(g_config->lgateip),g_config->lgateport);	
-		handle_t l = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
-		if(0 != kn_sock_listen(t_engine,l,&gate_local,on_new_gate,NULL)){
-			printf("create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->lgateip),g_config->lgateport);
-			LOG_GROUP(LOG_INFO,"create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->lgateip),g_config->lgateport);	
-			exit(0);
-		}
-	}
-	
 	/*{
 		//connect chatserver
 		kn_sockaddr addr;

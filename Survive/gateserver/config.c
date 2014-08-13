@@ -34,7 +34,7 @@ int loadconfig(){
 	release_luaTabRef(&obj);
 
 	//监听客户端
-	lua_getglobal(L,"toclient");
+	lua_getglobal(L,"listen");
 	obj = create_luaTabRef(L,-1);		
 	g_config->toclientip = kn_new_string(LuaTabRefGet(obj,"ip",const char*,lua_tostring));
 	g_config->toclientport = LuaTabRefGet(obj,"port",uint16_t,lua_tonumber);

@@ -128,8 +128,8 @@ static void cb_connect_group(handle_t s,int err,void *ud,kn_sockaddr *addr)
 		wpacket_t wpk = wpk_create(64);
 		wpk_write_uint16(wpk,CMD_GAMEG_LOGIN);
 		wpk_write_string(wpk,"game1");
-		wpk_write_string(wpk,kn_to_cstr(g_config->lgateip));
-		wpk_write_uint16(wpk,g_config->lgateport);
+		wpk_write_string(wpk,kn_to_cstr(g_config->listenip));
+		wpk_write_uint16(wpk,g_config->listenport);
 		stream_conn_send(conn,(packet_t)wpk);		
 		printf("connect to group success\n");
 	}else{
@@ -505,12 +505,12 @@ int on_db_initfinish(lua_State *_){
 	printf("on_db_initfinish\n");
 	//listen gate
 	{
-		kn_sockaddr gate_local;
-		kn_addr_init_in(&gate_local,kn_to_cstr(g_config->lgateip),g_config->lgateport);	
+		kn_sockaddr local;
+		kn_addr_init_in(&local,kn_to_cstr(g_config->listenip),g_config->listenport);	
 		handle_t l = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
-		if(0 != kn_sock_listen(t_engine,l,&gate_local,on_new_gate,NULL)){
-			printf("create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->lgateip),g_config->lgateport);
-			LOG_GAME(LOG_INFO,"create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->lgateip),g_config->lgateport);	
+		if(0 != kn_sock_listen(t_engine,l,&local,on_new_gate,NULL)){
+			printf("create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->listenip),g_config->listenport);
+			LOG_GAME(LOG_INFO,"create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->listenip),g_config->listenport);	
 			exit(0);
 		}
 	}

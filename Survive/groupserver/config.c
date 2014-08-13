@@ -15,20 +15,12 @@ int loadconfig(){
 		lua_close(L);
 		return -1;
 	}
-	
-	//监听game
-	//luaObject_t obj = GETGLOBAL_OBJECT(L,"game");
-	lua_getglobal(L,"game");
-	luaTabRef_t obj = create_luaTabRef(L,-1);	
-	g_config->lgameip = kn_new_string(LuaTabRefGet(obj,"ip",const char*,lua_tostring));
-	g_config->lgameport = LuaTabRefGet(obj,"port",uint16_t,lua_tonumber);
-	release_luaTabRef(&obj);
-	
-	//监听gate
-	lua_getglobal(L,"gate");
-	obj = create_luaTabRef(L,-1);
-	g_config->lgateip = kn_new_string(LuaTabRefGet(obj,"ip",const char*,lua_tostring));
-	g_config->lgateport = LuaTabRefGet(obj,"port",uint16_t,lua_tonumber);
+		
+	//监听
+	lua_getglobal(L,"listen");
+	luaTabRef_t obj = create_luaTabRef(L,-1);
+	g_config->listenip = kn_new_string(LuaTabRefGet(obj,"ip",const char*,lua_tostring));
+	g_config->listenport = LuaTabRefGet(obj,"port",uint16_t,lua_tonumber);
 	release_luaTabRef(&obj);
 	lua_close(L);
 	return 0;

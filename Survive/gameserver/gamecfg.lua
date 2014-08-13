@@ -1,9 +1,9 @@
 togrp={
 	ip = "127.0.0.1",
-	port = 8012
+	port = 8011
 }
 
-gate={
+listen={
 	ip = "127.0.0.1",
 	port = 8013
 }

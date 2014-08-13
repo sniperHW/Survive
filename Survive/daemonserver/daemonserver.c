@@ -1,17 +1,14 @@
 #include "kendynet.h"
-#include "groupserver.h"
-#include "config.h"
 #include "lua_util.h"
 #include "stream_conn.h"
 #include "common/netcmd.h"
 #include "common/cmdhandler.h"
 #include "common/common_c_function.h"
 
-IMP_LOG(grouplog);
-
 #define MAXCMD 65535
 static cmd_handler_t handler[MAXCMD] = {NULL};
-__thread engine_t t_engine = NULL;
+static engine_t t_engine = NULL;
+static stream_conn_t to_router = NULL;    
 
 static inline int call_lua_handler(luaTabRef_t *obj,uint16_t cmd,stream_conn_t conn,rpacket_t rpk){
 		lua_State *L = obj->L;
@@ -32,15 +29,12 @@ static inline int call_lua_handler(luaTabRef_t *obj,uint16_t cmd,stream_conn_t c
 		return lua_pcall(L,2,0,0);
 }
 
-
 static void process_cmd(uint16_t cmd,stream_conn_t conn,rpacket_t rpk){
-	//printf("process_cmd:%d\n",cmd);
 	if(handler[cmd]){
 		lua_State *L = handler[cmd]->obj->L;
 		if(call_lua_handler(handler[cmd]->obj,cmd,conn,rpk)){
 				const char *err = lua_tostring(L,1);
 				lua_pop(L,1);
-				LOG_GROUP(LOG_INFO,"error on handle[%u]:%s\n",cmd,err);
 				printf("error on handle[%u]:%s\n",cmd,err);				
 		}
 	}else{
@@ -48,24 +42,60 @@ static void process_cmd(uint16_t cmd,stream_conn_t conn,rpacket_t rpk){
 	}
 }
 
-//to gameserver
-static int on_game_packet(stream_conn_t conn,packet_t pk){
+static int on_packet(stream_conn_t conn,packet_t pk){
 	rpacket_t rpk = (rpacket_t)pk;
 	uint16_t cmd = rpk_read_uint16(rpk);
 	process_cmd(cmd,conn,rpk);
 	return 1;
 }
 
-static void on_game_disconnected(stream_conn_t conn,int err){
-	process_cmd(DUMMY_ON_GAME_DISCONNECTED,conn,NULL);
+static void on_disconnected(stream_conn_t conn,int err){
+	//process_cmd(DUMMY_ON_GAME_DISCONNECTED,conn,NULL);
 }
 
-
-static void on_new_game(handle_t s,void *_){
-	stream_conn_t game = new_stream_conn(s,65536,RPACKET);
-	if(0 != stream_conn_associate(t_engine,game,on_game_packet,on_game_disconnected))
+static void on_new_connection(handle_t s,void *_){
+	stream_conn_t conn = new_stream_conn(s,65535,RPACKET);
+	if(0 != stream_conn_associate(t_engine,conn,on_packet,on_disconnected))
 		stream_conn_close(game);
 }
+
+
+static void cb_connect_router(handle_t s,int err,void *ud,kn_sockaddr *addr);
+static int  cb_timer(kn_timer_t timer)//如果返回1继续注册，否则不再注册
+{
+	kn_sockaddr addr;
+	kn_addr_init_in(&addr,"127.0.0.1",8888);
+	handle_t sock = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+	kn_sock_connect(t_engine,sock,&addr,NULL,cb_connect_router,NULL);
+	return 0;
+}
+
+
+static void on_router_disconnected(stream_conn_t c,int err){
+	to_router = NULL;
+	kn_reg_timer(t_engine,5000,cb_timer,NULL);	
+}
+
+static void cb_connect_router(handle_t s,int err,void *ud,kn_sockaddr *addr)
+{
+	if(err == 0){
+		//success
+		to_router = new_stream_conn(s,65535,RPACKET);
+		stream_conn_associate(t_engine,to_router,on_packet,on_router_disconnected);
+		printf("connect to router success\n");
+	}else{
+		//failed
+		kn_close_sock(s);
+		kn_reg_timer(t_engine,5000,cb_timer,NULL);			
+	}
+}
+
+
+
+
+
+
+/*
 
 //to gateserver
 static int on_gate_packet(stream_conn_t conn,packet_t pk){
@@ -81,7 +111,7 @@ static void on_gate_disconnected(stream_conn_t conn,int err){
 
 
 static void on_new_gate(handle_t s,void *_){
-	stream_conn_t gate = new_stream_conn(s,65536,RPACKET);
+	stream_conn_t gate = new_stream_conn(s,65535,RPACKET);
 	if(0 != stream_conn_associate(t_engine,gate,on_gate_packet,on_gate_disconnected))
 		stream_conn_close(gate);
 }
@@ -124,7 +154,7 @@ static void cb_connect_chat(handle_t s,int err,void *ud,kn_sockaddr *addr)
 {
 	if(err == 0){
 		//success
-		tochat = new_stream_conn(s,65536,RPACKET);
+		tochat = new_stream_conn(s,65535,RPACKET);
 		stream_conn_associate(t_engine,tochat,on_chat_packet,on_chat_disconnected);
 		printf("connect to chat success\n");					
 		process_cmd(DUMMY_ON_CHAT_CONNECTED,tochat,NULL);
@@ -259,13 +289,6 @@ int on_db_initfinish(lua_State *_){
 		}
 	}
 	
-	/*{
-		//connect chatserver
-		kn_sockaddr addr;
-		kn_addr_init_in(&addr,kn_to_cstr(g_config->chatip),g_config->chatport);
-		handle_t sock = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
-		kn_sock_connect(t_engine,sock,&addr,NULL,cb_connect_chat,NULL);
-	}*/	
 	return 0;
 } 
 
@@ -280,4 +303,4 @@ int main(int argc,char **argv){
 		return 0;
 	kn_engine_run(t_engine);
 	return 0;	
-}
+}*/

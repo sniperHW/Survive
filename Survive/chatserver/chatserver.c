@@ -26,7 +26,7 @@ static void on_game_disconnected(stream_conn_t conn,int err){
 
 
 static void on_new_game(handle_t s,void *_){
-	stream_conn_t game = new_stream_conn(s,65536,RPACKET);
+	stream_conn_t game = new_stream_conn(s,65535,RPACKET);
 	if(0 != stream_conn_associate(t_engine,game,on_game_packet,on_game_disconnected))
 		stream_conn_close(game);
 }
@@ -44,7 +44,7 @@ static void on_gate_disconnected(stream_conn_t conn,int err){
 
 
 static void on_new_gate(handle_t s,void *_){
-	stream_conn_t gate = new_stream_conn(s,65536,RPACKET);
+	stream_conn_t gate = new_stream_conn(s,65535,RPACKET);
 	if(0 != stream_conn_associate(t_engine,gate,on_gate_packet,on_gate_disconnected))
 		stream_conn_close(gate);
 }

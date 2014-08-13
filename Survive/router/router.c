@@ -52,7 +52,7 @@ static void on_disconnected(stream_conn_t conn,int err){
 
 
 static void on_new_daemon(handle_t s,void *_){
-	stream_conn_t daemon = new_stream_conn(s,65536,RPACKET);
+	stream_conn_t daemon = new_stream_conn(s,65535,RPACKET);
 	if(0 != stream_conn_associate(t_engine,daemon,on_packet,on_disconnected))
 		stream_conn_close(daemon);
 }

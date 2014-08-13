@@ -69,7 +69,7 @@ function map:entermap(plys)
 			ply.nickname = v.nickname
 			ply.groupid = v.groupid
 			--玩家真实id高16位地图id,低16位玩家id
-			ply.id = self.mapid * 65536 + ply.id
+			ply.id = bit32.lshift(self.mapid,16) + ply.id
 			table.insert(gameids,ply.id)
 			ply.pos[1] = 10
 			ply.pos[2] = 10

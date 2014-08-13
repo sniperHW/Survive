@@ -67,7 +67,7 @@ static int on_packet(stream_conn_t conn,packet_t pk){
 
 
 static void on_new_connection(handle_t s,void *_){
-	stream_conn_t conn = new_stream_conn(s,65536,RPACKET);
+	stream_conn_t conn = new_stream_conn(s,65535,RPACKET);
 	if(0 != stream_conn_associate(t_engine,conn,on_packet,on_disconnected))
 		stream_conn_close(conn);
 }
@@ -110,7 +110,7 @@ static void cb_connect_chat(handle_t s,int err,void *ud,kn_sockaddr *addr)
 {
 	if(err == 0){
 		//success
-		tochat = new_stream_conn(s,65536,RPACKET);
+		tochat = new_stream_conn(s,65535,RPACKET);
 		stream_conn_associate(t_engine,tochat,on_chat_packet,on_chat_disconnected);
 		printf("connect to chat success\n");					
 		process_cmd(DUMMY_ON_CHAT_CONNECTED,tochat,NULL);

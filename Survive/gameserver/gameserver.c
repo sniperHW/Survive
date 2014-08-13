@@ -71,7 +71,7 @@ static void on_gate_disconnected(stream_conn_t conn,int err){
 
 
 static void on_new_gate(handle_t s,void *_){
-	stream_conn_t gate = new_stream_conn(s,65536,RPACKET);
+	stream_conn_t gate = new_stream_conn(s,65535,RPACKET);
 	if(0 != stream_conn_associate(t_engine,gate,on_gate_packet,on_gate_disconnected))
 		stream_conn_close(gate);
 }
@@ -122,7 +122,7 @@ static void cb_connect_group(handle_t s,int err,void *ud,kn_sockaddr *addr)
 {
 	if(err == 0){
 		//success
-		stream_conn_t conn = new_stream_conn(s,65536,RPACKET);
+		stream_conn_t conn = new_stream_conn(s,65535,RPACKET);
 		stream_conn_associate(t_engine,conn,on_group_packet,on_group_disconnected);		
 		togrp = conn;		
 		wpacket_t wpk = wpk_create(64);
@@ -164,7 +164,7 @@ static void cb_connect_chat(handle_t s,int err,void *ud,kn_sockaddr *addr)
 {
 	if(err == 0){
 		//success
-		tochat = new_stream_conn(s,65536,RPACKET);
+		tochat = new_stream_conn(s,65535,RPACKET);
 		stream_conn_associate(t_engine,tochat,on_chat_packet,on_chat_disconnected);					
 		printf("connect to chat success\n");
 	}else{

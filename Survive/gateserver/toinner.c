@@ -106,7 +106,7 @@ static void cb_connect_game(handle_t s,int err,void *ud,kn_sockaddr *addr)
 {
 	if(err == 0){
 		//success
-		stream_conn_t conn = new_stream_conn(s,65536,RPACKET);
+		stream_conn_t conn = new_stream_conn(s,65535,RPACKET);
 		stream_conn_associate(g_toinner->p,conn,on_packet,on_game_disconnected);
 		printf("connect to game success\n");		
 		wpacket_t wpk = wpk_create(64);
@@ -140,7 +140,7 @@ static void cb_connect_group(handle_t s,int err,void *ud,kn_sockaddr *addr)
 {
 	if(err == 0){
 		//success
-		g_toinner->togroup = new_stream_conn(s,65536,RPACKET);
+		g_toinner->togroup = new_stream_conn(s,65535,RPACKET);
 		stream_conn_associate(g_toinner->p,g_toinner->togroup,on_packet,on_group_disconnected);
 		printf("connect to group success\n");		
 		wpacket_t wpk = wpk_create(64);
@@ -175,7 +175,7 @@ static void cb_connect_chat(handle_t s,int err,void *ud,kn_sockaddr *addr)
 {
 	if(err == 0){
 		//success
-		g_toinner->tochat = new_stream_conn(s,65536,RPACKET);
+		g_toinner->tochat = new_stream_conn(s,65535,RPACKET);
 		stream_conn_associate(g_toinner->p,g_toinner->tochat,on_packet,on_chat_disconnected);
 		printf("connect to chat success\n");			
 	}else{

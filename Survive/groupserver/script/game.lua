@@ -59,9 +59,14 @@ game_net_handler[DUMMY_ON_GAME_DISCONNECTED] =  function (rpk,conn)
 		gamemgr.name2game[game.name] = nil
 		print("gameserver: " .. game.name .. " disconnected")		
 		for k,v in pairs(game.gameplys) do
+			print(k)
 			v.game = nil
 		end
-		gamemgr.size = gamemgr.size - 1		
+		gamemgr.size = gamemgr.size - 1
+		print("DUMMY_ON_GAME_DISCONNECTED")
+		if game.onGameDisconnect then
+			game.onGameDisconnect(game)
+		end		
 	end
 end
 
@@ -74,7 +79,7 @@ end
 local function insertGamePly(ply,game)
 	local t = gamemgr.con2game[game.conn]
 	if t then
-		t.gameplys[ply] = nil
+		t.gameplys[ply] = ply
 		t.plycount = t.plycount + 1
 	end
 end
@@ -82,7 +87,7 @@ end
 local function removeGamePly(ply,game)
 	local t = gamemgr.con2game[game.conn]
 	if t then
-		t.gameplys[ply] = ply
+		t.gameplys[ply] = nil
 		t.plycount = t.plycount - 1
 	end
 end

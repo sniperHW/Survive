@@ -175,7 +175,7 @@ function playermgr:new_player(actname)
 end
 
 function playermgr:release_player(ply)
-	if ply.groupid and ply.groupid >= 1 and ply.groupid <= 65536 then
+	if ply.groupid and ply.groupid >= 1 and ply.groupid <= 65535 then
 		self.freeidx:push({v=ply.groupid,__next=nil})
 		self.players[ply.groupid] = nil
 		self.actname2player[ply.actname] = nil

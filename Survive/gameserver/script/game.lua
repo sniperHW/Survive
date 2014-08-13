@@ -27,42 +27,44 @@ Rpc.RegisterRpcFunction("EnterMap",function (rpcHandle)
 	print("EnterMap " .. mapid .. " " .. maptype)
 	print(plys)
 	local gameids
-	--print("EnterMap1")
+	print("EnterMap1")
 	if mapid == 0 then
 		--创建实例
 		mapid = game.freeidx:pop()
 		if not mapid then
-			--print("EnterMap2")
+			print("EnterMap2")
 			--通知group,gameserver繁忙
 			Rpc.RPCResponse(rpcHandle,nil,"busy")
+			return
 		else
 			mapid = mapid.v
-			--print("EnterMap3")
-			--print(mapid)
-			--print(maptype)
-			--print(plys)
 			local map = Map.NewMap(mapid,maptype)
 			game.maps[mapid] = map
 			gameids = map:entermap(plys)
-			if gameids then
+			if not gameids then
 				--通知group进入地图失败
 				Rpc.RPCResponse(rpcHandle,nil,"failed")
+				return
 			end
 		end
 	else
-		--print("EnterMap4")
+		print("EnterMap3")
 		local map = game.maps[mapid]
 		if not map then
+			print("instance not found")
 			--TODO 通知group错误的mapid(可能实例已经被销毁)
 			Rpc.RPCResponse(rpcHandle,nil,"instance not found")
+			return
 		else
 			gameids = map:entermap(plys)
 			if not gameids then
 				--通知group进入地图失败
 				Rpc.RPCResponse(rpcHandle,nil,"failed")
+				return
 			end
 		end
 	end
+	print(gameids)
 	--将成功进入的mapid返回给调用方
 	Rpc.RPCResponse(rpcHandle,{mapid,gameids},nil)	
 end)
@@ -93,10 +95,10 @@ end)
 Rpc.RegisterRpcFunction("CliReConn",function (rpcHandle)
 	local param = rpcHandle.param
 	local gameid = param[1]
-	local mapid,_ = math.floor(gameid/65536)
+	local mapid = bit32.rshift(gameid,16)
 	local map = game.maps[mapid]
 	if map then
-		local plyid = math.fmod(gameid,65536)
+		local plyid = bit32.band(gameid,0xFFFF)
 		local ply = map.avatars[plyid]
 		print(plyid)
 		if ply and ply.avattype == Avatar.type_player then
@@ -123,11 +125,11 @@ local game_net_handler = {}
 game_net_handler[CMD_CS_MOV] = function (rpk,conn)
 	print("CS_MOV")
 	local gameid = rpk_reverse_read_uint32(rpk)
-	local mapid,_ = math.floor(gameid/65536)
+	local mapid = bit32.rshift(gameid,16)
 	local map = game.maps[mapid]
 	if map then
 		print("map:" .. mapid)		
-		local plyid = math.fmod(gameid,65536)
+		local plyid = bit32.band(gameid,0xFFFF)
 		print("ply:" .. plyid)
 		local ply = map.avatars[plyid]
 		print(ply)
@@ -142,11 +144,11 @@ end
 game_net_handler[CMD_GGAME_CLIDISCONNECTED] =  function (rpk,conn)
 	print("client disconn")
 	local gameid = rpk_reverse_read_uint32(rpk)
-	local mapid,_ = math.floor(gameid/65536)
+	local mapid = bit32.rshift(gameid,16)
 	local map = game.maps[mapid]
 	--print("mapid:" .. mapid)
 	if map then
-		local plyid = math.fmod(gameid,65536)
+		local plyid = bit32.band(gameid,0xFFFF)
 		print("plyid:" .. plyid)
 		--map:leavemap(plyid)
 		local ply = map.avatars[plyid]

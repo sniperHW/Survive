@@ -162,13 +162,6 @@ do {                                                     \
 
 /*------  Special Macros (debug and/or informative)  ---------------------*/
 
-// Orderly end, with any sort of message - see fmtmk
-#define debug_END(s) { \
-           static void std_err (const char *); \
-           fputs(Cap_clr_scr, stdout); \
-           std_err(s); \
-        }
-
 // A poor man's breakpoint, if he's too lazy to learn gdb
 #define its_YOUR_fault { *((char *)0) = '!'; }
 
@@ -394,14 +387,14 @@ typedef struct WIN_t {
    "%#5.1f%% us,%#5.1f%% sy,%#5.1f%% ni,%#5.1f%% id, %#5.1f%% wa,%#5.1f%% hi,%#5.1f%% si,%#5.1f%% st\n"
 #ifdef CASEUP_SUMMK
 #define MEMORY_line1  "Mem:" \
-   " %8luK total, %8luK used, %8luK free, %8luK buffers\n"
+   " %8luMB total, %8luMB used, %8luMB free, %8luMB buffers\n"
 #define MEMORY_line2  "Swap:" \
-   " %8luK total, %8luK used, %8luK free, %8luK cached\n"
+   " %8luMB total, %8luMB used, %8luMB free, %8luMB cached\n"
 #else
 #define MEMORY_line1  "Mem:" \
-   " %8luk total, %8luk used, %8luk free, %8luk buffers\n"
+   " %8luMB total, %8luMB used, %8luMB free, %8luMB buffers\n"
 #define MEMORY_line2  "Swap:" \
-   " %8luk total, %8luk used, %8luk free, %8luk cached\n"
+   " %8luMB total, %8luMB used, %8luMB free, %8luMB cached\n"
 #endif
 
 // Keyboard Help specially formatted string(s) --

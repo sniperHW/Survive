@@ -25,7 +25,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctype.h>
-//#include <curses.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -34,11 +33,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Foul POS defines all sorts of stuff...
-//#include <term.h>
 #undef tab
 
-//#include <termios.h>
 #include <time.h>
 #include <unistd.h>
 #include <values.h>
@@ -65,9 +61,6 @@ static char outbuf[4096];
 //static struct termios Savedtty,
 //                      Rawtty;
 //static int Ttychanged = 0;
-
-        /* Program name used in error messages and local 'rc' file name */
-static char *Myname;
 
         /* Name of user config file (dynamically constructed) and our
            'Current' rcfile contents, initialized with defaults but may be
@@ -146,11 +139,6 @@ static int   Cap_can_goto = 0;
            buffer is used, stdout is flushed at frame end or if interactive. */
 static char *Pseudo_scrn;
 static int   Pseudo_row, Pseudo_cols, Pseudo_size;
-#ifndef STDOUT_IOLBF
-        // less than stdout's normal buffer but with luck mostly '\n' anyway
-static char  Stdout_buf[2048];
-#endif
-
 
         /* ////////////////////////////////////////////////////////////// */
         /* Special Section: multiple windows/field groups  ---------------*/
@@ -254,27 +242,6 @@ static int sort_HST_t (const HST_t *P, const HST_t *Q)
 
 /*######  Tiny useful routine(s)  ########################################*/
 
-        /*
-         * This routine isolates ALL user INPUT and ensures that we
-         * wont be mixing I/O from stdio and low-level read() requests */
-static int chin (int ech, char *buf, unsigned cnt)
-{
-/*   int rc;
-
-   fflush(stdout);
-   if (!ech)
-      rc = read(STDIN_FILENO, buf, cnt);
-   else {
-      tcsetattr(STDIN_FILENO, TCSAFLUSH, &Savedtty);
-      rc = read(STDIN_FILENO, buf, cnt);
-      tcsetattr(STDIN_FILENO, TCSAFLUSH, &Rawtty);
-   }
-   // may be the beginning of a lengthy escape sequence
-   tcflush(STDIN_FILENO, TCIFLUSH);
-   return rc;                   // note: we do NOT produce a vaid 'string'*/
-   return 0;
-}
-
 
 // This routine simply formats whatever the caller wants and
 // returns a pointer to the resulting 'const char' string...
@@ -291,7 +258,7 @@ static const char *fmtmk (const char *fmts, ...)
 }
 
 void putp(const char *str){
-	printf("%s",str);
+	
 }
 
 
@@ -317,84 +284,6 @@ static char *strim_0 (char *str)
 }
 
 
-// This guy just facilitates Batch and protects against dumb ttys
-// -- we'd 'inline' him but he's only called twice per frame,
-// yet used in many other locations.
-static const char *tg2 (int x, int y)
-{
-   return  "";
-}
-
-
-/*######  Misc Color/Display support  ####################################*/
-
-   /* macro to test if a basic (non-color) capability is valid
-         thanks: Floyd Davidson <floyd@ptialaska.net> */
-#define tIF(s)  s ? s : ""
-#define CAPCOPY(dst,src) src && strcpy(dst,src)
-
-        /*
-         * Make the appropriate caps/color strings and set some
-         * lengths which are used to distinguish twix the displayed
-         * columns and an actual printed row!
-         * note: we avoid the use of background color so as to maximize
-         *       compatibility with the user's xterm settings */
-static void capsmk (WIN_t *q)
-{
-   static int capsdone = 0;
-
-   // we must NOT disturb our 'empty' terminfo strings!
-   if (Batch) return;
-
-   // these are the unchangeable puppies, so we only do 'em once
-   if (!capsdone) {
-      CAPCOPY(Cap_clr_eol, "");
-      CAPCOPY(Cap_clr_eos, "");
-      CAPCOPY(Cap_clr_scr, "");
-
-      if (0) {  // we like the eat_newline_glitch
-         CAPCOPY(Cap_rmam, "");
-         CAPCOPY(Cap_smam, "");
-         if (!*Cap_rmam || !*Cap_smam) {  // need both
-            *Cap_rmam = '\0';
-            *Cap_smam = '\0';
-            if (0) {
-               avoid_last_column = 1;
-            }
-         }
-      }
-
-      CAPCOPY(Cap_curs_huge, "");
-      CAPCOPY(Cap_curs_norm, "");
-      CAPCOPY(Cap_home, "");
-      CAPCOPY(Cap_norm, "");
-      CAPCOPY(Cap_reverse, "");
-
-      //snprintf(Caps_off, sizeof(Caps_off), "%s%s", Cap_norm, tIF(orig_pair));
-      //if (tgoto(cursor_address, 1, 1)) Cap_can_goto = 1;
-      capsdone = 1;
-   }
-   /* the key to NO run-time costs for configurable colors -- we spend a
-      little time with the user now setting up our terminfo strings, and
-      the job's done until he/she/it has a change-of-heart */
-   strcpy(q->cap_bold, Cap_norm);// : tIF(enter_bold_mode));
-
-  q->capclr_sum[0] = '\0';
-  strcpy(q->capclr_msg, Cap_reverse);
-  strcpy(q->capclr_pmt, q->cap_bold);
-  strcpy(q->capclr_hdr, Cap_reverse);
-  strcpy(q->capclr_rownorm, Cap_norm);
-
-   // composite(s), so we do 'em outside and after the if
-   snprintf(q->capclr_rowhigh, sizeof(q->capclr_rowhigh), "%s%s"
-      , q->capclr_rownorm, CHKw(q, Show_HIBOLD) ? q->cap_bold : Cap_reverse);
-   q->len_rownorm = strlen(q->capclr_rownorm);
-   q->len_rowhigh = strlen(q->capclr_rowhigh);
-
-#undef tIF
-}
-
-
 // Show an error, but not right now.
 // Due to the postponed opening of ksym, using open_psdb_message,
 // if P_WCH had been selected and the program is restarted, the
@@ -411,38 +300,6 @@ static void msg_save (const char *fmts, ...)
       /* we'll add some extra attention grabbers to whatever this is */
    snprintf(Msg_delayed, sizeof(Msg_delayed), "\a***  %s  ***", strim_0(tmp));
    Msg_awaiting = 1;
-}
-
-
-        /*
-         * Show an error message (caller may include a '\a' for sound) */
-static void show_msg (const char *str)
-{
-   PUTT("%s%s %s %s%s",
-      tg2(0, Msg_row),
-      Curwin->capclr_msg,
-      str,
-      Caps_off,
-      Cap_clr_eol
-   );
-   fflush(stdout);
-   sleep(MSG_SLEEP);
-   Msg_awaiting = 0;
-}
-
-
-        /*
-         * Show an input prompt + larger cursor */
-static void show_pmt (const char *str)
-{
-   PUTT("%s%s%s: %s%s",
-      tg2(0, Msg_row),
-      Curwin->capclr_pmt,
-      str,
-      Cap_curs_huge,
-      Caps_off
-   );
-   fflush(stdout);
 }
 
 
@@ -475,22 +332,6 @@ static void show_special (int interact, const char *glob)
 { 
 	strcat(outbuf,glob);
 }
-
-
-/*######  Small Utility routines  ########################################*/
-
-// Get a string from the user
-static char *ask4str (const char *prompt)
-{
-   static char buf[GETBUFSIZ];
-
-   show_pmt(prompt);
-   memset(buf, '\0', sizeof(buf));
-   chin(1, buf, sizeof(buf) - 1);
-   putp(Cap_curs_norm);
-   return strim_0(buf);
-}
-
 
 /*
  * Do some scaling stuff.
@@ -532,55 +373,6 @@ static const char *scale_num (unsigned long num, const int width, const unsigned
 }
 
 
-        /*
-         * Do some scaling stuff.
-         * format 'tics' to fit 'width'. */
-static const char *scale_tics (TIC_t tics, const int width)
-{
-#ifdef CASEUP_SCALE
-#define HH "%uH"
-#define DD "%uD"
-#define WW "%uW"
-#else
-#define HH "%uh"
-#define DD "%ud"
-#define WW "%uw"
-#endif
-   static char buf[TNYBUFSIZ];
-   unsigned long nt;    // narrow time, for speed on 32-bit
-   unsigned cc;         // centiseconds
-   unsigned nn;         // multi-purpose whatever
-
-   nt  = (tics * 100ull) / Hertz;
-   cc  = nt % 100;                              // centiseconds past second
-   nt /= 100;                                   // total seconds
-   nn  = nt % 60;                               // seconds past the minute
-   nt /= 60;                                    // total minutes
-   if (width >= snprintf(buf, sizeof(buf), "%lu:%02u.%02u", nt, nn, cc))
-      return buf;
-   if (width >= snprintf(buf, sizeof buf, "%lu:%02u", nt, nn))
-      return buf;
-   nn  = nt % 60;                               // minutes past the hour
-   nt /= 60;                                    // total hours
-   if (width >= snprintf(buf, sizeof buf, "%lu,%02u", nt, nn))
-      return buf;
-   nn = nt;                                     // now also hours
-   if (width >= snprintf(buf, sizeof buf, HH, nn))
-      return buf;
-   nn /= 24;                                    // now days
-   if (width >= snprintf(buf, sizeof buf, DD, nn))
-      return buf;
-   nn /= 7;                                     // now weeks
-   if (width >= snprintf(buf, sizeof buf, WW, nn))
-      return buf;
-      // well shoot, this outta' fit...
-   return "?";
-
-#undef HH
-#undef DD
-#undef WW
-}
-
 #include <pwd.h>
 
 static int selection_type;
@@ -606,25 +398,6 @@ static int good_uid(const proc_t *restrict const pp){
    }
    return 0;
 }
-
-// swiped from ps, and ought to be in libproc
-static const char *parse_uid(const char *restrict const str, uid_t *restrict const ret){
-   struct passwd *passwd_data;
-   char *endp;
-   unsigned long num;
-   static const char uidrange[] = "User ID out of range.";
-   static const char uidexist[] = "User name does not exist.";
-   num = strtoul(str, &endp, 0);
-   if(*endp != '\0'){  /* hmmm, try as login name */
-      passwd_data = getpwnam(str);
-      if(!passwd_data)    return uidexist;
-      num = passwd_data->pw_uid;
-   }
-   if(num > 0xfffffffeUL) return uidrange;
-   *ret = num;
-   return 0;
-}
-
 
 /*######  Library Alternatives  ##########################################*/
 
@@ -1025,97 +798,6 @@ static FLD_t Fieldstab[] = {
 #define FT_NEW_fmt 0
 #define FT_OLD_fmt 2
 
-
-#if 0
-        // convert, or 0 for failure
-static int ft_cvt_char (const int fr, const int to, int c) {
-   int j = -1;
-
-   while (++j < MAXTBL(Fieldstab)) {
-      if (c == Fieldstab[j].keys[fr])   return Fieldstab[j].keys[to];
-      if (c == Fieldstab[j].keys[fr+1]) return Fieldstab[j].keys[to+1];
-   }
-   return 0;
-}
-#endif
-
-
-        // convert
-static inline int ft_get_char (const int fr, int i) {
-   int c;
-   if (i < 0) return 0;
-   if (i >= MAXTBL(Fieldstab)) return 0;
-   c = Fieldstab[i].keys[fr];
-   if (c == '.') c = 0;         // '.' marks a bad entry
-   return c;
-}
-
-
-#if 0
-        // convert, or -1 for failure
-static int ft_get_idx (const int fr, int c) {
-   int j = -1;
-
-   while (++j < MAXTBL(Fieldstab)) {
-      if (c == Fieldstab[j].keys[fr])   return j;
-      if (c == Fieldstab[j].keys[fr+1]) return j;
-   }
-   return -1;
-}
-#endif
-
-
-        // convert, or NULL for failure
-static const FLD_t *ft_get_ptr (const int fr, int c) {
-   int j = -1;
-
-   while (++j < MAXTBL(Fieldstab)) {
-      if (c == Fieldstab[j].keys[fr])   return Fieldstab+j;
-      if (c == Fieldstab[j].keys[fr+1]) return Fieldstab+j;
-   }
-   return NULL;
-}
-
-
-#if 0
-        // convert, or NULL for failure
-static const FLD_t *ft_idx_to_ptr (const int i) {
-   if (i < 0) return NULL;
-   if (i >= MAXTBL(Fieldstab)) return NULL;
-   return Fieldstab + i;
-}
-
-
-        // convert, or -1 for failure
-static int ft_ptr_to_idx (const FLD_t *p) {
-   int i;
-   if (p < Fieldstab) return -1;
-   i = p - Fieldstab;
-   if (i >= MAXTBL(Fieldstab)) return -1;
-   return i;
-}
-#endif
-
-
-#if 0
-static void rc_bugless (const RCF_t *const rc) {
-   const RCW_t *w;
-   int i = 0;
-
-   fprintf(stderr,"\n%d %d %f %d\n",
-      rc->mode_altscr, rc->mode_irixps, rc->delay_time, rc->win_index
-   );
-   while(i < 4) {
-      w = &rc->win[i++];
-      fprintf(stderr, "<%s> <%s> %d %08x %d %d %d %d %d\n",
-         w->winname, w->fieldscur, w->sortindx, w->winflags, w->maxtasks,
-         w->summclr, w->msgsclr, w->headclr, w->taskclr
-      );
-   }
-}
-#endif
-
-
 // '$HOME/Rc_name' contains multiple lines - 2 global + 3 per window.
 //   line 1: an eyecatcher, with a shameless advertisement
 //   line 2: an id, Mode_altcsr, Mode_irixps, Delay_time and Curwin.
@@ -1286,47 +968,6 @@ static int rc_read_old (const char *const buf, RCF_t *rc) {
    return 17;
 }
 
-
-static void rc_write_new (FILE *fp) {
-   int i;
-
-   fprintf(fp, RCF_EYECATCHER "\"%s with windows\"\t\t# shameless braggin'\n",
-      Myname
-   );
-   fprintf(fp, RCF_DEPRECATED
-      "Mode_altscr=%d, Mode_irixps=%d, Delay_time=%.3f, Curwin=%u\n",
-      Rc.mode_altscr, Rc.mode_irixps, Rc.delay_time, (unsigned)(Curwin - Winstk)
-   );
-   for (i = 0; i < GROUPSMAX; i++) {
-      char buf[40];
-      char *cp = Winstk[i].rc.fieldscur;
-      int j = 0;
-
-      while (j < 36) {
-         int c = *cp++ & 0xff;
-         switch (c) {
-            case '.':
-            case 1 ... ' ':
-            case 0x7f ... 0xff:
-               continue;                // throw away junk (some of it)
-            default:
-               buf[j++] = c;            // gets the '\0' too
-         }
-         if (!c) break;
-      }
-      fprintf(fp, "%s\tfieldscur=%s\n",
-         Winstk[i].rc.winname, buf
-      );
-      fprintf(fp, "\twinflags=%d, sortindx=%d, maxtasks=%d\n",
-         Winstk[i].rc.winflags, Winstk[i].rc.sortindx, Winstk[i].rc.maxtasks
-      );
-      fprintf(fp, "\tsummclr=%d, msgsclr=%d, headclr=%d, taskclr=%d\n",
-         Winstk[i].rc.summclr, Winstk[i].rc.msgsclr,
-         Winstk[i].rc.headclr, Winstk[i].rc.taskclr
-      );
-   }
-}
-
 /*######  Startup routines  ##############################################*/
 
 // No mater what *they* say, we handle the really really BIG and
@@ -1476,15 +1117,6 @@ static void configs_read (void)
       close(fd);
    }
 
-   if (getenv("TOPRC")) {    // should switch on Myname before documenting this?
-      // not the most optimal here...
-      snprintf(Rc_name, sizeof(Rc_name), "%s", getenv("TOPRC"));
-   } else {
-      snprintf(Rc_name, sizeof(Rc_name), ".%src", Myname);  // eeew...
-      if (getenv("HOME"))
-         snprintf(Rc_name, sizeof(Rc_name), "%s/.%src", getenv("HOME"), Myname);
-   }
-
    rcf = def_rcf;
    fd = open(Rc_name, O_RDONLY);
    if (fd > 0) {
@@ -1528,55 +1160,6 @@ static void configs_read (void)
 
 
 /*######  Field Selection/Ordering routines  #############################*/
-
-
-// Display each field represented in the Fields Table along with its
-// description and mark (with a leading asterisk) fields associated
-// with upper case letter(s) in the passed 'fields string'.
-//
-// After all fields have been displayed, some extra explanatory
-// text may also be output
-static void display_fields (const char *fields, const char *xtra)
-{
-#define yRSVD 3
-   const char *p;
-   int i, cmax = Screen_cols / 2, rmax = Screen_rows - yRSVD;
-
-   /* we're relying on callers to first clear the screen and thus avoid screen
-      flicker if they're too lazy to handle their own asterisk (*) logic */
-   putp(Curwin->cap_bold);
-   for (i = 0; fields[i]; ++i) {
-      const FLD_t *f = ft_get_ptr(FT_NEW_fmt, fields[i]);
-      int b = isupper(fields[i]);
-
-      if (!f) continue;                 // hey, should be std_err!
-      for (p = f->head; ' ' == *p; ++p) // advance past any leading spaces
-         ;
-      PUTT("%s%s%c %c: %-10s = %s",
-         tg2((i / rmax) * cmax, (i % rmax) + yRSVD),
-         b ? Curwin->cap_bold : Cap_norm,
-         b ? '*' : ' ',
-         fields[i],
-         p,
-         f->desc
-      );
-   }
-   if (xtra) {
-      putp(Curwin->capclr_rownorm);
-      while ((p = strchr(xtra, '\n'))) {
-         ++i;
-         PUTT("%s%.*s",
-            tg2((i / rmax) * cmax, (i % rmax) + yRSVD),
-            (int)(p - xtra),
-            xtra
-         );
-         xtra = ++p;
-      }
-   }
-   putp(Caps_off);
-
-#undef yRSVD
-}
 
 
 /*######  Windows/Field Groups support  #################################*/
@@ -1668,115 +1251,6 @@ static void reframewins (void)
 }
 
 
-// Value a window's name and make the associated group name.
-static void win_names (WIN_t *q, const char *name)
-{
-   // Note that src==dst is illegal in sprintf.
-   // Failure: amd64, glibc 2.9-20081201, gcc 4.3.4
-   if(q->rc.winname != name)
-      sprintf(q->rc.winname, "%.*s", WINNAMSIZ -1, name);
-   sprintf(q->grpname, "%d:%.*s", q->winnum, WINNAMSIZ -1, name);
-}
-
-
-
-
-
-
-// Manipulate flag(s) for all our windows.
-static void wins_reflag (int what, int flg)
-{
-   WIN_t *w;
-
-   w = Curwin;
-   do {
-      switch (what) {
-         case Flags_TOG:
-            TOGw(w, flg);
-            break;
-         case Flags_SET:                /* Ummmm, i can't find anybody */
-            SETw(w, flg);               /* who uses Flags_set ...      */
-            break;
-         case Flags_OFF:
-            OFFw(w, flg);
-            break;
-      }
-      // a flag with special significance -- user wants to rebalance
-      // display so we gotta' 'off' one number then force on two flags...
-      if (EQUWINS_cwo == flg) {
-         w->rc.maxtasks = 0;
-         SETw(w, Show_IDLEPS | VISIBLE_tsk);
-      }
-      w = w->next;
-   } while (w != Curwin);
-}
-
-
-// using a flag to avoid other code seeing inconsistant state
-static volatile int need_resize;
-static void wins_resize_sighandler (int dont_care_sig)
-{
-   (void)dont_care_sig;
-   need_resize = 1;
-   ZAP_TIMEOUT
-}
-
-
-// Set the screen dimensions and arrange for the real workhorse.
-// (also) catches:
-//    SIGWINCH and SIGCONT
-static void wins_resize (void)
-{
-   struct winsize wz;
-   char *env_columns;  // Unix98 environment variable COLUMNS
-   char *env_lines;    // Unix98 environment variable LINES
-
-   Screen_cols = 80;//columns;   // <term.h>
-   Screen_rows = 100;//lines;     // <term.h>
-
-   if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &wz) != -1 && wz.ws_col>0 && wz.ws_row>0) {
-      Screen_cols = wz.ws_col;
-      Screen_rows = wz.ws_row;
-   }
-
-   if (Batch) Screen_rows = MAXINT;
-
-   env_columns = getenv("COLUMNS");
-   if(env_columns && *env_columns){
-      long t;
-      char *endptr;
-      t = strtol(env_columns, &endptr, 0);
-      if(!*endptr && (t>0) && (t<=0x7fffffffL)) Screen_cols = (int)t;
-   }
-   env_lines   = getenv("LINES");
-   if(env_lines && *env_lines){
-      long t;
-      char *endptr;
-      t = strtol(env_lines, &endptr, 0);
-      if(!*endptr && (t>0) && (t<=0x7fffffffL)) Screen_rows = (int)t;
-   }
-
-   // be crudely tolerant of crude tty emulators
-   if (avoid_last_column) Screen_cols--;
-
-   // we might disappoint some folks (but they'll deserve it)
-   if (SCREENMAX < Screen_cols) Screen_cols = SCREENMAX;
-
-   // keep our support for output optimization in sync with current reality
-   // note: when we're in Batch mode, we don't really need a Pseudo_scrn and
-   //       when not Batch, our buffer will contain 1 extra 'line' since
-   //       Msg_row is never represented -- but it's nice to have some space
-   //       between us and the great-beyond...
-   Pseudo_cols = Screen_cols + CLRBUFSIZ + 1;
-   if (Batch) Pseudo_size = ROWBUFSIZ + 1;
-   else       Pseudo_size = Pseudo_cols * Screen_rows;
-   Pseudo_scrn = alloc_r(Pseudo_scrn, Pseudo_size);
-
-   // force rebuild of column headers AND libproc/readproc requirements
-   Frames_libflags = 0;
-}
-
-
 // Set up the raw/incomplete field group windows --
 // they'll be finished off after startup completes.
 // [ and very likely that will override most/all of our efforts ]
@@ -1807,21 +1281,6 @@ static void windows_stage1 (void)
    Winstk[3].next = &Winstk[0];
    Winstk[0].prev = &Winstk[3];
    Curwin = Winstk;
-}
-
-
-// This guy just completes the field group windows after the
-// rcfiles have been read and command line arguments parsed
-static void windows_stage2 (void)
-{
-   int i;
-
-   for (i = 0; i < GROUPSMAX; i++) {
-      win_names(&Winstk[i], Winstk[i].rc.winname);
-      //capsmk(&Winstk[i]);
-   }
-   // rely on this next guy to force a call (eventually) to reframewins
-   wins_resize();
 }
 
 
@@ -1964,9 +1423,9 @@ static proc_t **summary_show (void)
    meminfo();
    if (CHKw(Curwin, View_MEMORY)) {
       show_special(0, fmtmk(MEMORY_line1
-         , kb_main_total, kb_main_used, kb_main_free, kb_main_buffers));
+         , kb_main_total/1024, kb_main_used/1024, kb_main_free/1024, kb_main_buffers/1024));
       show_special(0, fmtmk(MEMORY_line2
-         , kb_swap_total, kb_swap_used, kb_swap_free, kb_main_cached));
+         , kb_swap_total/1024, kb_swap_used/1024, kb_swap_free/1024, kb_main_cached/1024));
       Msg_row += 2;
    }
 
@@ -1997,6 +1456,7 @@ static proc_t **summary_show (void)
 // Display information for a single task row.
 static void task_show (const WIN_t *q, const proc_t *p)
 { 
+   if(!filter_size)return;	
    char mybuf[1024] = {0};
    const char *fmt = "pid:%u,usr:%s,cpu:%#4.2f,mem:%#.2fMB,cmd:%s\n";
    float u = (float)p->pcpu * Frame_tscale;
@@ -2006,7 +1466,7 @@ static void task_show (const WIN_t *q, const proc_t *p)
    escape_command(cmd, p, sizeof cmd, &maxcmd,4);
    int match = 0;
    int i = 0;
-   for(;filter[i];++i){
+   for(;i<filter_size;++i){
       if(strstr(cmd,filter[i])){
 		match = 1;
 		break;
@@ -2134,18 +1594,10 @@ static void frame_make (void)
 
    Max_lines = (Screen_rows - Msg_row) - 1;
 
-   if (CHKw(Curwin, EQUWINS_cwo))
-      wins_reflag(Flags_OFF, EQUWINS_cwo);
-
-   // sure hope each window's columns header begins with a newline...
-   //mark by sniper putp(tg2(0, Msg_row));
-\
-
-
    Curwin->winlines = Curwin->rc.maxtasks;
    window_show(ppt, Curwin, &scrlins);
 
-   fflush(stdout);
+
 }
 
 
@@ -2169,7 +1621,6 @@ const char* top(){
 		before(NULL);                                        //                 +-------------+
 		windows_stage1();                    //                 top (sic) slice
 		configs_read();                      //                 > spread etc, <
-		windows_stage2();                    //                 as bottom slice
 		isinit = 1;
 	}
 	outbuf[0] = 0; 

@@ -71,6 +71,11 @@ testpacket:\
 	testpacket.c\
 	kendynet.a
 	$(CC) $(CFLAGS) -o testpacket $^ ./deps/hiredis/libhiredis.a $(INCLUDE) $(LDFLAGS) $(DEFINE) -ldl -lm
+	
+testtop:\
+	testtop.c \
+	./deps/top/libproc.a
+	$(CC) $(CFLAGS) -o testtop $^ ./deps/top/libproc.a -Ideps/top $(LDFLAGS) $(DEFINE) -ldl -lm	
 
 buildscript:
 	cp Survive/commonscript/dbmgr.lua Survive/groupserver/script

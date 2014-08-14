@@ -1,0 +1,8 @@
+libproc.so*
+*.o
+.depend
+*.lo
+*.la
+.libs
+.deps
+Makefile

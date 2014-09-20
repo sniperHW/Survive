@@ -4,14 +4,12 @@
 #include <stdio.h>
 #include "wordfilter.h"
 
-
 struct token{ 
 	char   code;       //字符的编码     
 	struct token   **children;       //子节点
 	uint32_t       children_size;  //子节点的数量
     uint8_t        end;          //是否一个word的结尾
 };
-
 
 typedef struct wordfilter{
 	struct token * tokarry[256];
@@ -48,7 +46,6 @@ struct token *inserttoken(struct token *tok,char c)
 
 static struct token *getchild(struct token *tok,char c)     
 {   
-	
 	if(!tok->children_size) return NULL;
 	int left = 0;
 	int right = tok->children_size - 1;
@@ -66,7 +63,6 @@ static struct token *getchild(struct token *tok,char c)
 	} 
 }
 
-
 static struct token *addchild(struct token *tok,char c){
 	struct token *child = getchild(tok,c);
 	if(!child)
@@ -80,13 +76,11 @@ static void NextChar(struct token *tok,const char *str,int i,int *maxmatch)
     struct token *childtok = getchild(tok,str[i]);  
     if(childtok)     
     {     
-        if(childtok->end)     
-            *maxmatch = i + 1;     
+        if(childtok->end) *maxmatch = i + 1;     
         NextChar(childtok,str,i+1,maxmatch);     
     }
-	else{
-		if(tok->end)
-			*maxmatch = i;
+	else if(tok->end){
+		*maxmatch = i;
 	}
 }   
 
@@ -94,22 +88,17 @@ static void NextChar(struct token *tok,const char *str,int i,int *maxmatch)
 static uint8_t processWord(wordfilter_t filter,const char *str,int *pos)     
 {   
 	struct token *tok = filter->tokarry[(uint8_t)str[*pos]];
-	if(tok == NULL)
-	{
+	if(tok == NULL){
 		(*pos) += 1;
 		return 0;
 	}else{
 		int maxmatch = 0;     
         NextChar(tok,str,(*pos)+1,&maxmatch);                      
-        if(maxmatch == 0)     
-        {     
+        if(maxmatch == 0){     
             (*pos) += 1;
-			if(tok->end)
-				return 1;
-            return 0;     
+			return tok->end ? 1:0; 
         }     
-        else     
-        {     
+        else{     
             (*pos) = maxmatch;     
             return 1;     
         }   
@@ -137,20 +126,14 @@ wordfilter_t wordfilter_new(const char **forbidwords){
 	return filter;
 }     
 
-uint8_t isvaildword(wordfilter_t filter,const char *str)
-{
-	uint8_t ret = 1;
+uint8_t isvaildword(wordfilter_t filter,const char *str){
 	//首先将srt从const char *转换成_char*
 	int size = strlen(str);
 	int i = 0;
-    for(; i < size;)     
-    {       
-        if(processWord(filter,str,&i)){
-			ret = 0;
-			break;
-		}
-    } 
-	return ret;
+    for(; i < size;)       
+        if(processWord(filter,str,&i))
+			return 0;
+	return 1;
 }
 
 kn_string_t wordfiltrate(wordfilter_t filter,const char *str,char replace){
@@ -158,15 +141,13 @@ kn_string_t wordfiltrate(wordfilter_t filter,const char *str,char replace){
 	int i,j;	
 	char *tmp = calloc(1,size+1);
 	strcpy(tmp,str);
-	for(i = 0; i < size;)     
-    {     
+	for(i = 0; i < size;){     
         int o = i;     
         if(processWord(filter,str,&i)){       
 			 j = o;           
 			 for(; j < i; ++j) tmp[j] = replace;
 		}
-    }
-    
+    }    
     kn_string_t ret = kn_new_string(tmp);
     //将连续的replace符号合成1个
     int flag = 0;
@@ -184,6 +165,5 @@ kn_string_t wordfiltrate(wordfilter_t filter,const char *str,char replace){
 	}
 	free(tmp);
 	((char*)kn_to_cstr(ret))[j] = 0; 
-    return ret;
-       
+    return ret;       
 }  

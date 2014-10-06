@@ -23,9 +23,10 @@
 #include <assert.h>
 
 enum{
-	WPACKET   = 1,
-	RPACKET   = 2,
-	RAWPACKET = 3,
+	WPACKET = 1,
+	RPACKET,
+	RAWPACKET,
+	PACKET_END,
 };
 
 typedef struct packet

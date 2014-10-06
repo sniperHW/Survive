@@ -114,7 +114,7 @@ static inline int rpk_peek(rpacket_t r,int8_t *out,uint32_t size){
 }
 
 #define CHECK_READ(TYPE)\
-		if(likely(r->readbuf->size - r->rpos >= sizeof(TYPE))){\
+		if(likely(r->readbuf->size - r->rpos >= sizeof(TYPE)) && r->data_remain >= sizeof(TYPE)){\
 			uint32_t pos = r->rpos;\
 			r->rpos += sizeof(TYPE);\
 			r->data_remain -= sizeof(TYPE);\
@@ -171,14 +171,38 @@ static inline ident rpk_read_ident(rpacket_t r)
 
 
 #define CHECK_PEEK(TYPE)\
-		if(likely(r->readbuf->size - r->rpos >= sizeof(TYPE))){\
+		if(likely(r->readbuf->size - r->rpos >= sizeof(TYPE) && r->data_remain >= sizeof(TYPE))){\
 			return *(TYPE*)(r->readbuf->buf+r->rpos);\
 		}
+
+static inline uint8_t rpk_peek_uint8(rpacket_t r)
+{
+	CHECK_PEEK(uint8_t);
+    uint8_t value = 0;
+    rpk_peek(r,(int8_t*)&value,sizeof(value));
+    return value;
+}
 
 static inline uint16_t rpk_peek_uint16(rpacket_t r)
 {
 	CHECK_PEEK(uint16_t);
     uint16_t value = 0;
+    rpk_peek(r,(int8_t*)&value,sizeof(value));
+    return value;
+}
+
+static inline uint32_t rpk_peek_uint32(rpacket_t r)
+{
+	CHECK_PEEK(uint32_t);
+    uint32_t value = 0;
+    rpk_peek(r,(int8_t*)&value,sizeof(value));
+    return value;
+}
+
+static inline uint32_t rpk_peek_double(rpacket_t r)
+{
+	CHECK_PEEK(double);
+    double value = 0;
     rpk_peek(r,(int8_t*)&value,sizeof(value));
     return value;
 }

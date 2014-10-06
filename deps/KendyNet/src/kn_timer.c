@@ -7,14 +7,14 @@
 #include "kn_time.h"
 #include "kn_dlist.h"
 
-typedef struct kn_timer{
+struct kn_timer{
 	kn_dlist_node node;             //同一时间过期的timer被连接在一起
 	uint64_t      timeout;
 	uint64_t      expire;
 	void          *ud;
 	kn_cb_timer   timeout_callback;
 	kn_timermgr_t mgr;
-}*kn_timer_t;
+};
 
 
 struct timing_wheel{
@@ -57,12 +57,12 @@ struct timing_wheel* new_timing_wheel(uint8_t type){
 	return wheel;	
 }
 
-typedef struct kn_timermgr{
+struct kn_timermgr{
 	struct timing_wheel *wheels[wheel_max];
 	kn_dlist      pending_reg;
 	uint64_t      last_tick;
 	uint8_t       intick;
-}*kn_timermgr_t;
+};
 
 static inline void _reg_timer(kn_timer_t timer,uint8_t setexpire){
 	if(setexpire && timer->mgr->intick){

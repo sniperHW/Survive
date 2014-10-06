@@ -94,6 +94,31 @@ void kn_release_engine(engine_t e){
 	free(ep);
 }
 
+void kn_engine_runonce(engine_t e,uint32_t ms){
+	kn_epoll *ep = (kn_epoll*)e;
+	errno = 0;
+	int i;
+	handle_t h;
+	int nfds = TEMP_FAILURE_RETRY(epoll_wait(ep->epfd,ep->events,ep->maxevents,1000));
+	if(nfds > 0){
+		for(i=0; i < nfds ; ++i)
+		{
+			h = (handle_t)ep->events[i].data.ptr;
+			if(h){ 
+				if(h == (handle_t)&ep->notify_stop){
+					for(;;){
+						char buf[4096];
+						int ret = TEMP_FAILURE_RETRY(read(h->fd,buf,4096));
+						if(ret <= 0) break;
+					}
+					return;
+				}else
+					h->on_events(h,ep->events[i].events);
+			}
+		}
+	}	
+}
+
 int kn_engine_run(engine_t e){
 	kn_epoll *ep = (kn_epoll*)e;
 	for(;;){

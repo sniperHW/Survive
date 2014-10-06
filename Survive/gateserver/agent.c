@@ -4,7 +4,6 @@
 #include "gateplayer.h"
 #include "toinner.h"
 #include "kn_thread.h"
-#include "config.h"
 #include "gateserver.h"
 #include "kendynet.h"
 #include "chanmsg.h"
@@ -228,7 +227,7 @@ static	void on_redis_disconnected(redisconn_t conn,void *_){
 
 int    connect_redis(){
 	if(0 != kn_redisAsynConnect(t_agent->p,
-				kn_to_cstr(g_config->redisip),g_config->redisport,
+				"127.0.0.1",6379,
 				on_redis_connect,
 				on_redis_disconnected,
 				NULL)){

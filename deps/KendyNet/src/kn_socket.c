@@ -48,8 +48,7 @@ static handle_t new_sock(int fd,int domain,int type,int protocal){
 static void process_read(kn_socket *s){
 	st_io* io_req = 0;
 	int bytes_transfer = 0;
-	int total_transfer = 0;
-	while(total_transfer < 65535 && (io_req = (st_io*)kn_list_pop(&s->pending_recv))!=NULL){
+	while((io_req = (st_io*)kn_list_pop(&s->pending_recv))!=NULL){
 		errno = 0;
 		if(s->protocal == IPPROTO_TCP){
 			bytes_transfer = TEMP_FAILURE_RETRY(readv(s->comm_head.fd,io_req->iovec,io_req->iovec_count));
@@ -78,8 +77,7 @@ static void process_read(kn_socket *s){
 static void process_write(kn_socket *s){
 	st_io* io_req = 0;
 	int bytes_transfer = 0;
-	int total_transfer = 0;
-	while(total_transfer < 65535 && (io_req = (st_io*)kn_list_pop(&s->pending_send))!=NULL){
+	while((io_req = (st_io*)kn_list_pop(&s->pending_send))!=NULL){
 		errno = 0;
 		if(s->protocal == IPPROTO_TCP){
 			bytes_transfer = TEMP_FAILURE_RETRY(writev(s->comm_head.fd,io_req->iovec,io_req->iovec_count));
@@ -139,7 +137,7 @@ again:
 static void process_accept(kn_socket *s){
     int fd;
     kn_sockaddr remote;
-    while(1)
+    for(;;)
     {
     	fd = _accept(s,&remote);
     	if(fd < 0)
@@ -175,7 +173,7 @@ static void process_connect(kn_socket *s,int events){
 }
 
 static void destroy_socket(kn_socket *s){
-	printf("destroy_socket\n");
+	//printf("destroy_socket\n");
 	st_io *io_req;
 	if(s->destry_stio){
         while((io_req = (st_io*)kn_list_pop(&s->pending_send))!=NULL)
@@ -246,9 +244,67 @@ int kn_sock_associate(handle_t h,
 }
 
 int kn_sock_send(handle_t h,st_io *req){
-	if(((handle_t)h)->type != KN_SOCKET) return -1;	
+	if(((handle_t)h)->type != KN_SOCKET){ 
+		errno =  EBADF;
+		return -1;
+	}	
 	kn_socket *s = (kn_socket*)h;
-	if(!s->e || s->comm_head.status != SOCKET_ESTABLISH) return -2;
+	if(!s->e || s->comm_head.status != SOCKET_ESTABLISH){
+		errno = EBADFD;
+		return -1;
+	 }
+	
+	if(0 != kn_list_size(&s->pending_send))
+		return kn_sock_post_send(h,req);
+	errno = 0;			
+	int bytes_transfer = 0;
+	if(s->protocal == IPPROTO_TCP)
+		bytes_transfer = TEMP_FAILURE_RETRY(writev(s->comm_head.fd,req->iovec,req->iovec_count));		
+	else if(s->protocal == IPPROTO_UDP){		
+	}else
+		assert(0);
+		
+	if(bytes_transfer < 0 && errno == EAGAIN)
+		return kn_sock_post_send(h,req);				
+	return bytes_transfer > 0 ? bytes_transfer:-1;	
+}
+
+int kn_sock_recv(handle_t h,st_io *req){
+	if(((handle_t)h)->type != KN_SOCKET){ 
+		errno =  EBADF;
+		return -1;
+	}	
+	kn_socket *s = (kn_socket*)h;
+	if(!s->e || s->comm_head.status != SOCKET_ESTABLISH){
+		errno = EBADFD;
+		return -1;
+	 }
+	errno = 0;	
+	if(0 != kn_list_size(&s->pending_send))
+		return kn_sock_post_recv(h,req);
+		
+	int bytes_transfer = 0;
+	if(s->protocal == IPPROTO_TCP)
+		bytes_transfer = TEMP_FAILURE_RETRY(readv(s->comm_head.fd,req->iovec,req->iovec_count));		
+	else if(s->protocal == IPPROTO_UDP){		
+	}else
+		assert(0);
+		
+	if(bytes_transfer < 0 && errno == EAGAIN)
+		return kn_sock_post_recv(h,req);				
+	return bytes_transfer > 0 ? bytes_transfer:-1;		
+}
+
+int kn_sock_post_send(handle_t h,st_io *req){
+	if(((handle_t)h)->type != KN_SOCKET){ 
+		errno =  EBADF;
+		return -1;
+	}	
+	kn_socket *s = (kn_socket*)h;
+	if(!s->e || s->comm_head.status != SOCKET_ESTABLISH){
+		errno = EBADFD;
+		return -1;
+	 }
 	if(!(s->events & EPOLLOUT)){
 		int events = s->events | EPOLLOUT;
 		int ret = 0;
@@ -260,17 +316,25 @@ int kn_sock_send(handle_t h,st_io *req){
 			
 		if(ret == 0)
 			s->events = events;
-		else
+		else{
+			assert(0);
 			return -1;
+		}
 	}
 	kn_list_pushback(&s->pending_send,(kn_list_node*)req);	 	
 	return 0;
 }
 
-int kn_sock_recv(handle_t h,st_io *req){
-	if(((handle_t)h)->type != KN_SOCKET) return -1;	
+int kn_sock_post_recv(handle_t h,st_io *req){
+	if(((handle_t)h)->type != KN_SOCKET){ 
+		errno =  EBADF;
+		return -1;
+	}	
 	kn_socket *s = (kn_socket*)h;
-	if(!s->e || s->comm_head.status != SOCKET_ESTABLISH) return -2;
+	if(!s->e || s->comm_head.status != SOCKET_ESTABLISH){
+		errno = EBADFD;
+		return -1;
+	}
 	if(!(s->events & EPOLLIN)){
 		int events = s->events | EPOLLIN;
 		int ret = 0;
@@ -282,8 +346,10 @@ int kn_sock_recv(handle_t h,st_io *req){
 			
 		if(ret == 0)
 			s->events = events;
-		else
+		else{
+			assert(0);
 			return -1;
+		}
 	} 
 	kn_list_pushback(&s->pending_recv,(kn_list_node*)req);		
 	return 0;	

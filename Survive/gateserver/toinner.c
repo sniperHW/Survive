@@ -1,7 +1,6 @@
 #include "toinner.h"
 #include "chanmsg.h"
 #include "stream_conn.h"
-#include "config.h"
 #include "common/netcmd.h"
 
 struct st_2gameconn{
@@ -106,7 +105,7 @@ static void cb_connect_game(handle_t s,int err,void *ud,kn_sockaddr *addr)
 {
 	if(err == 0){
 		//success
-		stream_conn_t conn = new_stream_conn(s,65535,RPACKET);
+		stream_conn_t conn = new_stream_conn(s,65535,new_rpk_decoder(65535));
 		stream_conn_associate(g_toinner->p,conn,on_packet,on_game_disconnected);
 		printf("connect to game success\n");		
 		wpacket_t wpk = wpk_create(64);
@@ -140,7 +139,7 @@ static void cb_connect_group(handle_t s,int err,void *ud,kn_sockaddr *addr)
 {
 	if(err == 0){
 		//success
-		g_toinner->togroup = new_stream_conn(s,65535,RPACKET);
+		g_toinner->togroup = new_stream_conn(s,65535,new_rpk_decoder(65535));
 		stream_conn_associate(g_toinner->p,g_toinner->togroup,on_packet,on_group_disconnected);
 		printf("connect to group success\n");		
 		wpacket_t wpk = wpk_create(64);
@@ -175,7 +174,7 @@ static void cb_connect_chat(handle_t s,int err,void *ud,kn_sockaddr *addr)
 {
 	if(err == 0){
 		//success
-		g_toinner->tochat = new_stream_conn(s,65535,RPACKET);
+		g_toinner->tochat = new_stream_conn(s,65535,new_rpk_decoder(65535));
 		stream_conn_associate(g_toinner->p,g_toinner->tochat,on_packet,on_chat_disconnected);
 		printf("connect to chat success\n");			
 	}else{
@@ -250,7 +249,7 @@ static void *service_main(void *ud){
 	{		
 		//connect to group
 		kn_sockaddr addr;
-		kn_addr_init_in(&addr,kn_to_cstr(g_config->groupip),g_config->groupport);
+		kn_addr_init_in(&addr,"127.0.0.1",8011);
 		handle_t sock = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
 		kn_sock_connect(g_toinner->p,sock,&addr,NULL,cb_connect_group,NULL);
 	}

@@ -22,59 +22,84 @@ static inline void update_next_recv_pos(stream_conn_t c,int32_t _bytestransfer)
 	}while(bytestransfer);
 }
 
-static inline int unpack(stream_conn_t c)
-{
+
+static int raw_unpack(decoder *_,stream_conn_t c){
+	((void)_);
+	uint32_t pk_len = 0;
+	packet_t r = NULL;
+	do{
+		pk_len = c->unpack_buf->size - c->unpack_pos;
+		if(!pk_len) return 0;
+		r = (packet_t)rawpacket_create1(c->unpack_buf,c->unpack_pos,pk_len);
+		c->unpack_pos  += pk_len;
+		c->unpack_size -= pk_len;
+		if(c->unpack_pos >= c->unpack_buf->capacity)
+		{
+			assert(c->unpack_buf->next);
+			c->unpack_pos = 0;
+			c->unpack_buf = buffer_acquire(c->unpack_buf,c->unpack_buf->next);
+		}
+		if(c->on_packet(c,r)) destroy_packet(r);
+		if(c->is_close) return decode_socket_close;
+	}while(1);
+	return 0;
+}
+
+static int rpk_unpack(decoder *d,stream_conn_t c){
 	uint32_t pk_len = 0;
 	uint32_t pk_total_size;
 	packet_t r = NULL;
+	rpk_decoder *rdecoder = (rpk_decoder*)d;
 	do{
-		if(c->packet_type == RPACKET)
-		{
-			if(c->unpack_size <= sizeof(uint32_t))
-				return 0;
-			buffer_read(c->unpack_buf,c->unpack_pos,(int8_t*)&pk_len,sizeof(pk_len));
-			pk_total_size = pk_len+sizeof(pk_len);
-			if(pk_total_size > c->recv_bufsize){
-				//可能是攻击
-				return -1;
-			}
-			if(pk_total_size > c->unpack_size)
-				return 0;
-			r = (packet_t)rpk_create(c->unpack_buf,c->unpack_pos,pk_len);
-			do{
-				uint32_t size = c->unpack_buf->size - c->unpack_pos;
-				size = pk_total_size > size ? size:pk_total_size;
-				c->unpack_pos  += size;
-				pk_total_size  -= size;
-				c->unpack_size -= size;
-				if(c->unpack_pos >= c->unpack_buf->capacity)
-				{
-					assert(c->unpack_buf->next);
-					c->unpack_pos = 0;
-					c->unpack_buf = buffer_acquire(c->unpack_buf,c->unpack_buf->next);
-				}
-			}while(pk_total_size);
+		if(c->unpack_size <= sizeof(uint32_t))
+			return 0;
+		buffer_read(c->unpack_buf,c->unpack_pos,(int8_t*)&pk_len,sizeof(pk_len));
+		pk_total_size = pk_len+sizeof(pk_len);
+		if(pk_total_size > rdecoder->maxpacket_size){
+			//可能是攻击
+			return decode_packet_too_big;
 		}
-		else
-		{
-			pk_len = c->unpack_buf->size - c->unpack_pos;
-			if(!pk_len) return 0;
-			r = (packet_t)rawpacket_create1(c->unpack_buf,c->unpack_pos,pk_len);
-			c->unpack_pos  += pk_len;
-			c->unpack_size -= pk_len;
+		if(pk_total_size > c->unpack_size)
+			return 0;
+		r = (packet_t)rpk_create(c->unpack_buf,c->unpack_pos,pk_len);
+		do{
+			uint32_t size = c->unpack_buf->size - c->unpack_pos;
+			size = pk_total_size > size ? size:pk_total_size;
+			c->unpack_pos  += size;
+			pk_total_size  -= size;
+			c->unpack_size -= size;
 			if(c->unpack_pos >= c->unpack_buf->capacity)
 			{
 				assert(c->unpack_buf->next);
 				c->unpack_pos = 0;
 				c->unpack_buf = buffer_acquire(c->unpack_buf,c->unpack_buf->next);
 			}
-		}
+		}while(pk_total_size);
 		if(c->on_packet(c,r)) destroy_packet(r);
-		if(c->is_close) return -2;
+		if(c->is_close) return decode_socket_close;
 	}while(1);
-	return 0;
+	return 0;	
 }
 
+decoder* new_rpk_decoder(uint32_t maxpacket_size){
+	rpk_decoder *de = calloc(1,sizeof(*de));
+	de->base.unpack = rpk_unpack;
+	de->base.destroy = NULL;
+	de->maxpacket_size = maxpacket_size;
+	return (decoder*)de;
+}
+
+decoder* new_rawpk_decoder(){
+	rawpk_decoder *de = calloc(1,sizeof(*de));
+	de->base.destroy = NULL;
+	de->base.unpack = raw_unpack;
+	return (decoder*)de;	
+}
+
+void destroy_decoder(decoder *d){
+	if(d->destroy) d->destroy(d);
+	free(d);
+}
 
 static inline st_io *prepare_send(stream_conn_t c)
 {
@@ -159,16 +184,15 @@ static void stream_conn_destroy(void *ptr)
 	buffer_release(c->unpack_buf);
 	buffer_release(c->next_recv_buf);
 	kn_close_sock(c->handle);
+	destroy_decoder(c->_decoder);
 	free(c);				
 }
 
-stream_conn_t new_stream_conn(handle_t sock,uint32_t buffersize,uint8_t packet_type)
+stream_conn_t new_stream_conn(handle_t sock,uint32_t buffersize,decoder *_decoder)
 {
-	assert(packet_type == RPACKET || packet_type == RAWPACKET);
 	buffersize = size_of_pow2(buffersize);
     if(buffersize < 1024) buffersize = 1024;	
 	stream_conn_t c = calloc(1,sizeof(*c));
-	c->packet_type = packet_type;
 	c->recv_bufsize = buffersize;
 	c->unpack_buf = buffer_create(buffersize);
 	c->next_recv_buf = buffer_acquire(NULL,c->unpack_buf);
@@ -179,6 +203,8 @@ stream_conn_t new_stream_conn(handle_t sock,uint32_t buffersize,uint8_t packet_t
 	refobj_init((refobj*)c,stream_conn_destroy);
 	c->handle = sock;
 	kn_sock_setud(sock,c);
+	c->_decoder = _decoder;
+	if(!c->_decoder) c->_decoder = new_rawpk_decoder();
 	return c;
 }
 
@@ -219,13 +245,43 @@ void stream_conn_close(stream_conn_t c){
 	} 	
 }
 
-void RecvFinish(stream_conn_t c,int32_t bytestransfer,int32_t err_code)
-{
-	uint32_t recv_size;
-	uint32_t free_buffer_size;
+
+static inline void Recv(stream_conn_t c){
 	buffer_t buf;
 	uint32_t pos;
 	int32_t i = 0;
+	uint32_t free_buffer_size;
+	uint32_t recv_size;
+	//发出新的读请求
+	buf = c->next_recv_buf;
+	pos = c->next_recv_pos;
+	recv_size = c->recv_bufsize;
+	do
+	{
+		free_buffer_size = buf->capacity - pos;
+		free_buffer_size = recv_size > free_buffer_size ? free_buffer_size:recv_size;
+		c->wrecvbuf[i].iov_len = free_buffer_size;
+		c->wrecvbuf[i].iov_base = buf->buf + pos;
+		recv_size -= free_buffer_size;
+		pos += free_buffer_size;
+		if(recv_size && pos >= buf->capacity)
+		{
+			pos = 0;
+			if(!buf->next)
+				buf->next = buffer_create(c->recv_bufsize);
+			buf = buf->next;
+		}
+		++i;
+	}while(recv_size);
+	c->recv_overlap.iovec_count = i;
+	c->recv_overlap.iovec = c->wrecvbuf;
+	kn_sock_post_recv(c->handle,&c->recv_overlap);	
+	c->doing_recv = 1;	
+}
+
+void RecvFinish(stream_conn_t c,int32_t bytestransfer,int32_t err_code)
+{
+	c->doing_recv = 0;	
 	if(bytestransfer == 0 || (bytestransfer < 0 && err_code != EAGAIN)){
 		//不处理半关闭的情况，如果读到流的结尾直接关闭连接
 		printf("recv close\n");
@@ -234,35 +290,12 @@ void RecvFinish(stream_conn_t c,int32_t bytestransfer,int32_t err_code)
 		update_next_recv_pos(c,bytestransfer);
 		c->unpack_size += bytestransfer;
 		int ret; 
-		if((ret = unpack(c)) == -1){
+		if((ret = c->_decoder->unpack(c->_decoder,c)) == decode_packet_too_big){
 			_force_close(c,err_code);	
 			return;
 		}
 		if(ret != 0) return;
-		//发出新的读请求
-		buf = c->next_recv_buf;
-		pos = c->next_recv_pos;
-		recv_size = c->recv_bufsize;
-		do
-		{
-			free_buffer_size = buf->capacity - pos;
-			free_buffer_size = recv_size > free_buffer_size ? free_buffer_size:recv_size;
-			c->wrecvbuf[i].iov_len = free_buffer_size;
-			c->wrecvbuf[i].iov_base = buf->buf + pos;
-			recv_size -= free_buffer_size;
-			pos += free_buffer_size;
-			if(recv_size && pos >= buf->capacity)
-			{
-				pos = 0;
-				if(!buf->next)
-					buf->next = buffer_create(c->recv_bufsize);
-				buf = buf->next;
-			}
-			++i;
-		}while(recv_size);
-		c->recv_overlap.iovec_count = i;
-		c->recv_overlap.iovec = c->wrecvbuf;
-		kn_sock_recv(c->handle,&c->recv_overlap);
+		Recv(c);
 	}
 }
 
@@ -270,18 +303,26 @@ void SendFinish(stream_conn_t c,int32_t bytestransfer,int32_t err_code)
 {
 	if(bytestransfer == 0 || (bytestransfer < 0 && err_code != EAGAIN)){
 		_force_close(c,err_code);
-	}else{
-		update_send_list(c,bytestransfer);
-		st_io *io = prepare_send(c);
-		if(!io) {
-			c->doing_send = 0;
-			if(c->is_close){
-				//数据发送完毕且收到关闭请求，可以安全关闭了
-				_force_close(c,0);
+	}else{		
+		for(;;){
+			update_send_list(c,bytestransfer);
+			st_io *io = prepare_send(c);
+			if(!io) {
+				c->doing_send = 0;
+				if(c->is_close){
+					//数据发送完毕且收到关闭请求，可以安全关闭了
+					_force_close(c,0);
+				}
+				return;
 			}
-			return;
+			bytestransfer = kn_sock_send(c->handle,io);
+			if(bytestransfer == 0) return;//EAGAIN
+			else if(bytestransfer < 0){
+				_force_close(c,errno);
+				return;
+			}			
 		}
-		kn_sock_send(c->handle,io);		
+		//kn_sock_post_send(c->handle,io);		
 	}
 }
 
@@ -316,7 +357,7 @@ int stream_conn_send(stream_conn_t c,packet_t w)
 	if(!c->doing_send){
 		c->doing_send = 1;
 		O = prepare_send(c);
-		if(O) return kn_sock_send(c->handle,O);
+		if(O) return kn_sock_post_send(c->handle,O);
 	}
 	return 0;
 }
@@ -330,9 +371,7 @@ int stream_conn_associate(engine_t e,
       kn_sock_associate(conn->handle,e,IoFinish,NULL);
       if(on_packet) conn->on_packet = on_packet;
       if(on_disconnect) conn->on_disconnected = on_disconnect;
-      if(e){
-	  kn_sock_recv(conn->handle,&conn->recv_overlap);		
-      }
+      if(e && !conn->doing_recv)
+			Recv(conn);
       return 0;
-
 }

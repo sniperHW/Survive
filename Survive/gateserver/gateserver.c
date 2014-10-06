@@ -1,5 +1,4 @@
 #include "agent.h"
-#include "config.h"
 #include "chanmsg.h"
 #include "gateserver.h"
 #include "toinner.h"
@@ -36,10 +35,10 @@ void forward_agent(packet_t rpk,stream_conn_t conn){
 static void on_new_client(handle_t s,void *_){
 	(void)_;
 	//随机选择一个agent将conn交给他处理
-	uint8_t idx = rand()%g_config->agentcount;
+	uint8_t idx = rand()%1;
 	struct chanmsg_newclient *msg = calloc(1,sizeof(*msg));
 	msg->chanmsg.msgtype = NEWCLIENT;
-	msg->conn = new_stream_conn(s,4096,RPACKET);;
+	msg->conn = new_stream_conn(s,4096,new_rpk_decoder(4096));
 	mail2toagent(agents[idx],msg,chanmsg_newclient_destroy);
 }
 
@@ -50,23 +49,20 @@ static void sig_int(int sig){
 
 int main(int argc,char **argv){
 	LOG_GATE(LOG_INFO,"begin start gateserver\n");
-	if(loadconfig() != 0){
-		return 0;
-	}
 	signal(SIGPIPE,SIG_IGN);
 	signal(SIGINT,sig_int);
 	int i = 0;
-	for(; i < g_config->agentcount; ++i)
+	for(; i < 1; ++i)
 		agents[i] = start_agent(i);
 
 	e = kn_new_engine();
 	//启动监听
 	kn_sockaddr local;
-	kn_addr_init_in(&local,kn_to_cstr(g_config->toclientip),g_config->toclientport);	
+	kn_addr_init_in(&local,"127.0.0.1",8010);	
 	handle_t l = kn_new_sock(AF_INET,SOCK_STREAM,IPPROTO_TCP);
 	if(0 != kn_sock_listen(e,l,&local,on_new_client,NULL)){
-		printf("create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->toclientip),g_config->toclientport);
-		LOG_GATE(LOG_INFO,"create server on ip[%s],port[%u] error\n",kn_to_cstr(g_config->toclientip),g_config->toclientport);
+		printf("create server on ip[%s],port[%u] error\n","127.0.0.1",8010);
+		LOG_GATE(LOG_INFO,"create server on ip[%s],port[%u] error\n","127.0.0.1",8010);
 		
 		exit(0);
 	}

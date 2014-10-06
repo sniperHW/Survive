@@ -16,239 +16,122 @@
 */
 #ifndef _LUA_UTIL_H
 #define _LUA_UTIL_H
-#ifdef USE_LUAJIT
-#include <luajit-2.0/lua.h>  
-#include <luajit-2.0/lauxlib.h>  
-#include <luajit-2.0/lualib.h>
-#else
 #include <lua.h>  
 #include <lauxlib.h>  
 #include <lualib.h>
-#endif 
 #include <stdio.h>
 #include <stdlib.h>
 
-static inline int _traceback (lua_State *L) {
-  const char *msg = lua_tostring(L, 1);
-  if (msg)
-    luaL_traceback(L, L, msg, 1);
-  else if (!lua_isnoneornil(L, 1)) {  /* is there an error object? */
-    if (!luaL_callmeta(L, 1, "__tostring"))  /* try its 'tostring' metamethod */
-      lua_pushliteral(L, "(no error message)");
-  }
-  return 1;
+
+typedef struct{
+	lua_State     *L;
+	int 		   rindex;	
+}luaRef_t;
+
+static inline void release_luaRef(luaRef_t *ref)
+{
+	if(ref->rindex != LUA_REFNIL){
+		luaL_unref(ref->L,LUA_REGISTRYINDEX,ref->rindex);
+		ref->L = NULL;
+		ref->rindex = LUA_REFNIL;
+	}
 }
 
-//call lua function
-#define LuaCall0(LUASTATE,FUNCNAME,RET)\
-		({\
-			lua_getglobal(LUASTATE,FUNCNAME);\
-			int ___base = lua_gettop(LUASTATE) - 0;\
-			lua_pushcfunction(LUASTATE, _traceback);\
-			lua_insert(LUASTATE, ___base);\
-			const char * ___err = NULL;\
-			if(lua_pcall(LUASTATE,0,RET,___base)){\
-				___err = lua_tostring(LUASTATE,-1);\
-				lua_pop(LUASTATE,1);\
-			}\
-			lua_remove(LUASTATE,___base);\
-			___err;})
-
-#define LuaCall1(LUASTATE,FUNCNAME,RET,ARG1)\
-		({\
-			lua_getglobal(LUASTATE,FUNCNAME);\
-			ARG1;\
-			int ___base = lua_gettop(LUASTATE) - 1;\
-			lua_pushcfunction(LUASTATE, _traceback);\
-			lua_insert(LUASTATE, ___base);\
-			const char * ___err = NULL;\
-			if(lua_pcall(LUASTATE,1,RET,0)){\
-				___err = lua_tostring(LUASTATE,-1);\
-				lua_pop(LUASTATE,1);\
-			}\
-			lua_remove(LUASTATE,___base);\
-			___err;})
-
-#define LuaCall2(LUASTATE,FUNCNAME,RET,ARG1,ARG2)\
-		({\
-			lua_getglobal(LUASTATE,FUNCNAME);\
-			ARG1;ARG2;\
-			int ___base = lua_gettop(LUASTATE) - 2;\
-			lua_pushcfunction(LUASTATE, _traceback);\
-			lua_insert(LUASTATE, ___base);\
-			const char * ___err = NULL;\
-			if(lua_pcall(LUASTATE,2,RET,0)){\
-				___err = lua_tostring(LUASTATE,-1);\
-				lua_pop(LUASTATE,1);\
-			}\
-			lua_remove(LUASTATE,___base);\
-			___err;})
-		
-#define LuaCall3(LUASTATE,FUNCNAME,RET,ARG1,ARG2,ARG3)\
-		({\
-			lua_getglobal(LUASTATE,FUNCNAME);\
-			ARG1;ARG2;ARG3;\
-			int ___base = lua_gettop(LUASTATE) - 3;\
-			lua_pushcfunction(LUASTATE, _traceback);\
-			lua_insert(LUASTATE, ___base);\
-			const char * ___err = NULL;\
-			if(lua_pcall(LUASTATE,3,RET,0)){\
-				___err = lua_tostring(LUASTATE,-1);\
-				lua_pop(LUASTATE,1);\
-			}\
-			lua_remove(LUASTATE,___base);\
-			___err;})
-		
-#define LuaCall4(LUASTATE,FUNCNAME,RET,ARG1,ARG2,ARG3,ARG4)\
-		({\
-			lua_getglobal(LUASTATE,FUNCNAME);\
-			ARG1;ARG2;ARG3;ARG4;\
-			int ___base = lua_gettop(LUASTATE) - 4;\
-			lua_pushcfunction(LUASTATE, _traceback);\
-			lua_insert(LUASTATE, ___base);\
-			const char * ___err = NULL;\
-			if(lua_pcall(LUASTATE,4,RET,0)){\
-				___err = lua_tostring(LUASTATE,-1);\
-				lua_pop(LUASTATE,1);\
-			}\
-			lua_remove(LUASTATE,___base);\
-			___err;})
-
-//lua表的一个引用
-typedef struct
-{
-	lua_State      *L;
-	int 		   rindex;	
-}luaTabRef_t;
-
-static inline luaTabRef_t create_luaTabRef(lua_State *L,int idx)
-{
-	luaTabRef_t o = {.L=NULL,.rindex=LUA_REFNIL};
+static inline luaRef_t toluaRef(lua_State *L,int idx){
+	luaRef_t ref = {.L = NULL,.rindex = LUA_REFNIL};
 	lua_pushvalue(L,idx);
 	if(!lua_istable(L,-1)){
 		lua_pop(L,1);
 	}else{
-		o.L = L;
-		o.rindex = luaL_ref(L,LUA_REGISTRYINDEX);
+		ref.rindex = luaL_ref(L,LUA_REGISTRYINDEX);
+		lua_rawgeti(L,  LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);
+		ref.L = lua_tothread(L,-1);
+		lua_pop(L,1);
 	}
-	return o;
+	return ref;
 }
 
-static inline int  isVaild_TabRef(luaTabRef_t o){
-	return o.rindex != LUA_REFNIL;
+static inline void push_LuaRef(lua_State *L,luaRef_t ref){
+	lua_rawgeti(L,LUA_REGISTRYINDEX,ref.rindex);
 }
 
-static inline void release_luaTabRef(luaTabRef_t *o)
-{
-	if(o->rindex != LUA_REFNIL){
-		luaL_unref(o->L,LUA_REGISTRYINDEX,o->rindex);
-		o->L = NULL;
-		o->rindex = LUA_REFNIL;
-	}
-}
+/* 当ref是一个table时，可通过调用以下两个函数获取和设置table字段
+*  fmt "kkkkkk:vvvvv",k,v含义与luacall一致,且数量必须配对
+*/
+const char *LuaRef_Get(luaRef_t ref,const char *fmt,...);
+const char *LuaRef_Set(luaRef_t ref,const char *fmt,...);
 
-#define CallLuaTabFunc0(LSTATE,TABREF,FUNCNAME,RET)\
-		({\
-			lua_State *___L = LSTATE;\
-			if(!___L) ___L = (TABREF).L;\
-			lua_rawgeti(___L,LUA_REGISTRYINDEX,(TABREF).rindex);\
-			lua_pushstring(___L,FUNCNAME);\
-			lua_gettable(___L,-2);\
-			lua_insert(___L,-2);\
-			int ___base = lua_gettop(___L) - 1;\
-			lua_pushcfunction(___L, _traceback);\
-			lua_insert(___L, ___base);\
-			const char *___err = NULL;\
-			if(lua_pcall(___L,1,RET,0)){\
-				___err = lua_tostring(___L,-1);\
-				lua_pop(___L,1);\
+/*i:符号整数
+* u:无符号整数
+* s:字符串,lua_pushstring,lua_tostring
+* S:字符串,lua_pushlstring,lua_tolstring,注:S后跟的长度字段必须为size_t/size_t*
+* b:布尔值,必须为int/int*
+* n:lua number
+* r:lua ref
+* p:指针(lightuserdata)
+*/
+const char *luacall(lua_State *L,const char *fmt,...);
+
+#define LuaCall(__L,__FUNC,__FMT, ...)({\
+			const char *__result;\
+			int __oldtop = lua_gettop(__L);\
+			lua_getglobal(__L,__FUNC);\
+			__result = luacall(__L,__FMT,##__VA_ARGS__);\
+			lua_settop(__L,__oldtop);\
+		__result;})
+
+//调用一个lua引用，这个引用是一个函数		
+#define LuaCallRefFunc(__FUNREF,__FMT,...)({\
+			const char *__result;\
+			lua_State *__L = (__FUNREF).L;\
+			int __oldtop = lua_gettop(__L);\
+			lua_rawgeti(__L,LUA_REGISTRYINDEX,(__FUNREF).rindex);\
+			__result = luacall(__L,__FMT,##__VA_ARGS__);\
+			lua_settop(__L,__oldtop);\
+		__result;})
+
+//调用luatable的一个函数字段,注意此调用方式相当于o:func(),也就是会传递self		
+#define LuaCallTabFuncS(__TABREF,__FIELD,__FMT,...)({\
+			const char *__result;\
+			lua_State *__L = (__TABREF).L;\
+			int __oldtop = lua_gettop(__L);\
+			lua_rawgeti(__L,LUA_REGISTRYINDEX,(__TABREF).rindex);\
+			lua_pushstring(__L,__FIELD);\
+			lua_gettable(__L,-2);\
+			lua_remove(__L,-2);\
+			const char *__fmt = __FMT;\
+			if(__fmt){char __tmp[32];\
+				snprintf(__tmp,32,"r%s",(const char*)__fmt);\
+				__result = luacall(__L,__tmp,__TABREF,##__VA_ARGS__);\
+			}else{\
+				__result = luacall(__L,"r",__TABREF);\
 			}\
-			lua_remove(___L,___base);\
-			___err;})
-			
-#define CallLuaTabFunc1(LSTATE,TABREF,FUNCNAME,RET,ARG1)\
-		({\
-			lua_State *___L = LSTATE;\
-			if(!___L) ___L = (TABREF).L;\
-			lua_rawgeti(___L,LUA_REGISTRYINDEX,(TABREF).rindex);\
-			lua_pushstring(___L,FUNCNAME);\
-			lua_gettable(___L,-2);\
-			lua_insert(___L,-2);\
-			ARG1;\
-			int ___base = lua_gettop(___L) - 2;\
-			lua_pushcfunction(___L, _traceback);\
-			lua_insert(___L, ___base);\
-			const char *___err = NULL;\
-			if(lua_pcall(___L,2,RET,0)){\
-				___err = lua_tostring(___L,-1);\
-				lua_pop(___L,1);\
+			lua_settop(__L,__oldtop);\
+		__result;})
+		
+//调用luatable的一个函数字段,注意此调用方式相当于o.func(),也就是不传递self		
+#define LuaCallTabFunc(__TABREF,__FIELD,__FMT,...)({\
+			const char *__result;\
+			lua_State *__L = (__TABREF).L;\
+			int __oldtop = lua_gettop(__L);\
+			lua_rawgeti(__L,LUA_REGISTRYINDEX,(__TABREF).rindex);\
+			lua_pushstring(__L,__FIELD);\
+			lua_gettable(__L,-2);\
+			lua_remove(__L,-2);\
+			const char *__fmt = __FMT;\
+			if(__fmt){char __tmp[32];\
+				snprintf(__tmp,32,"r%s",(const char*)__fmt);\
+				__result = luacall(__L,__tmp,__TABREF,##__VA_ARGS__);\
+			}else{\
+				__result = luacall(__L,"r",__TABREF);\
 			}\
-			lua_remove(___L,___base);\
-			___err;})
-			
-#define CallLuaTabFunc2(LSTATE,TABREF,FUNCNAME,RET,ARG1,ARG2)\
-		({\
-			lua_State *___L = LSTATE;\
-			if(!___L) ___L = (TABREF).L;\
-			lua_rawgeti(___L,LUA_REGISTRYINDEX,(TABREF).rindex);\
-			lua_pushstring(___L,FUNCNAME);\
-			lua_gettable(___L,-2);\
-			lua_insert(___L,-2);\
-			ARG1;ARG2;\
-			int ___base = lua_gettop(___L) - 3;\
-			lua_pushcfunction(___L, _traceback);\
-			lua_insert(___L, ___base);\
-			const char *___err = NULL;\
-			if(lua_pcall(___L,3,RET,0)){\
-				___err = lua_tostring(___L,-1);\
-				lua_pop(___L,1);\
-			}\
-			lua_remove(___L,___base);\
-			___err;})	
-			
-#define CallLuaTabFunc3(LSTATE,TABREF,FUNCNAME,RET,ARG1,ARG2,ARG3)\
-		({\
-			lua_State *___L = LSTATE;\
-			if(!___L) ___L = (TABREF).L;\
-			lua_rawgeti(___L,LUA_REGISTRYINDEX,(TABREF).rindex);\
-			lua_pushstring(___L,FUNCNAME);\
-			lua_gettable(___L,-2);\
-			lua_insert(___L,-2);\
-			ARG1;ARG2;ARG3;\
-			const char *___err = NULL;\
-			int ___base = lua_gettop(___L) - 4;\
-			lua_pushcfunction(___L, _traceback);\
-			lua_insert(___L, ___base);\
-			if(lua_pcall(___L,4,RET,0)){\
-				___err = lua_tostring(___L,-1);\
-				lua_pop(___L,1);\
-			}\
-			lua_remove(___L,___base);\
-			___err;})
-			
-#define CallLuaTabFunc4(LSTATE,TABREF,FUNCNAME,RET,ARG1,ARG2,ARG3,ARG4)\
-		({\
-			lua_State *___L = LSTATE;\
-			if(!___L) ___L = (TABREF).L;\
-			lua_rawgeti(___L,LUA_REGISTRYINDEX,(TABREF).rindex);\
-			lua_pushstring(___L,FUNCNAME);\
-			lua_gettable(___L,-2);\
-			lua_insert(___L,-2);\
-			ARG1;ARG2;ARG3;ARG4;\
-			const char *___err = NULL;\
-			int ___base = lua_gettop(___L) - 5;\
-			lua_pushcfunction(___L, _traceback);\
-			lua_insert(___L, ___base);\
-			if(lua_pcall(___L,5,RET,0)){\
-				___err = lua_tostring(___L,-1);\
-				lua_pop(___L,1);\
-			}\
-			lua_remove(___L,___base);\
-			___err;})
+			lua_settop(__L,__oldtop);\
+		__result;})	
+
 
 #define EnumKey -2
 #define EnumVal -1				
-#define LuaTabEnum(TABREF)\
+#define LuaTabForEach(TABREF)\
 			for(lua_rawgeti(TABREF.L,LUA_REGISTRYINDEX,TABREF.rindex),lua_pushnil(TABREF.L);\
 				({\
 					int __result;\
@@ -257,145 +140,6 @@ static inline void release_luaTabRef(luaTabRef_t *o)
 					if(!__result)lua_pop(TABREF.L,1);\
 					__result;});lua_pop(TABREF.L,1))
 
-
-#define LuaTabRefGet(TABREF,NAME,TYPE,TO)\
-		({\
-			TYPE __result;\
-			lua_State *___L = (TABREF).L;\
-			int ___oldtop = lua_gettop(___L);\
-			lua_rawgeti(___L,LUA_REGISTRYINDEX,(TABREF).rindex);\
-			lua_pushstring(___L,NAME);\
-			lua_gettable(___L,-2);\
-			__result = (TYPE)TO(___L,-1);\
-			lua_settop(___L,___oldtop);\
-		__result;})
-		
-#define PushLuaTabRef(LUASTATE,TABREF)\
-        do{\
-            lua_rawgeti(LUASTATE,LUA_REGISTRYINDEX,(TABREF).rindex);\
-        }while(0)
-
-//lua函数的一个引用        
-typedef struct
-{
-	lua_State      *L;
-	int 		   rindex;	
-}luaFuncRef_t;
-
-static inline luaFuncRef_t create_luaFuncRef(lua_State *L,int idx)
-{
-	luaFuncRef_t o = {.L=NULL,.rindex=LUA_REFNIL};
-	lua_pushvalue(L,idx);
-	if(lua_isfunction(L,-1) && !lua_iscfunction(L,-1)){
-		o.L = L;
-		o.rindex = luaL_ref(L,LUA_REGISTRYINDEX);
-	}else{
-		lua_pop(L,1);
-	}
-	return o;
-}
-
-static inline int  isVaild_FuncRef(luaFuncRef_t o){
-	return o.rindex != LUA_REFNIL;
-}
-
-static inline void release_luaFuncRef(luaFuncRef_t *o)
-{
-	if(o->rindex != LUA_REFNIL){
-		luaL_unref(o->L,LUA_REGISTRYINDEX,o->rindex);
-		o->L = NULL;
-		o->rindex = LUA_REFNIL;
-	}
-}
-
-#define CallLuaFuncRef0(LSTATE,FUNCREF,RET)\
-		({\
-			lua_State *___L = LSTATE;\
-			if(!___L) ___L = (FUNCREF).L;\
-			lua_rawgeti(___L,LUA_REGISTRYINDEX,(FUNCREF).rindex);\
-			const char * ___err = NULL;\
-			int ___base = lua_gettop(___L) - 0;\
-			lua_pushcfunction(___L, _traceback);\
-			lua_insert(___L, ___base);\
-			if(lua_pcall(___L,0,RET,0)){\
-				___err = lua_tostring(___L,-1);\
-				lua_pop(___L,1);\
-			}\
-			lua_remove(___L,___base);\
-			___err;})
-			
-#define CallLuaFuncRef1(LSTATE,FUNCREF,RET,ARG1)\
-		({\
-			lua_State *___L = LSTATE;\
-			if(!___L) ___L = (FUNCREF).L;\
-			lua_rawgeti(___L,LUA_REGISTRYINDEX,(FUNCREF).rindex);\
-			ARG1;\
-			const char * ___err = NULL;\
-			int ___base = lua_gettop(___L) - 1;\
-			lua_pushcfunction(___L, _traceback);\
-			lua_insert(___L, ___base);\
-			if(lua_pcall(___L,1,RET,0)){\
-				___err = lua_tostring(___L,-1);\
-				lua_pop(___L,1);\
-			}\
-			lua_remove(___L,___base);\
-			___err;})
-			
-#define CallLuaFuncRef2(LSTATE,FUNCREF,RET,ARG1,ARG2)\
-		({\
-			lua_State *___L = LSTATE;\
-			if(!___L) ___L = (FUNCREF).L;\
-			lua_rawgeti(___L,LUA_REGISTRYINDEX,(FUNCREF).rindex);\
-			ARG1;ARG2;\
-			const char * ___err = NULL;\
-			int ___base = lua_gettop(___L) - 2;\
-			lua_pushcfunction(___L, _traceback);\
-			lua_insert(___L, ___base);\
-			if(lua_pcall(___L,2,RET,0)){\
-				___err = lua_tostring(___L,-1);\
-				lua_pop(___L,1);\
-			}\
-			lua_remove(___L,___base);\
-			___err;})
-			
-#define CallLuaFuncRef3(LSTATE,FUNCREF,RET,ARG1,ARG2,ARG3)\
-		({\
-			lua_State *___L = LSTATE;\
-			if(!___L) ___L = (FUNCREF).L;\
-			lua_rawgeti(___L,LUA_REGISTRYINDEX,(FUNCREF).rindex);\
-			ARG1;ARG2;ARG3;\
-			const char * ___err = NULL;\
-			int ___base = lua_gettop(___L) - 3;\
-			lua_pushcfunction(___L, _traceback);\
-			lua_insert(___L, ___base);\
-			if(lua_pcall(___L,3,RET,0)){\
-				___err = lua_tostring(___L,-1);\
-				lua_pop(___L,1);\
-			}\
-			lua_remove(___L,___base);\
-			___err;})
-			
-			
-#define CallLuaFuncRef4(LSTATE,FUNCREF,RET,ARG1,ARG2,ARG3,ARG4)\
-		({\
-			lua_State *___L = LSTATE;\
-			if(!___L) ___L = (FUNCREF).L;\
-			lua_rawgeti(___L,LUA_REGISTRYINDEX,(FUNCREF).rindex);\
-			ARG1;ARG2;ARG3;ARG4;\
-			const char * ___err = NULL;\
-			int ___base = lua_gettop(___L) - 4;\
-			lua_pushcfunction(___L, _traceback);\
-			lua_insert(___L, ___base);\
-			if(lua_pcall(___L,4,RET,0)){\
-				___err = lua_tostring(___L,-1);\
-				lua_pop(___L,1);\
-			}\
-			lua_remove(___L,___base);\
-			___err;})
-			
-#define PushLuaFuncRef(LUASTATE,FUNCREF)\
-        do{\
-            lua_rawgeti(LUASTATE,LUA_REGISTRYINDEX,(FUNCREF).rindex);\
-        }while(0)															        		
-
 #endif
+
+

@@ -23,8 +23,7 @@ enum{
 static void process_read(kn_chr_dev *r){
 	st_io* io_req = 0;
 	int bytes_transfer = 0;
-	int total_transfer = 0;
-	while(total_transfer < 65535 && (io_req = (st_io*)kn_list_pop(&r->pending_read))!=NULL){
+	while((io_req = (st_io*)kn_list_pop(&r->pending_read))!=NULL){
 		errno = 0;
 		bytes_transfer = TEMP_FAILURE_RETRY(readv(r->comm_head.fd,io_req->iovec,io_req->iovec_count));
 		if(bytes_transfer < 0 && errno == EAGAIN){
@@ -48,8 +47,7 @@ static void process_read(kn_chr_dev *r){
 static void process_write(kn_chr_dev *r){
 	st_io* io_req = 0;
 	int bytes_transfer = 0;
-	int total_transfer = 0;
-	while(total_transfer < 65535 && (io_req = (st_io*)kn_list_pop(&r->pending_write))!=NULL){
+	while((io_req = (st_io*)kn_list_pop(&r->pending_write))!=NULL){
 		errno = 0;
 		bytes_transfer = TEMP_FAILURE_RETRY(writev(r->comm_head.fd,io_req->iovec,io_req->iovec_count));
 		if(bytes_transfer < 0 && errno == EAGAIN){

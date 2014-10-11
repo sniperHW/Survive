@@ -31,13 +31,24 @@ make all
 ```
 
 运行服务
--------------
+
+首先根据实际情况调整ip和端口号,相关文件:
+
+gateserver.lua 
+
+gameserver.lua 
+
+groupserver.lua 
+
+robotclient.lua 
+
+client/src/UI/UILogin.lua
+
 ```
-首先根据实际情况调整ip和端口号,相关文件为:gateserver.lua gameserver.lua groupserver.lua robotclient.lua client/src/UI/UILogin.lua
 
-启动redis服务器
+1)启动redis服务器
 
-启动游戏服务器
+2)启动游戏服务器
 
 ./distrilua Survive/groupserver/groupserver.lua
 
@@ -45,7 +56,7 @@ make all
 
 ./distrilua Survive/gateserver/gateserver.lua
 
-启动机器人客户端
+3)启动机器人客户端或在windows下执行client/runtime/win32/battle.exe启动客户端
 
 ./distrilua Survive/robotclient.lua
 

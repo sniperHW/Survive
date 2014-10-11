@@ -6,17 +6,16 @@ Survive是一个在distri.lua之上构建的手机网游服务器,除了几个�
 
 获取 Survive
 -----------
-Install redis.
 
-Clone [the repository](https://github.com/sniperHW/distri.lua).
+Clone [dirsti.lua](https://github.com/sniperHW/distri.lua).
 
-cd distri.lua
+cd distri.lua/deps
+
+Clone [KendyNet](https://github.com/sniperHW/KendyNet).
+
+cd ..
 
 Clone [Survive](https://github.com/sniperHW/survive.lua).
-
-cd deps
-
-Clone [the repository](https://github.com/sniperHW/KendyNet).
 
 
 构建

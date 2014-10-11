@@ -13,6 +13,15 @@ local toinner = App.New()
 local toclient = App.New()
 local name2game = {}
 
+local redis_ip = "127.0.0.1"
+local redis_port = 6379
+
+local group_ip = "127.0.0.1"
+local group_port = 8811
+
+local ip = "127.0.0.1"
+local port = 8810
+
 function Send2Group(wpk)
 	if togroup then
 		togroup:Send(wpk)		
@@ -204,7 +213,7 @@ local function connect_to_group()
 	Sche.Spawn(function ()
 		while true do
 			local sock = Socket.New(CSocket.AF_INET,CSocket.SOCK_STREAM,CSocket.IPPROTO_TCP)
-			if not sock:Connect("127.0.0.1",8811) then
+			if not sock:Connect(group_ip,group_port) then
 				sock:Establish(CSocket.rpkdecoder(65535))
 				toinner:Add(sock,OnInnerMsg,connect_to_group)								
 				--登录到groupserver
@@ -232,7 +241,7 @@ local function connect_to_group()
 	end)	
 end
 
-Db.Init()
+Db.Init(redis_ip,redis_port)
 connect_to_group()
 toinner:Run()
 toclient:Run()
@@ -244,13 +253,13 @@ end
 
 --在连接上groupserver和db初始化完成后才启动对客户端的监听
 
-if TcpServer.Listen("192.168.0.87",8810,function (sock)
+if TcpServer.Listen(ip,port,function (sock)
 		sock:Establish(CSocket.rpkdecoder(4096))
 		print("client connected")
 		toclient:Add(sock,OnClientMsg,Player.OnPlayerDisconnected)		
 	end) then
-	print("start server on 192.168.0.87:8810 error")
+	print(string.format("start server on %s:%d error",ip,port))
 	stop_program()	
 else
-	print("start server on 192.168.0.87:8810")
+	print(string.format("start server on %s:%d",ip,port))
 end

@@ -4,7 +4,7 @@ local Sche = require "lua/sche"
 local toredis
 
 --建立到redis的连接
-local function connect_to_redis()
+local function connect_to_redis(ip,port)
     if toredis then
 		print("to redis disconnected")
     end
@@ -12,7 +12,7 @@ local function connect_to_redis()
 	Sche.Spawn(function ()
 		while true do
 			local err
-			err,toredis = Redis.Connect("127.0.0.1",6379,connect_to_redis)
+			err,toredis = Redis.Connect(ip,port,connect_to_redis)
 			if toredis then
 				print("connect to redis success")
 				break
@@ -30,8 +30,8 @@ local function Command(str)
 	return toredis:Command(str)
 end
 
-local function Init()
-	connect_to_redis()
+local function Init(ip,port)
+	connect_to_redis(ip,port)
 end
 
 local function Finish()

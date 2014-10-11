@@ -3,12 +3,17 @@ local App = require "lua/application"
 local RPC = require "lua/rpc"
 local NetCmd = require "Survive/netcmd/netcmd"
 local MsgHandler = require "Survive/netcmd/msghandler"
-local Db = require "Survive/common/db"
 local Sche = require "lua/sche"
 local Socket = require "lua/socket"
 local Gate = require "Survive/gameserver/gate"
 local Timer = require "lua/timer"
 local Map = require "Survive/gameserver/map"
+
+local ip = "127.0.0.1"
+local port = 8812
+
+local group_ip = "127.0.0.1"
+local group_port = 8811
 
 local togroup
 local gameApp = App.New()
@@ -26,12 +31,12 @@ local function connect_to_group()
 	Sche.Spawn(function ()
 		while true do
 			local sock = Socket.New(CSocket.AF_INET,CSocket.SOCK_STREAM,CSocket.IPPROTO_TCP)
-			if not sock:Connect("127.0.0.1",8811) then
+			if not sock:Connect(group_ip,group_port) then
 				sock:Establish(CSocket.rpkdecoder(65535))
 				gameApp:Add(sock,MsgHandler.OnMsg,connect_to_group)				
 				--登录到groupserver
 				local rpccaller = RPC.MakeRPC(sock,"GameLogin")
-				local err,ret = rpccaller:Call("game1","127.0.0.1",8812)
+				local err,ret = rpccaller:Call("game1",ip,port)
 				if err or ret == "Login failed" then
 					if err then
 						print(err)
@@ -52,20 +57,19 @@ local function connect_to_group()
 end
 
 connect_to_group()
-Db.Init()
 gameApp:Run()
 
 
-while not togroup or not Db.Finish() do
+while not togroup do
 	Sche.Yield()
 end
 
-if TcpServer.Listen("127.0.0.1",8812,function (sock)
+if TcpServer.Listen(ip,port,function (sock)
 		sock:Establish(CSocket.rpkdecoder(65535))
 		gameApp:Add(sock,MsgHandler.OnMsg,Gate.OnGateDisconnected)		
 	end) then
-	print("start server on 127.0.0.1:8812 error")
+	print(string.format("start server on %s:%d error",ip,port))
 	stop_program()	
 else
-	print("start server on 127.0.0.1:8812")
+	print(string.format("start server on %s:%d",ip,port))
 end

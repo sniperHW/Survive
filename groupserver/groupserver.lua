@@ -9,7 +9,13 @@ local Sche = require "lua/sche"
 local Gate = require "Survive/groupserver/gate"
 local Game = require "Survive/groupserver/game"
 
-Db.Init()
+local redis_ip = "127.0.0.1"
+local redis_port = 6379
+
+local ip = "127.0.0.1"
+local port = 8811
+
+Db.Init(redis_ip,redis_port)
 while not Db.Finish() do
 	Sche.Yield()
 end
@@ -32,16 +38,16 @@ local function on_disconnected(sock,errno)
 end
 
 groupApp:Run(function ()
-	success = not TcpServer.Listen("127.0.0.1",8811,function (sock)
+	success = not TcpServer.Listen(ip,port,function (sock)
 		sock:Establish(CSocket.rpkdecoder(65535))
 		groupApp:Add(sock,MsgHandler.OnMsg,on_disconnected)		
 	end)
 end)
 
 if not success then
-	print("start server on 127.0.0.1:8811 error")
+	print(string.format("start server on %s:%d error",ip,port))
 	stop_program()		
 else
-	print("start server on 127.0.0.1:8811")
+	print(string.format("start server on %s:%d",ip,port))
 end
 

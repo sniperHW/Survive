@@ -33,7 +33,7 @@ make all
 运行服务
 -------------
 ```
-首先根据实际情况调整ip和端口号,相关文件为:gateserver.lua gameserver.lua groupserver.lua robotclient.lua
+首先根据实际情况调整ip和端口号,相关文件为:gateserver.lua gameserver.lua groupserver.lua robotclient.lua client/src/UI/UILogin.lua
 
 启动redis服务器
 
@@ -45,7 +45,7 @@ make all
 
 ./distrilua Survive/gateserver/gateserver.lua
 
-启动测试客户端
+启动机器人客户端
 
 ./distrilua Survive/robotclient.lua
 

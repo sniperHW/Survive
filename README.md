@@ -1,11 +1,53 @@
-一个轻量级的游戏手游服务器使用C+lua开发.主要逻辑使用lua编写.
+轻量级手游服务器框架Survive
+======
+
+Survive是一个在distri.lua之上构建的手机网游服务器,除了几个基本模块外全部使用lua编写.
 
 
+获取 Survive
+-----------
+Install redis.
 
-[详细介绍](https://github.com/sniperHW/Survive/blob/master/Survive/doc/README.md)
+Clone [the repository](https://github.com/sniperHW/distri.lua).
 
-[简单的测试客户端](https://github.com/sniperHW/MyCocos2dxTest/tree/master/TiledMap)
+cd distri.lua
 
-[机器人测试程序](https://github.com/sniperHW/Survive/blob/master/testclient.c)
+Clone [Survive](https://github.com/sniperHW/survive.lua).
 
+cd deps
+
+Clone [the repository](https://github.com/sniperHW/KendyNet).
+
+
+构建
+------
+```
+make distrilua
+
+cd Survive
+
+make all
+
+```
+
+运行服务
+-------------
+```
+首先根据实际情况调整ip和端口号,相关文件为:gateserver.lua gameserver.lua groupserver.lua robotclient.lua
+
+启动redis服务器
+
+启动游戏服务器
+
+./distrilua Survive/groupserver/groupserver.lua
+
+./distrilua Survive/gameserver/gameserver.lua
+
+./distrilua Survive/gateserver/gateserver.lua
+
+启动测试客户端
+
+./distrilua Survive/robotclient.lua
+
+```
 

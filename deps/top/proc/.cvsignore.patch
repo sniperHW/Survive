@@ -1,7 +1,0 @@
-diff -Naur procps-2.0.6/proc/.cvsignore procps-2.0.7/proc/.cvsignore
---- procps-2.0.6/proc/.cvsignore	Wed Dec 31 19:00:00 1969
-+++ procps-2.0.7/proc/.cvsignore	Fri Jul 14 16:45:01 2000
-@@ -0,0 +1,3 @@
-+.depend
-+signames.h
-+libproc.so.*

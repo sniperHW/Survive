@@ -92,11 +92,11 @@ end
 
 --连接gameserver并完成登录
 local function connect_to_game(name,ip,port)
-	if name2game[name] then
-		return
-	end
 	Sche.Spawn(function ()
 		while true do
+			if name2game[name] and name2game[name].sock then
+				return
+			end		
 			local sock = Socket.New(CSocket.AF_INET,CSocket.SOCK_STREAM,CSocket.IPPROTO_TCP)
 			print("connect_to_game",name,ip,port)
 			if not sock:Connect(ip,port) then

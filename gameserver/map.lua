@@ -171,7 +171,7 @@ end
 --注册RPC服务
 local function RegRpcService(app)
 	app:RPCService("EnterMap",function (sock,mapid,type,plys)
-		print("EnterMap",type)
+		--print("EnterMap",type)
 		local plyids
 		local m
 		if mapid == 0 then

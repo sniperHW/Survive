@@ -26,6 +26,7 @@ local function OnGateDisconnected(sock,errno)
 			v.gatesession = nil
 		end
 		sock2gate[sock] = nil
+		gate.sock = nil
 		name2gate[gate.name] = nil
 	end
 end

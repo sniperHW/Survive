@@ -46,6 +46,7 @@ local function OnGameDisconnected(sock,errno)
 			v.gamesession = nil
 		end
 		sock2game[sock] = nil
+		game.sock = nil
 		name2game[game.name] = nil
 	end	
 end

@@ -42,7 +42,9 @@ local function GetInstanceByType(type,count)
 	local m = maps[type]
 	if m then
 		for k,v in pairs(m) do
-			if v.max - v.size >= count then
+			if not v.game.sock then
+				m[k] = nil
+			elseif v.max - v.size >= count then
 				return {v.game,v}
 			end
 		end
@@ -86,6 +88,7 @@ local function EnterMap(ply,type)
 	end
 	mapid = ret[2]
 	gameids = ret[3]
+	print(ply.actname .. " EnterMap id ",gameids[1]) 
 	Game.Bind(game,ply,gameids[1])
 	if not instance then
 		print("create new map instance",mapid)

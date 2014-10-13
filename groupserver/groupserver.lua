@@ -10,33 +10,14 @@ local Gate = require "Survive/groupserver/gate"
 local Game = require "Survive/groupserver/game"
 local Config = require "Survive/common/config"
 
-Config.Init("127.0.0.1",6379)
-local redis_ip
-local redis_port
+local ret,err = Config.Init("测试1服","127.0.0.1",6379)
+if ret then
+	local redis_ip = Config.Get("db")[1]
+	local redis_port = Config.Get("db")[2]
 
-local ip
-local port
+	local ip = Config.Get("group")[1]
+	local port = Config.Get("group")[2]
 
-local function Init()
-	--从配置数据库获取配置信息
-	local err,result = Config.Get("测试1-toredis")
-	if err or not result then
-		return false
-	end
-	redis_ip = result[1]
-	redis_port = result[2]
-		
-	err,result = Config.Get("测试1-togroup")
-	if err or not result then
-		return false
-	end
-	ip = result[1]
-	port = result[2]			
-	return true
-end
-
-if Init() then
-    Config.Close()
 	Db.Init(redis_ip,redis_port)
 	while not Db.Finish() do
 		Sche.Yield()
@@ -74,5 +55,6 @@ if Init() then
 	end
 
 else
+	print("get config error:" .. err)
 	stop_program()	
 end

@@ -10,35 +10,16 @@ local Timer = require "lua/timer"
 local Map = require "Survive/gameserver/map"
 
 local Config = require "Survive/common/config"
-Config.Init("127.0.0.1",6379)
 
-local ip 
-local port
+local ret,err = Config.Init("测试1服","127.0.0.1",6379)
+if ret then
 
-local group_ip
-local group_port
+	local group_ip = Config.Get("group")[1]
+	local group_port = Config.Get("group")[2]
 
-local function Init()
-	--从配置数据库获取配置信息
-	local err,result = Config.Get("测试1-togroup")
-	if err or not result then
-		return false
-	end
-	group_ip = result[1]
-	group_port = result[2]
-		
-	err,result = Config.Get("测试1-game1")
-	if err or not result then
-		return false
-	end
-	ip = result[1]
-	port = result[2]		
-	return true
-end
+	local ip = Config.Get("game1")[1]
+	local port = Config.Get("game1")[2]
 
-
-if Init() then
-	Config.Close()
 	local togroup
 	local gameApp = App.New()
 
@@ -99,5 +80,6 @@ if Init() then
 	end
 
 else
-	stop_program()	
+	print("get config error:" .. err)
+	stop_program()		
 end

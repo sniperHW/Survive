@@ -6,6 +6,7 @@ local Sche = require "lua/sche"
 --local Base64 = require "base64"
 
 local toredis
+local deployment
 
 local function connect_to_redis(ip,port)
     toredis = nil
@@ -14,9 +15,7 @@ local function connect_to_redis(ip,port)
 			local err
 			err,toredis = Redis.Connect(ip,port,
 										function (redisconn)
-												if not redisconn.activeclose then	
-													connect_to_redis(ip,port)
-												end
+											print("connection to config server close")
 										end)
 			if toredis then
 				print("connect to config server success")
@@ -29,33 +28,38 @@ local function connect_to_redis(ip,port)
 end
 
 local isInit
-local function Init(ip,port)
+local deploy_key
+
+local function Init(key,ip,port)
 	if not isInit then
 		isInit = true
+		deploy_key = key
 		connect_to_redis(ip,port)
+		while not toredis do
+			Sche.Sleep(100)
+		end
+		local err,result = toredis:Command("hmget deploy " .. key)
+		if err or not result then
+			toredis:Close()
+			return false,err
+		else
+			deployment = Cjson.decode(result[1])
+			toredis:Close()
+			return true,nil
+		end
+	else
+		return "already init",false
 	end
 end
 
 local function Get(key)
-	while not toredis do
-		Sche.Sleep(100)
+	if not deployment then
+		return nil
 	end
-	local err,result = toredis:Command("get " .. key)
-	if result then
-		print(key,result)
-		result = Cjson.decode(result)
-	end
-	return err,result
-end
-
-local function Close()
-	if toredis then
-		toredis:Close()
-	end
+	return deployment[key]
 end
 
 return {
 	Init = Init,
-	Get = Get,
-	Close = Close,
+	Get = Get
 }

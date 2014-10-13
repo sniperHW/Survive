@@ -11,11 +11,6 @@ local Game = require "Survive/groupserver/game"
 local Config = require "Survive/common/config"
 
 Config.Init("127.0.0.1",6379)
-
-while not Config.IsInitFinish() do
-	Sche.Yield()
-end
-
 local redis_ip
 local redis_port
 
@@ -41,7 +36,7 @@ local function Init()
 end
 
 if Init() then
-
+    Config.Close()
 	Db.Init(redis_ip,redis_port)
 	while not Db.Finish() do
 		Sche.Yield()

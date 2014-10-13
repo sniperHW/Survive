@@ -11,10 +11,6 @@ local Config = require "Survive/common/config"
 
 Config.Init("127.0.0.1",6379)
 
-while not Config.IsInitFinish() do
-	Sche.Yield()
-end
-
 local togroup
 local toinner = App.New()
 local toclient = App.New()
@@ -51,7 +47,7 @@ local function Init()
 		return false
 	end
 	ip = result[1]
-	port = result[2]			
+	port = result[2]				
 	return true
 end
 
@@ -278,6 +274,7 @@ end
 
 
 if Init() then
+	Config.Close()
 	Db.Init(redis_ip,redis_port)
 	connect_to_group()
 	toinner:Run()

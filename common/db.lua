@@ -13,7 +13,12 @@ local function connect_to_redis(ip,port)
 	Sche.Spawn(function ()
 		while true do
 			local err
-			err,toredis = Redis.Connect(ip,port,connect_to_redis)
+			err,toredis = Redis.Connect(ip,port,
+										function (redisconn)
+												if not redisconn.activeclose then	
+													connect_to_redis(ip,port)
+												end
+										end)
 			if toredis then
 				print("connect to redis success")
 				break
@@ -31,8 +36,12 @@ local function Command(str)
 	return toredis:Command(str)
 end
 
+local isInit
 local function Init(ip,port)
-	connect_to_redis(ip,port)
+	if not isInit then
+		isInit = true
+		connect_to_redis(ip,port)
+	end
 end
 
 local function Finish()

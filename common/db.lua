@@ -1,6 +1,7 @@
 local Redis = require "lua/redis"
 local Sche = require "lua/sche"
 
+
 local toredis
 
 --建立到redis的连接

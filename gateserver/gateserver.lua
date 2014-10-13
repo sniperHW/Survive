@@ -7,20 +7,55 @@ local MsgHandler = require "Survive/netcmd/msghandler"
 local Sche = require "lua/sche"
 local Socket = require "lua/socket"
 local Db = require "Survive/common/db"
+local Config = require "Survive/common/config"
+
+Config.Init("127.0.0.1",6379)
+
+while not Config.IsInitFinish() do
+	Sche.Yield()
+end
 
 local togroup
 local toinner = App.New()
 local toclient = App.New()
 local name2game = {}
 
-local redis_ip = "127.0.0.1"
-local redis_port = 6379
+local redis_ip
+local redis_port
 
-local group_ip = "127.0.0.1"
-local group_port = 8811
+local group_ip
+local group_port
 
-local ip = "127.0.0.1"
-local port = 8810
+local ip
+local port
+
+
+local function Init()
+	--从配置数据库获取配置信息
+	local err,result = Config.Get("测试1-toredis")
+	if err or not result then
+		return false
+	end
+	redis_ip = result[1]
+	redis_port = result[2]
+	
+	err,result = Config.Get("测试1-togroup")
+	if err or not result then
+		return false
+	end
+	group_ip = result[1]
+	group_port = result[2]
+	
+	err,result = Config.Get("测试1-gate1")
+	if err or not result then
+		return false
+	end
+	ip = result[1]
+	port = result[2]			
+	return true
+end
+
+
 
 function Send2Group(wpk)
 	if togroup then
@@ -241,25 +276,30 @@ local function connect_to_group()
 	end)	
 end
 
-Db.Init(redis_ip,redis_port)
-connect_to_group()
-toinner:Run()
-toclient:Run()
 
+if Init() then
+	Db.Init(redis_ip,redis_port)
+	connect_to_group()
+	toinner:Run()
+	toclient:Run()
 
-while not togroup or not Db.Finish() do
-	Sche.Yield()
-end
+	while not togroup or not Db.Finish() do
+		Sche.Yield()
+	end
 
---在连接上groupserver和db初始化完成后才启动对客户端的监听
+	--在连接上groupserver和db初始化完成后才启动对客户端的监听
 
-if TcpServer.Listen(ip,port,function (sock)
-		sock:Establish(CSocket.rpkdecoder(4096))
-		print("client connected")
-		toclient:Add(sock,OnClientMsg,Player.OnPlayerDisconnected)		
-	end) then
-	print(string.format("start server on %s:%d error",ip,port))
-	stop_program()	
+	if TcpServer.Listen(ip,port,function (sock)
+			sock:Establish(CSocket.rpkdecoder(4096))
+			print("client connected")
+			toclient:Add(sock,OnClientMsg,Player.OnPlayerDisconnected)		
+		end) then
+		print(string.format("start server on %s:%d error",ip,port))
+
+	else
+		print(string.format("start server on %s:%d",ip,port))
+	end
+
 else
-	print(string.format("start server on %s:%d",ip,port))
+	stop_program()		
 end

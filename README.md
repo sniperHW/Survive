@@ -31,23 +31,13 @@ make all
 
 运行服务
 
-首先根据实际情况调整ip和端口号,相关文件:
-
-gateserver.lua 
-
-gameserver.lua 
-
-groupserver.lua 
-
-robotclient.lua 
-
-client/src/UI/UILogin.lua
-
-```
-
 1)启动redis服务器
 
-2)启动游戏服务器
+2)按实际需要调整setconfig.lua中的ip地址和端口号
+
+3)运行./distrilua Survive/setconfig.lua
+
+4)启动游戏服务器
 
 ./distrilua Survive/groupserver/groupserver.lua
 
@@ -55,7 +45,14 @@ client/src/UI/UILogin.lua
 
 ./distrilua Survive/gateserver/gateserver.lua
 
-3)启动机器人客户端或在windows下执行client/runtime/win32/battle.exe启动客户端
+
+5)启动启动客户端
+
+首先调整中的ip和端口号 client/src/UI/UILogin.lua
+
+然后执行client/runtime/win32/battle.exe
+
+6)启动机器人
 
 ./distrilua Survive/robotclient.lua
 

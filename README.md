@@ -52,6 +52,8 @@ make all
 
 然后执行client/runtime/win32/battle.exe
 
+(注意客户端创建角色界面没完成，所以请先使用机器人登录游戏)
+
 6)启动机器人
 
 ./distrilua Survive/robotclient.lua

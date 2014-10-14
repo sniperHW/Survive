@@ -1,9 +1,7 @@
 --配置管理,从配置中心数据库获取本进程相关的配置
---package.cpath = "Survive/?.so"
 local Redis = require "lua/redis"
 local Cjson = require "cjson"
 local Sche = require "lua/sche"
---local Base64 = require "base64"
 
 local toredis
 local deployment
@@ -13,10 +11,7 @@ local function connect_to_redis(ip,port)
 	Sche.Spawn(function ()
 		while true do
 			local err
-			err,toredis = Redis.Connect(ip,port,
-										function (redisconn)
-											print("connection to config server close")
-										end)
+			err,toredis = Redis.Connect(ip,port)
 			if toredis then
 				print("connect to config server success")
 				break
@@ -27,12 +22,10 @@ local function connect_to_redis(ip,port)
 	end)	
 end
 
-local isInit
 local deploy_key
 
 local function Init(key,ip,port)
-	if not isInit then
-		isInit = true
+	if not deployment then
 		deploy_key = key
 		connect_to_redis(ip,port)
 		while not toredis do
@@ -43,12 +36,13 @@ local function Init(key,ip,port)
 			toredis:Close()
 			return false,err
 		else
+			print(result)
 			deployment = Cjson.decode(result[1])
 			toredis:Close()
 			return true,nil
 		end
 	else
-		return "already init",false
+		return true,nil
 	end
 end
 

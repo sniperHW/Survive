@@ -7,15 +7,7 @@ Survive是一个在distri.lua之上构建的手机网游服务器,除了几个�
 获取 Survive
 -----------
 
-Clone [dirsti.lua](https://github.com/sniperHW/distri.lua).
-
-cd distri.lua/deps
-
-Clone [KendyNet](https://github.com/sniperHW/KendyNet).
-
-cd ..
-
-Clone [Survive](https://github.com/sniperHW/survive.lua).
+[下载](https://github.com/sniperHW/Survive/blob/master/Survive-2014-10-14.zip)
 
 
 构建
@@ -23,9 +15,7 @@ Clone [Survive](https://github.com/sniperHW/survive.lua).
 ```
 make distrilua
 
-cd Survive
-
-make all
+make survive
 
 ```
 

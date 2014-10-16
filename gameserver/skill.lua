@@ -39,7 +39,7 @@ end
 
 local function notify_atksuffer(atker,sufferer,skillid,damage,timetick)
 	local wpk = CPacket.NewWPacket(64)
-	wpk:Write_uint16(wpk,NetCmd.CMD_SC_NOTIATKSUFFER)
+	wpk:Write_uint16(NetCmd.CMD_SC_NOTIATKSUFFER)
 	wpk:Write_uint32(atker.id)
 	wpk:Write_uint16(skillid)
 	wpk:Write_uint32(sufferer.id)

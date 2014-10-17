@@ -1,6 +1,6 @@
 local Cjson = require "cjson"
-local Name2idx = require "Survive/common/name2idx"
-local NetCmd = require "Survive/netcmd/netcmd"
+local Name2idx = require "Survive.common.name2idx"
+local NetCmd = require "Survive.netcmd.netcmd"
 local attr = {}
 
 --需要从group带到game的属性

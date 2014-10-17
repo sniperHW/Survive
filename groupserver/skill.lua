@@ -1,5 +1,5 @@
 local Cjson = require "cjson"
-local Db = require "Survive/common/db"
+local Db = require "Survive.common.db"
 local skills = {}
 
 function skills:new(o)

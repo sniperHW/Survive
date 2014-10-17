@@ -1,5 +1,5 @@
-local Game = require "Survive/groupserver/game"
-local RPC = require "lua/rpc"
+local Game = require "Survive.groupserver.game"
+local RPC = require "lua.rpc"
 
 
 --地图实例

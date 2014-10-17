@@ -1,7 +1,7 @@
 --配置管理,从配置中心数据库获取本进程相关的配置
-local Redis = require "lua/redis"
+local Redis = require "lua.redis"
 local Cjson = require "cjson"
-local Sche = require "lua/sche"
+local Sche = require "lua.sche"
 
 local toredis
 local deployment

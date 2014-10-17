@@ -1,7 +1,7 @@
 --package.cpath = "Survive/?.so"
-local Db = require "Survive/common/db"
+local Db = require "Survive.common.db"
 local Cjson = require "cjson"
-local Sche = require "lua/sche"
+local Sche = require "lua.sche"
 --local Base64 = require "base64"
 Db.Init("127.0.0.1",6379)
 

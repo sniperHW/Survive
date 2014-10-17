@@ -1,5 +1,5 @@
-local Redis = require "lua/redis"
-local Sche = require "lua/sche"
+local Redis = require "lua.redis"
+local Sche = require "lua.sche"
 
 
 local toredis

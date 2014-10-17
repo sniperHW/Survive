@@ -1,8 +1,8 @@
 local Cjson = require "cjson"
-local Name2idx = require "Survive/common/name2idx"
-local NetCmd = require "Survive/netcmd/netcmd"
-local Db = require "Survive/common/db"
-local Item = require "Survive/groupserver/item"
+local Name2idx = require "Survive.common.name2idx"
+local NetCmd = require "Survive.netcmd.netcmd"
+local Db = require "Survive.common.db"
+local Item = require "Survive.groupserver.item"
 local bag = {}
 
 function bag:new()

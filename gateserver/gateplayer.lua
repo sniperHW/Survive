@@ -1,5 +1,5 @@
-local Que = require "lua/queue"
-local NetCmd = require "Survive/netcmd/netcmd"
+local Que = require "lua.queue"
+local NetCmd = require "Survive.netcmd.netcmd"
 local freeidx = Que.New()
 
 local id2player = {}

@@ -1,15 +1,15 @@
-local TcpServer = require "lua/tcpserver"
-local App = require "lua/application"
-local RPC = require "lua/rpc"
-local NetCmd = require "Survive/netcmd/netcmd"
-local MsgHandler = require "Survive/netcmd/msghandler"
-local Sche = require "lua/sche"
-local Socket = require "lua/socket"
-local Gate = require "Survive/gameserver/gate"
-local Timer = require "lua/timer"
-local Map = require "Survive/gameserver/map"
+local TcpServer = require "lua.tcpserver"
+local App = require "lua.application"
+local RPC = require "lua.rpc"
+local NetCmd = require "Survive.netcmd.netcmd"
+local MsgHandler = require "Survive.netcmd.msghandler"
+local Sche = require "lua.sche"
+local Socket = require "lua.socket"
+local Gate = require "Survive.gameserver.gate"
+local Timer = require "lua.timer"
+local Map = require "Survive.gameserver.map"
 
-local Config = require "Survive/common/config"
+local Config = require "Survive.common.config"
 
 local ret,err = Config.Init("测试1服","127.0.0.1",6379)
 if ret then

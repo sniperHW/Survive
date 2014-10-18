@@ -1,6 +1,6 @@
 package.cpath = "Survive/?.so"
 local Aoi = require "aoi"
-local NetCmd = require "Survive/netcmd/netcmd"
+local NetCmd = require "Survive.netcmd.netcmd"
 
 local avatar ={
 	id,            

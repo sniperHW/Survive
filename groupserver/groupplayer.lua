@@ -231,10 +231,10 @@ local function RegRpcService(app)
 			else
 				print("already in group")
 				--断线重连
+				Gate.Bind(Gate.GetGateBySock(sock),ply,sessionid)
 				if ply.status == createcha then
 					return ply:NotifyCreate()
 				elseif ply.status == playing then
-					Gate.Bind(Gate.GetGateBySock(sock),ply,sessionid)
 					ply:NotifyBeginPlay()					
 					if ply.gamesession then
 						print("game CliReConn")

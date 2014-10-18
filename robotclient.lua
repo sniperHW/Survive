@@ -163,7 +163,7 @@ Robot:Run(function ()
 	for i=1,1 do
 		sche.Spawn(function () 
 			local client = socket.New(CSocket.AF_INET,CSocket.SOCK_STREAM,CSocket.IPPROTO_TCP)
-			if client:Connect("127.0.0.1",8010) then
+			if client:Connect("192.168.0.87",8010) then
 				print("connect to 127.0.0.1:8010 error")
 				return
 			end

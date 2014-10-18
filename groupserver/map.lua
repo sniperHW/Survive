@@ -69,7 +69,7 @@ local function EnterMap(ply,type)
 			actname=ply.actname,
 			gatesession = {name=ply.gatesession.gate.name,id=ply.gatesession.sessionid},
 			groupsession = ply.groupsession,
-			avatid = 1,--暂时设置
+			avatid = ply.avatarid,--暂时设置
 			attr = ply.attr:Pack2Game()
 		}		
 	}

@@ -1,6 +1,6 @@
 package.cpath = "Survive/?.so"
-local Avatar = require "Survive/gameserver/avatar"
-local NetCmd = require "Survive/netcmd/netcmd"
+local Avatar = require "Survive.gameserver.avatar"
+local NetCmd = require "Survive.netcmd.netcmd"
 local Aoi = require "aoi"
 
 local player = Avatar.New()

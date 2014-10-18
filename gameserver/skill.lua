@@ -1,6 +1,6 @@
 local Cjson = require "cjson"
-require "Survive/common/TableSkill"
-local NetCmd = require "Survive/netcmd/netcmd"
+require "Survive.common.TableSkill"
+local NetCmd = require "Survive.netcmd.netcmd"
 
 local skillmgr = {
 	skills,

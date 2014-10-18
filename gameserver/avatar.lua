@@ -53,10 +53,20 @@ end
 
 function avatar:Send2view(wpk,exclude) --exclude排除列表
 	--将玩家分组,同gateserver的玩家为一组,发送一个统一的包	
-	exclude = exclude or {}	
+	local function isInExclude(a)
+		if not exclude then
+			return false
+		end
+		for k,v in pairs(exclude) do
+			if a == v then
+				return true
+			end
+		end
+		return false
+	end
 	local gates = {}
 	for k,v in pairs(self.watch_me) do
-		if v.gatesession and (not exclude[v]) then
+		if v.gatesession and (not isInExclude(v)) then
 			local t = gates[v.gatesession]
 			if not t then
 				t = {}

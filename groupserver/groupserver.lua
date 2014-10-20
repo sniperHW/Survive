@@ -49,12 +49,12 @@ if ret then
 
 	if not success then
 		print(string.format("start server on %s:%d error",ip,port))
-		stop_program()		
+		Exit()		
 	else
 		print(string.format("start server on %s:%d",ip,port))
 	end
 
 else
 	print("get config error:" .. err)
-	stop_program()	
+	Exit()	
 end

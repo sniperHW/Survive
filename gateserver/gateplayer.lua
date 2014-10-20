@@ -1,7 +1,8 @@
 local Que = require "lua.queue"
 local NetCmd = require "Survive.netcmd.netcmd"
-local freeidx = Que.New()
+local Time = require "lua.time"
 
+local freeidx = Que.New()
 local id2player = {}
 local sock2player = {}
 
@@ -39,7 +40,7 @@ function player:new()
 	 local o = {}   
 	 setmetatable(o, self)
 	 self.__index = self
-	 o.sessionid = bit32.lshift(idx,16) + bit32.band(GetSysTick(),0x0000FFFF)
+	 o.sessionid = bit32.lshift(idx,16) + bit32.band(Time.SysTick(),0x0000FFFF)
 	 return o
 end
 

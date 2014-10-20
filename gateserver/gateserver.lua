@@ -230,7 +230,7 @@ if ret then
 							print(ret)
 						end
 						sock:Close()
-						stop_program()	
+						Exit()	
 					end
 					togroup = sock
 					print("connect to group success")
@@ -270,5 +270,5 @@ if ret then
 
 else
 	print("get config error:" .. err)
-	stop_program()		
+	Exit()		
 end

@@ -2,6 +2,7 @@ package.cpath = "Survive/?.so"
 local Avatar = require "Survive.gameserver.avatar"
 local NetCmd = require "Survive.netcmd.netcmd"
 local Aoi = require "aoi"
+local Time = require "lua.time"
 
 local player = Avatar.New()
 
@@ -50,7 +51,7 @@ function player:Mov(x,y)
 	if path then
 		self.path = {cur=1,path=path}
 		self.map:beginMov(self)
-		self.lastmovtick = GetSysTick()
+		self.lastmovtick = Time.SysTick()
 		self.movmargin = 0
 
 		local size = #self.path.path
@@ -136,7 +137,7 @@ local function distance(dir)
 end
 
 function player:process_mov()
-	local now = GetSysTick()
+	local now = Time.SysTick()
 	local movmargin = self.movmargin + now - self.lastmovtick
 	local path = self.path.path
 	local cur  = self.path.cur
@@ -159,7 +160,7 @@ function player:process_mov()
 	end
 	self.path.cur = cur
 	self.movmargin = movmargin
-	self.lastmovtick = GetSysTick()
+	self.lastmovtick = Time.SysTick()
 	
 	if self.path.cur > #self.path.path then
 

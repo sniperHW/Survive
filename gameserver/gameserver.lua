@@ -49,7 +49,7 @@ if ret then
 							print(ret)
 						end
 						sock:Close()
-						stop_program()	
+						Exit()	
 					end
 					togroup = sock
 					print("connect to group success")				
@@ -74,12 +74,12 @@ if ret then
 			gameApp:Add(sock,MsgHandler.OnMsg,Gate.OnGateDisconnected)		
 		end) then
 		print(string.format("start server on %s:%d error",ip,port))
-		stop_program()	
+		Exit()	
 	else
 		print(string.format("start server on %s:%d",ip,port))
 	end
 
 else
 	print("get config error:" .. err)
-	stop_program()		
+	Exit()		
 end

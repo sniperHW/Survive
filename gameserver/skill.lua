@@ -1,6 +1,7 @@
 local Cjson = require "cjson"
 require "Survive.common.TableSkill"
 local NetCmd = require "Survive.netcmd.netcmd"
+local Time = require "lua.time"
 
 local skillmgr = {
 	skills,
@@ -99,7 +100,7 @@ function skillmgr:UseSkill(avatar,rpk)
 	print("skillid",id)
 	local skill = self.skills[id]	
 	if not skill then
-		skill = {id=id,lev=1,nexttime = GetSysTick(),tb = TableSkill[id]}
+		skill = {id=id,lev=1,nexttime = Time.SysTick(),tb = TableSkill[id]}
 		self.skills[id] = skill
 	end	
 	if skill then -- and skill.nexttime >= C.systemms() then

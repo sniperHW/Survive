@@ -24,7 +24,7 @@ MsgHandler.RegHandler(NetCmd.CMD_GC_CREATE,function (sock,rpk)
 	print("CMD_GC_CREATE")
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_CG_CREATE)	
-	wpk:Write_uint8(1)
+	wpk:Write_uint8(2)
 	wpk:Write_string(sock.actname)
 	wpk:Write_uint8(1)
 	sock:Send(wpk)
@@ -46,13 +46,13 @@ MsgHandler.RegHandler(NetCmd.CMD_SC_ENTERMAP,function (sock,rpk)
 end)
 
 local function Mov(sock)
-	local x = math.random(10,400)
-	local y = math.random(10,200)
+	local x = math.random(100,150)--math.random(10,400)
+	local y = math.random(100,150)--math.random(10,200)
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_CS_MOV)
 	wpk:Write_uint16(x)
 	wpk:Write_uint16(y)
-	print("MoveTo",x,y)
+	--print("MoveTo",x,y,sock.ply.id)
 	sock:Send(wpk)	
 end
 
@@ -64,12 +64,17 @@ MsgHandler.RegHandler(NetCmd.CMD_SC_ENTERSEE,function (sock,rpk)
 			rpk:Read_uint8()
 			rpk:Read_uint16()
 			local nickname = rpk:Read_string()
+			ply.teamid = rpk:Read_uint16()
 			ply.pos = {}
 			ply.pos.x = rpk:Read_uint16()
 			ply.pos.y = rpk:Read_uint16()
 			ply.dir = rpk:Read_uint8()
-			print("self enter see",nickname,string.len(nickname))
-			Mov(sock)				
+			local attr = ReadAttr(rpk)
+			for k,v in pairs(attr) do
+				print(k,v)
+			end
+			print("self enter see",nickname,ply.teamid)
+			--Mov(sock)				
 		else
 			print("enter see",id)
 		end
@@ -77,12 +82,12 @@ MsgHandler.RegHandler(NetCmd.CMD_SC_ENTERSEE,function (sock,rpk)
 end)
 
 MsgHandler.RegHandler(NetCmd.CMD_SC_MOV_FAILED,function (sock,rpk)
-	print("CMD_SC_MOV_FAILED")
+	--print("CMD_SC_MOV_FAILED")
 	Mov(sock)
 end)
 
 MsgHandler.RegHandler(NetCmd.CMD_SC_MOV_ARRI,function (sock,rpk)
-	print("CMD_SC_MOV_ARRI")
+	--print("CMD_SC_MOV_ARRI")
 	Mov(sock)
 end)
 
@@ -160,18 +165,18 @@ MsgHandler.RegHandler(NetCmd.CMD_GC_BEGINPLY,function (sock,rpk)
 end)
 
 Robot:Run(function ()
-	for i=1,1 do
+	for i=401,401 do
 		sche.Spawn(function () 
 			local client = socket.New(CSocket.AF_INET,CSocket.SOCK_STREAM,CSocket.IPPROTO_TCP)
 			if client:Connect("192.168.0.87",8010) then
-				print("connect to 127.0.0.1:8010 error")
+				print("connect to 127.0.0.1:8810 error")
 				return
 			end
 			client:Establish(CSocket.rpkdecoder())
 			Robot:Add(client,MsgHandler.OnMsg,function () print("robot" .. i .. " disconnected") end)
 			local wpk = CPacket.NewWPacket(64)
 			wpk:Write_uint16(NetCmd.CMD_CA_LOGIN)
-			wpk:Write_uint8(1)
+			wpk:Write_uint8(2)
 			wpk:Write_string("robot" .. i)
 			client.actname = "robot" .. i
 			client:Send(wpk)

@@ -142,7 +142,9 @@ local netcmd = {
 	CMD_SC_NOTIATKSUFFER = NextCmdNum(),   
 	CMD_SC_NOTISUFFER = NextCmdNum(),      
 	CMD_SC_ATTRUPDATE = NextCmdNum(),
-	CMD_SC_CREATE_ERROR = NextCmdNum(),	
+	CMD_SC_BUFFBEGIN = NextCmdNum(),
+	CMD_SC_BUFFEND = NextCmdNum(),
+	--CMD_SC_CREATE_ERROR = NextCmdNum(),	
 	CMD_SC_END = NextCmdNum(),
 	--client <-> group
 	

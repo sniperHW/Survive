@@ -1,4 +1,4 @@
-local Que = require "lua/queue"
+local Que = require "lua.queue"
 local idmgr = {}
 
 function idmgr:new(size)

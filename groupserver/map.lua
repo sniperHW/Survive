@@ -92,7 +92,7 @@ local function EnterMap(ply,type)
 	Game.Bind(game,ply,gameids[1])
 	if not instance then
 		print("create new map instance",mapid)
-		instance = mapinstance:new(game,1,100,mapid,type)
+		instance = mapinstance:new(game,1,200,mapid,type)
 		local m = maps[type]
 		if not m then
 			m = {}

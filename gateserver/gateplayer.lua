@@ -1,8 +1,8 @@
 local Que = require "lua.queue"
 local NetCmd = require "Survive.netcmd.netcmd"
 local Time = require "lua.time"
-
 local freeidx = Que.New()
+
 local id2player = {}
 local sock2player = {}
 

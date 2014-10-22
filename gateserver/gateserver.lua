@@ -4,12 +4,11 @@ local RPC = require "lua.rpc"
 local Player = require "Survive.gateserver.gateplayer"
 local NetCmd = require "Survive.netcmd.netcmd"
 local MsgHandler = require "Survive.netcmd.msghandler"
-print("1")
 local Sche = require "lua.sche"
 local Socket = require "lua.socket"
 local Db = require "Survive.common.db"
 local Config = require "Survive.common.config"
-print("2")
+
 local ret,err = Config.Init("测试1服","127.0.0.1",6379)
 if ret then
 	local togroup
@@ -230,7 +229,7 @@ if ret then
 							print(ret)
 						end
 						sock:Close()
-						Exit()	
+						break	
 					end
 					togroup = sock
 					print("connect to group success")

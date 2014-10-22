@@ -1,4 +1,4 @@
-package.cpath = "Survive/?.so"
+package.cpath = "SurviveServer/?.so"
 local Avatar = require "Survive.gameserver.avatar"
 local Player = require "Survive.gameserver.gameplayer"
 local Que = require "lua.queue"
@@ -9,6 +9,7 @@ local Skill = require "Survive.gameserver.skill"
 local Aoi = require "aoi"
 local Astar = require "astar"
 local Timer = require "lua.timer"
+local Time = require "lua.time"
 local NetCmd = require "Survive.netcmd.netcmd"
 local MsgHandler = require "Survive.netcmd.msghandler"
 local IdMgr = require "Survive.common.idmgr"
@@ -20,7 +21,7 @@ local mapdef = {
 		xcount,
 		ycount,
 		radius = 100,              --视距大小
-		coli   = "./Survive/gameserver/fightMap.meta",   --寻路碰撞文件
+		coli   = "./SurviveServer/gameserver/fightMap.meta",   --寻路碰撞文件
 		astar  = nil,
 	},
 }
@@ -55,6 +56,7 @@ local map = {
 	plycount,      
 	movingavatar, 
 	movtimer,
+	mapdef ,
 }
 
 function map:new(mapid,maptype)
@@ -66,12 +68,20 @@ function map:new(mapid,maptype)
 	o.movingavatar = {}
 	o.avatars = {}
 	o.freeidx = IdMgr.New(4096)
-	local mapdef = GetDefByType(maptype)	
+	local mapdef = GetDefByType(maptype)
+	o.mapdef = mapdef	
 	o.astar = mapdef.astar
 	o.aoi = Aoi.create_map(mapdef.gridlength,mapdef.radius,0,0,mapdef.xcount-1,mapdef.ycount-1)
 	o.movtimer = Timer.New():Register(function () o:process_mov() return true end,100)
+	o.generalTimer = Timer.New():Register(function ()
+			for k,v in pairs(o.avatars) do
+				v:Tick(Time.SysTick())
+			end
+			return true
+		end,500)
 	o.plycount = 0
 	Sche.Spawn(function () o.movtimer:Run() end)
+	Sche.Spawn(function () o.generalTimer:Run() end)
 	maps[mapid] = o  
 	return o
 end
@@ -81,6 +91,7 @@ function map:GetAvatar(id)
 end
 
 function map:entermap(plys)
+	print("map:entermap")
 	if self.freeidx:Len() < #plys then
 		return nil
 	else
@@ -91,19 +102,26 @@ function map:entermap(plys)
 			if not gate then
 				table.insert(gameids,false)
 			else
+				print("map:entermap1")
 				local id = self.freeidx:Get()
-				local ply = Player.New(bit32.lshift(self.mapid,16) + id,avatid)
+				--id,avatid,map,nickname,actname,groupsession,attr,skillmgr,pos,dir,teamid
+				local ply = Player.New(bit32.lshift(self.mapid,16) + id,avatid,
+						             self,v.nickname,
+						             v.actname,v.groupsession,
+						             v.attr,Skill.New(),{220,120},5)
+				print("map:entermap2")
 				Gate.Bind(gate,ply,v.gatesession.id)
 				self.avatars[ply.id] = ply
-				ply.map = self
-				ply.nickname = v.nickname
-				ply.actname = v.actname
-				ply.groupsession = v.groupsession
-				ply.attr = Attr.New():Init(ply,v.attr)
-				ply.skillmgr = Skill.New()
+				print("map:entermap3")
+				--ply.map = self
+				--ply.nickname = v.nickname
+				--ply.actname = v.actname
+				--ply.groupsession = v.groupsession
+				--ply.attr = Attr.New():Init(ply,v.attr)
+				--ply.skillmgr = Skill.New()
 				table.insert(gameids,ply.id)
-				ply.pos = {220,120}
-				ply.dir = 5
+				--ply.pos = {220,120}
+				--ply.dir = 5
 				ply:on_entermap()	
 				self.plycount = self.plycount + 1
 				Aoi.enter_map(self.aoi,ply.aoi_obj,ply.pos[1],ply.pos[2])
@@ -141,6 +159,7 @@ function map:Release()
 	end
 	Aoi.destroy_map(self.aoi)
 	self.movtimer:Stop()
+	self.generalTimer:Stop()
 	maps[self.mapid] = nil
 end
 
@@ -239,6 +258,7 @@ MsgHandler.RegHandler(NetCmd.CMD_CS_USESKILL,function (sock,rpk)
 	end
 end)
 
+local Robot = require "Survive.gameserver.robot"
 --客户端的连接断开
 MsgHandler.RegHandler(NetCmd.CMD_GGAME_CLIDISCONNECTED,function (sock,rpk)
 	local id = rpk:Reverse_read_uint32()	
@@ -246,6 +266,10 @@ MsgHandler.RegHandler(NetCmd.CMD_GGAME_CLIDISCONNECTED,function (sock,rpk)
 	if ply then
 		print(ply.actname .. " CMD_GGAME_CLIDISCONNECTED")
 		Gate.UnBind(ply)
+		if not ply.robot then
+			ply.robot = Robot.New(ply,1)
+		end
+		ply.robot:StartRun()
 	end
 end)
 

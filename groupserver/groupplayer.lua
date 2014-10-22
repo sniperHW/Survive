@@ -140,7 +140,8 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_CREATE,function (sock,rpk)
 	end	
 	if ply.status ~= createcha then
 		return 
-	end	
+	end
+	print("CMD_CG_CREATE1")	
 	ply.chaid = ply.chaid or 0
 	ply.nickname = nickname
 	ply.avatarid = avatarid
@@ -181,6 +182,7 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_CREATE,function (sock,rpk)
 		[Name2idx.Idx("anger")] = 0,
 		[Name2idx.Idx("combat_power")] = 0,
 	}
+	print("CMD_CG_CREATE2")	
 	ply.attr = Attr.New():Init(attr)
 	ply.bag = Bag.New():Init()
 	ply.skills = Skill.New():Init()	
@@ -231,10 +233,11 @@ local function RegRpcService(app)
 			else
 				print("already in group")
 				--断线重连
-				Gate.Bind(Gate.GetGateBySock(sock),ply,sessionid)
 				if ply.status == createcha then
+					Gate.Bind(Gate.GetGateBySock(sock),ply,sessionid)
 					return ply:NotifyCreate()
 				elseif ply.status == playing then
+					Gate.Bind(Gate.GetGateBySock(sock),ply,sessionid)
 					ply:NotifyBeginPlay()					
 					if ply.gamesession then
 						print("game CliReConn")
@@ -248,6 +251,7 @@ local function RegRpcService(app)
 					end					
 					return {true,ply.groupsession}					
 				else
+					print("invaild status",ply.status)
 					return {false,"invaild status"}				
 				end				 
 			end

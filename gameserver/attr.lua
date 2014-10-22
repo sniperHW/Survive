@@ -11,20 +11,22 @@ local attr2view ={
 }
 
 
-function attr:new(o)
-  local o = o or {}   
+function attr:new()
+  local o = {}   
   setmetatable(o, self)
   self.__index = self
   return o
 end
 
 function attr:Init(avatar,baseinfo)
+	print("attr:Init1")
 	self.attr = {}
 	for k,v in pairs(baseinfo) do
 		if type(v) ~= "userdata" then
 			self.attr[k] = v
 		end
 	end
+	print("attr:Init2")
 	self.avatar = avatar		
 	return self
 end
@@ -113,5 +115,5 @@ function attr:NotifyUpdate()
 end
 
 return {
-	New = function () return attr:new() end,
+	New = function (avatar,baseinfo) return attr:new():Init(avatar,baseinfo) end,
 }

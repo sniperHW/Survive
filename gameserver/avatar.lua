@@ -1,6 +1,10 @@
-package.cpath = "Survive/?.so"
+package.cpath = "SurviveServer/?.so"
 local Aoi = require "aoi"
 local NetCmd = require "Survive.netcmd.netcmd"
+local Buff = require "Survive.gameserver.buff"
+local Attr = require "Survive.gameserver.attr"
+local Skill = require "Survive.gameserver.skill"
+local Time = require "lua.time"
 
 local avatar ={
 	id,            
@@ -30,26 +34,45 @@ function avatar:new()
   return o
 end
 
-function avatar:Init(id,avatid)
+function avatar:Init(id,avatid,map,nickname,actname,groupsession,attr,skillmgr,pos,dir,teamid)
 	self.id = id
+	self.map = map
+	self.nickname = nickname
+	self.attr = Attr.New(self,attr)
+	self.skillmgr = skillmgr
+	self.pos = pos
+	self.dir = dir
 	self.avatid = avatid
+	self.teamid = teamid or 0
 	self.avattype = 0
 	self.see_radius = 5
 	self.view_obj = {}
 	self.watch_me = {}
-	self.gate = nil
-	self.map =  nil
 	self.path = nil
 	self.speed = 20
-	self.pos = nil
-	self.nickname = ""
 	self.aoi_obj = Aoi.create_obj(self)
+	self.buff = Buff.New(self)	
 	return self
 end
 
 function avatar:Send2Client(wpk)
 end
 
+function avatar:Tick(currenttick)
+	self.buff:Tick(currenttick)
+end
+
+function avatar:GetViewObj()
+	return self.view_obj
+end
+
+function avatar:isDead()
+	if self.attr and self.attr:Get("life") > 0 then
+		return false
+	else
+		return true
+	end
+end
 
 function avatar:Send2view(wpk,exclude) --exclude排除列表
 	--将玩家分组,同gateserver的玩家为一组,发送一个统一的包	
@@ -96,16 +119,15 @@ function avatar:Release(idmgr)
 	idmgr:Release(bit32.band(self.id,0x0000FFFF))
 end
 
-function avatar:enter_see(other)
-	self.view_obj[other.id] = other
-	other.watch_me[self.id] = self	
-	
+function avatar:SendEnterSee(other)
 	local wpk = CPacket.NewWPacket(1024)
 	wpk:Write_uint16(NetCmd.CMD_SC_ENTERSEE)
 	wpk:Write_uint32(other.id)
 	wpk:Write_uint8(other.avattype)
 	wpk:Write_uint16(other.avatid)
+	--print("enter see avatid",other.avatid)
 	wpk:Write_string(other.nickname)
+	wpk:Write_uint16(other.teamid)
 	wpk:Write_uint16(other.pos[1])
 	wpk:Write_uint16(other.pos[2])
 	wpk:Write_uint8(other.dir)
@@ -125,6 +147,13 @@ function avatar:enter_see(other)
 	end	
 end
 
+function avatar:enter_see(other)
+	self.view_obj[other.id] = other
+	other.watch_me[self.id] = self	
+	self:SendEnterSee(other)
+
+end
+
 function avatar:leave_see(other)
 	self.view_obj[other.id] = nil
 	other.watch_me[self.id] = nil
@@ -134,6 +163,116 @@ function avatar:leave_see(other)
 	wpk:Write_uint32(other.id)	
 	self:Send2Client(wpk)	
 end
+
+function avatar:Mov(x,y)
+	--print("player:Mov",x,y)
+	local path = self.map:findpath(self.pos,{x,y})
+	if path then
+		self.path = {cur=1,path=path}
+		self.map:beginMov(self)
+		self.lastmovtick = Time.SysTick()
+		self.movmargin = 0
+
+		local size = #self.path.path
+		local target = self.path.path[size]
+		local wpk = CPacket.NewWPacket(64)
+		wpk:Write_uint16(NetCmd.CMD_SC_MOV)
+		wpk:Write_uint32(self.id)
+		--wpk_write_uint16(wpk,self.speed)
+		wpk:Write_uint16(target[1])
+		wpk:Write_uint16(target[2])	
+		self:Send2view(wpk)
+		return true			
+	else
+		local wpk = CPacket.NewWPacket(64)
+		wpk:Write_uint16(NetCmd.CMD_SC_MOV_FAILED)
+		self:Send2Client(wpk)
+		return false			
+	end
+end
+
+function avatar:UseSkill(rpk)
+	self.skillmgr:UseSkill(self,rpk)
+end
+
+function avatar:UseSkillByAi(skill,param)
+	print("avatar:UseSkillByAi")
+	self.skillmgr:UseSkillAi(self,skill,param)
+end
+
+local array_direction = {
+	[1] = {0,-1},--north
+	[2] = {0,1}, --south
+	[3] = {1,0}, --east
+	[4] = {-1,0},--west
+	[5] = {1,-1},--north east
+	[6] = {-1,-1}, --north west
+	[7] = {1,1},   --south east
+	[8] = {-1,1}   --south west
+}
+
+local grid_edge = 8
+local grid_diagonal = 8 * 1.41
+
+local function direction(old_t,new_t,olddir)	
+	for i = 1,8 do
+		if old_t[1] + array_direction[i][1] == new_t[1] and old_t[2] + array_direction[i][2] == new_t[2] then
+			return i
+		end
+	end
+	return olddir
+end
+
+local function distance(dir)
+	if dir <= 4 then
+		return grid_edge
+	else
+		return grid_diagonal
+	end
+end
+
+function avatar:process_mov()
+	local now = Time.SysTick()
+	local movmargin = self.movmargin + now - self.lastmovtick
+	local path = self.path.path
+	local cur  = self.path.cur
+	local size = #path
+	while cur <= size do
+		local node = path[cur]
+		local tmpdir = direction(self.pos,node,self.dir)
+		local dis    =  distance(tmpdir)
+		local speed  = self.speed * grid_edge
+		local elapse = dis/speed * 1000
+		if elapse < movmargin then
+			self.dir = tmpdir
+			self.pos = node
+			cur = cur + 1
+			movmargin = movmargin - elapse;			
+			Aoi.moveto(self.aoi_obj,node[1],node[2])
+		else
+			break	
+		end
+	end
+	self.path.cur = cur
+	self.movmargin = movmargin
+	self.lastmovtick = Time.SysTick()
+	
+	if self.path.cur > #self.path.path then
+		self.path = nil
+		local wpk = CPacket.NewWPacket(64)
+		wpk:Write_uint16(NetCmd.CMD_SC_MOV_ARRI)
+		self:Send2Client(wpk)
+		--print("mov arrive")
+		if self.robot then
+			--print("wakeup robot")
+			self.robot:Wakeup() --if we have a robot,wake it up
+		end
+		return true
+	else
+		return false
+	end
+end
+
 
 return {
 	New = function () return avatar:new() end

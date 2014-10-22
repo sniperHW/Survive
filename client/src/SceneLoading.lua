@@ -44,7 +44,7 @@ function SceneLoading:ctor()
     
     self.schedulerID = cc.Director:getInstance():getScheduler():scheduleScriptFunc(tick, 0, false)
     self:runAction(cc.Sequence:create(
-        {cc.DelayTime:create(5), 
+        {cc.DelayTime:create(1), 
         cc.CallFunc:create(loadingOver, {}), 
         nil}))
     

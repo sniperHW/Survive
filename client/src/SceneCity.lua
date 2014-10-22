@@ -24,13 +24,22 @@ function SceneCity:ctor()
         --print(_.."hello"..var)
         self.map:addChild(var)
         var:release()
+        print("--------------------")
+        print(var.id)
+        print(maincha.id)
         if var.id == maincha.id then
             self.localPlayer = var
         end
     end
+    print(self.localPlayer)
+    print("*************************")
     
     local viseSize = cc.Director:getInstance():getVisibleSize()
     local mapSize = self.map:getContentSize()
+
+    self.hud = require("UI.UIHudLayer").create()
+    self:addChild(self.hud, 1)
+    self.hud:openUI("UIFightLayer")
 
     local function tick(detal)
         if self.localPlayer then
@@ -44,6 +53,14 @@ function SceneCity:ctor()
                     cy + viseSize.height / 2 - mapMid.y), 0)
             self.map:setPosition(posX, posY)            
         end
+        
+        local children = self.map:getChildren()
+        for _, value in ipairs(children) do
+            local zorder = math.ceil(value:getPositionY())
+            --print(zorder)
+            value:setLocalZOrder(mapSize.height - zorder)
+        end
+
         MgrFight:atkTick(detal)
     end
 

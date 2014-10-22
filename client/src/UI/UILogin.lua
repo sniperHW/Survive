@@ -1,3 +1,5 @@
+local netCmd = require "src.net.NetCmd"
+
 local UILogin = class("UILogin", function()
     return require("UI.UIBaseLayer").create()
 end)
@@ -22,7 +24,7 @@ function UILogin:ctor()
     
     local function btnHandle(sender, event)
         print("pre connect")
-        Connect("121.40.90.61", 8010)
+        Connect("192.168.0.87", 8010)
         --cc.Director:getInstance():replaceScene(require("SceneLoading.lua").create())
     end
     
@@ -76,17 +78,17 @@ function UILogin:ctor()
         local userName = self.txtUserName:getText()
         local pass = self.txtPass:getText()
         CMD_LOGIN(userName, pass, 1)
-    end, CMD_CC_CONNECT_SUCCESS)
+    end, netCmd.CMD_CC_CONNECT_SUCCESS)
 
     --beginButton:registerControlEventHandler(btnHandle, cc.CONTROL_EVENTTYPE_TOUCH_UP_INSIDE)
 end
     
 RegHandler(function (rpk) 
     print("CMD_CC_CONNECT_FAILED")
-end, CMD_CC_CONNECT_FAILED)
+end, netCmd.CMD_CC_CONNECT_FAILED)
     
 RegHandler(function (rpk) 
     print("CMD_CC_DISCONNECTED")
-end, CMD_CC_DISCONNECTED)
+end, netCmd.CMD_CC_DISCONNECTED)
     
 return UILogin

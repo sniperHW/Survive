@@ -16,6 +16,7 @@ end
 
 function UIHudLayer:openUI(className)
     if self[className] == nil then
+        print("UI."..className)
         local ui = require("UI."..className).create()
         self[className] = ui
         self:addChild(ui)

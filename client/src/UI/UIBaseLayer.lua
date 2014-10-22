@@ -120,7 +120,7 @@ function UIBaseLayer.createButton(btnopt)
     local btn = cc.ControlButton:create(btnopt.title or "", 
                                         btnopt.font or "", 
                                         btnopt.fontSize or 20)
-    btn:ignoreAnchorPointForPosition(btnopt.ignore or true)                                        
+    btn:ignoreAnchorPointForPosition(btnopt.ignore == nil or btnopt.ignore == true)                                        
     btn:setPosition(btnopt.pos)
     local texture = cc.Director:getInstance():getTextureCache():addImage(btnopt.icon)
     btn:setPreferredSize(texture:getContentSize())

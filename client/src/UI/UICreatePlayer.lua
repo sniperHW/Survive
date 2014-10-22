@@ -13,7 +13,7 @@ function UICreatePlayer:ctor()
     self.schedulerID = nil
     
     local size = self.visibleSize
-    self.back = cc.Sprite:create("UI/common/bg.jpg")
+    self.back = cc.Sprite:create("Scene/Back.png")
     self.back:setAnchorPoint(0, 0)
     self:addChild(self.back)
     
@@ -61,15 +61,21 @@ function UICreatePlayer:createPlayer()
         if cell == nil then
             cell = cc.TableViewCell:create()
             local back = self.createScale9Sprite("UI/createCharacter/frameLeft.png", nil, bkSize, {cell})
-            cell.lbl = self.createLabel("", nil, {x = 200, y = 250}, nil, {cell} )
+            --cell.lbl = self.createLabel("", nil, {x = 200, y = 250}, nil, {cell} )
         end
+        local avatarID = idx + 1
+        local avatarShow = require("Avatar").create(avatarID)   
+        avatarShow:setPosition({x = 175, y = 200})    
+        avatarShow:setTag(32432)
+        cell:removeChildByTag(32432)
+        cell:addChild(avatarShow)
         
-        cell.lbl:setString(tostring(idx + 1))
+        --cell.lbl:setString(tostring(idx + 1))
         return cell
     end
     
     local tablePlayer = cc.TableViewAutoAlign:create(bkSize, {x = bkSize.width, y = 0})
-    
+    self.tablePlayer = tablePlayer
     local function onScroll()
         local textureChche = cc.Director:getInstance():getTextureCache()
         local textureH = textureChche:addImage("UI/createCharacter/scrollIndicatorH.png")
@@ -109,7 +115,9 @@ function UICreatePlayer:createWeapon()
     self.nodeMid:addChild(nodeWeapon)
     self.nodeWeapon = nodeWeapon
     
-    self.createScale9Sprite("UI/createCharacter/frameRight.png", {x = 0, y = 0}, {width = 360, height = 582}, {nodeWeapon})
+    self.createScale9Sprite("UI/createCharacter/frameRight.png", 
+        {x = 0, y = 0}, {width = 360, height = 582}, {nodeWeapon})
+    
     local function onBtnTouched(sender, type)
     end
 
@@ -161,10 +169,10 @@ function UICreatePlayer:createWeapon()
         elseif typestr == "return" then
         end
         --return true
-    end
-    
-    self.txtUserName = cc.EditBox:create({width = 323, height = 51},
-        self.createScale9Sprite("UI/createCharacter/editbox.png", nil, {widht = 200, height = 100}, {}))
+    end    
+
+    self.txtUserName = ccui.EditBox:create({width = 323, height = 51},
+        "UI/createCharacter/editbox.png")
     self.txtUserName:setPosition(20, 140)
     self.txtUserName:setAnchorPoint(0, 0.5)
     self.txtUserName:registerScriptEditBoxHandler(onTextHandle)
@@ -175,10 +183,20 @@ function UICreatePlayer:createWeapon()
         handle = onBtnTouched,
         parent = nodeWeapon   
     } 
+
+    local function onBtnCreate(sender, event)
+        local offset = self.tablePlayer:getContentOffset()
+        local offX = math.abs(math.min(offset.x, 0))
+        local idx = math.ceil((offX/350)) + 1
+        idx = math.min(math.max(1,idx), 4)
+        local userName = self.txtUserName:getText()
+        print("*****create Avatar ID:"..idx)
+        CMD_CREATE(idx, userName, 1)
+    end
     
     self.createButton{pos = {x = 60, y = 25},
         icon = "UI/createCharacter/start.png",
-        handle = onBtnTouched,
+        handle = onBtnCreate,
         parent = nodeWeapon   
     }
 end

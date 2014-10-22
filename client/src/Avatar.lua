@@ -2,45 +2,12 @@ local Avatar = class("Avatar", function()
     return cc.Sprite:create()
 end)
 
-local function ENUM_AVATAR(cmdBegin)
-    local cmd = cmdBegin
-    return function() 
-        cmd = cmd + 1 
-        return cmd 
-    end
-end
-
-local ENUM = ENUM_AVATAR(0)
-EnumAvatar = EnumAvatar or {
-    ["Tag3D"]       = ENUM(),
-    ["Tag2D"]       = ENUM(),
-}
-
-ENUM = ENUM_AVATAR(0)
-EnumActions = EnumActions or {
-    ["Idle"]        = ENUM(),
-    ["Walk"]        = ENUM(),
-    ["Hit"]         = ENUM(),
-    ["Death"]       = ENUM(),
-    ["Attack1"]     = ENUM(),
-    ["Attack2"]     = ENUM(),
-    ["Attack3"]     = ENUM(),
-}
-
-ENUM = ENUM_AVATAR(0)
-EnumActionTag = EnumActionTag or {
-    ["Idle"]        = ENUM(),
-    ["Walk"]        = ENUM(),
-    ["Hit"]         = ENUM(),
-    ["ActionMove"]  = ENUM(),       --位移action,非动作
-    ["Attack3D"]    = ENUM(),       --3D专用，攻击动作不混合
-    ["State2D"]     = ENUM(),       --2D专用，动作不混合
-}
-
 function Avatar.create(avatarID)
     local sprite = Avatar.new()
     sprite.actions = {}
-    local resPath = Model[avatarID].Resource_Path
+    sprite.delayHit = {}
+    local modelID = TableAvatar[avatarID].ModelID
+    local resPath = TableModel[modelID].Resource_Path
     local len = string.len(resPath)
     
     local spriteShadow = cc.Sprite:create("shadow.png")    
@@ -50,9 +17,13 @@ function Avatar.create(avatarID)
         sprite:addChild(sprite2D)
         spriteShadow:setPosition(15,-15)
     elseif string.sub(resPath, len - 3, len) == ".c3b" then
-        local sprite3D = sprite:init3DAvatar(avatarID)
+        local sprite3D = sprite:init3DAvatar(modelID)
         sprite3D:setTag(EnumAvatar.Tag3D)
-        sprite3D:setScale(Model[avatarID].Scale)
+        sprite3D:setScale(TableAvatar[avatarID].Scale) 
+        if avatarID == 2 then
+            local weapon = cc.Sprite3D:create("animation/player/dao.c3b")
+            sprite3D:getAttachNode("Bone020"):addChild(weapon)
+        end
         sprite:addChild(sprite3D)
         spriteShadow:setPosition(5,5)
     end
@@ -116,7 +87,7 @@ function Avatar:createAction(actionID)
     end
     
     local animation = cc.Animation:create()
-    local tableAction = Action[actionID]
+    local tableAction = TableAction[actionID]
     
     local frameCache = cc.SpriteFrameCache:getInstance()
     local name = ""
@@ -135,15 +106,14 @@ function Avatar:createAction3D(actionID, animation)
         return nil
     end
     
-    local tableAction = Action[actionID]
-    local frameSpeed = tableAction.Frame_Interval
-    --local animation3d = cc.Animation3D:create("cat.c3b")
+    local tableAction = TableAction[actionID]
+
     local action = cc.Animate3D:create(animation, 
         tableAction.Start_Frame/24, 
         (tableAction.End_Frame - tableAction.Start_Frame)/24)
 
     action:setSpeed(tableAction.Frame_Interval)
-    action:setWeight(tableAction.Weight)            
+    action:setWeight(tableAction.Weight)
     return action
 end
 
@@ -151,16 +121,16 @@ function Avatar:Idle()
     local avatar3d = self:getChildByTag(EnumAvatar.Tag3D) 
     local avatar2d = self:getChildByTag(EnumAvatar.Tag2D)
     local avatar = avatar3d or avatar2d
-
     avatar:stopActionByTag(EnumActionTag.ActionMove)
     if avatar2d then
         avatar:stopActionByTag(EnumActionTag.State2D)
+        avatar:runAction(self.actions[EnumActions.Idle])
     elseif avatar3d then
         avatar:stopActionByTag(EnumActionTag.Walk)
-    end    
-
-    local action = self.actions[EnumActions.Idle]
-    avatar:runAction(action)
+        if not avatar:getActionByTag(EnumActionTag.Idle) then
+            avatar:runAction(self.actions[EnumActions.Idle])
+        end
+    end   
 end
 
 function Avatar:Walk()
@@ -196,14 +166,18 @@ function Avatar:Attack(actionID, endHandle)
         avatar:runAction(se)
     elseif avatar3d then
         avatar:stopActionByTag(EnumActionTag.Attack3D)
+        avatar:stopActionByTag(EnumActionTag.Walk)
+
+        avatar:stopAction(self.actions[EnumActionTag.Idle])  --TODO debug
         local action = self.actions[actionID]
-        local se = cc.Sequence:create(action, cc.CallFunc:create(endHandle,{}))
+        local se = cc.Sequence:create(action, 
+                        cc.CallFunc:create(endHandle,{}))
         se:setTag(EnumActionTag.Attack3D)
-        avatar:runAction(se)
+        avatar3d:runAction(se)
     end
 end
 
-function Avatar:Hit()
+function Avatar:Hit(hpchandge)
     local avatar3d = self:getChildByTag(EnumAvatar.Tag3D) 
     local avatar2d = self:getChildByTag(EnumAvatar.Tag2D)
     local avatar = avatar3d or avatar2d
@@ -222,6 +196,30 @@ function Avatar:Hit()
         avatar:stopAction(self.actions[EnumActions.Hit])
         avatar:runAction(self.actions[EnumActions.Hit])
     end
+
+    local hp = tostring(hpchandge)
+    local label = cc.Label:createWithBMFont("fnt/green.fnt", hp, cc.TEXT_ALIGNMENT_CENTER, 0, {x = 0, y = 0})
+    label:setPosition({x = 0, y = 160})
+
+    local acScaleMax = cc.ScaleTo:create(0.1, 2)
+    local acScaleMin = cc.ScaleTo:create(0.3, 1)
+    local acScale = cc.Sequence:create(acScaleMax, cc.DelayTime:create(0.2), acScaleMin)
+    local ac = cc.Sequence:create(cc.Spawn:create(cc.MoveBy:create(0.2, {x = 0, y = 30}), acScale), cc.RemoveSelf:create())
+    label:runAction(ac)
+    self:addChild(label)
+end
+
+function Avatar:DelayHit(delayTime, hpchandge)
+    local function delayHit(sender, extra)
+        self:Hit(extra[1])
+    end
+    if delayTime > 0 then
+        local action = cc.Sequence:create(cc.DelayTime:create(delayTime), 
+                                            cc.CallFunc:create(delayHit, {hpchandge}))
+        self:runAction(action)
+    else
+        self:Hit()
+    end
 end
 
 function Avatar:Death()
@@ -237,9 +235,10 @@ function Avatar:Death()
         avatar:stopAction(self.actions[EnumActions.Idle])
         avatar:stopAction(self.actions[EnumActions.Attack])
         avatar:stopAction(self.actions[EnumActions.Hit])
+        print("avatar3d dead")
     end
 
-    self.actions[EnumActions.Death]:setWeight(0.98)
+    --self.actions[EnumActions.Death]:setWeight(0.98)
     avatar:runAction(self.actions[EnumActions.Death])        
 end
 
@@ -289,8 +288,8 @@ function Avatar:SetLife(life, maxLife)
     self.barHP:setPercentage(value)    
 end
 
-function Avatar:init2DAvatar(avatarID)
-    local model = Model[avatarID]
+function Avatar:init2DAvatar(modelID)
+    local model = TableModel[modelID]
     local pathlen = string.len(model.Resource_Path)
     local img = string.sub(model.Resource_Path, 1, pathlen - 5)
     local avatar = cc.Sprite:create()
@@ -332,7 +331,7 @@ function Avatar:init2DAvatar(avatarID)
 end
 
 function Avatar:init3DAvatar(avatarID)
-    local model = Model[avatarID]
+    local model = TableModel[avatarID]
     local sprite3d = cc.Sprite3D:create(model.Resource_Path)
     local animation3d = cc.Animation3D:create(model.Resource_Path)
 
@@ -349,7 +348,32 @@ function Avatar:init3DAvatar(avatarID)
         self.actions[EnumActions.Walk]:setTag(EnumActionTag.Walk)
         self.actions[EnumActions.Walk]:retain()
     end
-    
+
+    for i = EnumActions.Attack1, EnumActions.Attack3 do
+        local  idxName = GetEnumName(EnumActions, i)
+        if model[idxName] > 0 then
+            self.actions[i] = self:createAction3D(model[idxName], animation3d)
+            self.actions[i]:setTag(EnumActionTag.Attack3D)
+            self.actions[i]:retain()
+            local tableAction = TableAction[model[idxName]]
+            self.delayHit[i] = tableAction.HitDelay / (tableAction.Frame_Interval * 24)
+        end
+    end
+
+    for i = EnumActions.Skill1, EnumActions.Skill5 do
+        local  idxName = GetEnumName(EnumActions, i)
+        print(idxName)
+        print(model[idxName])
+
+        if nil ~= model[idxName] then
+            self.actions[i] = self:createAction3D(model[idxName], animation3d)
+            self.actions[i]:setTag(EnumActionTag.Attack3D)
+            self.actions[i]:retain()
+            local tableAction = TableAction[model[idxName]]
+            self.delayHit[i] = tableAction.HitDelay / (tableAction.Frame_Interval * 24)
+        end
+    end
+    --[[
     if model.Attack1 > 0 then
         self.actions[EnumActions.Attack1] = self:createAction3D(model.Attack1, animation3d)
         self.actions[EnumActions.Attack1]:setTag(EnumActionTag.Attack3D)
@@ -367,7 +391,7 @@ function Avatar:init3DAvatar(avatarID)
         self.actions[EnumActions.Attack3]:setTag(EnumActionTag.Attack3D)
         self.actions[EnumActions.Attack3]:retain()
     end
-
+]]
     if model.Hit > 0 then
         self.actions[EnumActions.Hit] = self:createAction3D(model.Hit, animation3d)
         self.actions[EnumActions.Hit]:setTag(EnumActionTag.Hit)
@@ -386,8 +410,7 @@ end
 function Avatar:AttackPlayer(skillID, endHandle, target)
     local avatar3d = self:getChildByTag(EnumAvatar.Tag3D)
     local avatar2d = self:getChildByTag(EnumAvatar.Tag2D)
-    if MgrFight.lockTarget then      
-        
+    if target then       
         local selfPosX, selfPosY = self:getPosition()
         local tarPosX, tarPosY = target:getPosition()
         
@@ -402,10 +425,12 @@ function Avatar:AttackPlayer(skillID, endHandle, target)
             end
         elseif avatar3d then
             local ro = avatar3d:getRotation3D()
-            avatar3d:setRotation3D({x = ro.x, y = roY, z = ro.z})
+            if math.abs(ro.y - roY) > 15 then
+                avatar3d:setRotation3D({x = ro.x, y = roY, z = ro.z})
+            end
         end
     end
-    self:Attack(skillID + EnumActions["Attack1"] - 1, endHandle)
+    self:Attack(EnumActions[TableSkill[skillID].ActionName], endHandle)
 end
 
 return Avatar

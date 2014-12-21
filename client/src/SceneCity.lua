@@ -1,9 +1,13 @@
+local comm = require("common.CommonFun")
+
 --region SceneCity.lua
 local SceneCity = class("SceneCity",function()
     return cc.Scene:create()
 end)
 
-function SceneCity.create()
+local sceneMapID = 0
+function SceneCity.create(mapID)
+    sceneMapID = mapID
     local scene = SceneCity.new()
     return scene
 end
@@ -11,35 +15,91 @@ end
 function SceneCity:ctor()
     self.visibleSize = cc.Director:getInstance():getVisibleSize()
     self.origin = cc.Director:getInstance():getVisibleOrigin()
-    --self.schedulerID = nil
+    self.schedulerID = nil
     self.localPlayer = nil
-    
-    local sprMap = cc.Sprite:create("Scene/map9.png")
-    sprMap:setAnchorPoint({x = 0, y = 0})
-    --self.map = cc.TMXTiledMap:create("Scene/fightMap.tmx")
+
+    local mapInfo = TableMap[sceneMapID]
+    local sprMap = nil
+    if mapInfo.Source_Path == "PVP" then
+        local maps = {}
+        sprMap = cc.Sprite:create()
+        sprMap:setAnchorPoint({x = 0, y = 0})
+        for i = 1, 8 do
+            maps[i] =  cc.Sprite:create("Scene/"..mapInfo.Source_Path..i..".png")
+            maps[i]:setAnchorPoint({x = 0, y = 0})
+            local cellSize = maps[i]:getContentSize()
+            if i <= 4 then
+                maps[i]:setPosition({x = (i-1)%4 * cellSize.width, 
+                    y = cellSize.height})
+            else
+                maps[i]:setPosition({x = (i-1)%4 * cellSize.width, 
+                    y = 0})
+            end
+            maps[i]:setLocalZOrder(-1)
+            maps[i]:setTag(111) 
+            sprMap:addChild(maps[i])
+        end
+        sprMap:setContentSize({width = 3088, height = 1920})
+    else
+        sprMap = cc.Sprite:create("Scene/"..mapInfo.Source_Path..".png")    
+        sprMap:setAnchorPoint({x = 0, y = 0})
+    end
+    comm.playMusic(mapInfo.Music, true)
+    InitAstar("Scene/"..mapInfo.Colision)
     self.map = sprMap
     self:addChild(self.map)
-    
+
     for _, var in pairs(MgrPlayer) do
-        --print(_.."hello"..var)
+        print("add player in scene:"..var.id)
+        var:setLocalZOrder(1)
         self.map:addChild(var)
         var:release()
-        print("--------------------")
-        print(var.id)
-        print(maincha.id)
         if var.id == maincha.id then
             self.localPlayer = var
         end
     end
-    print(self.localPlayer)
-    print("*************************")
-    
+
+    if sceneMapID == 205 then
+        local player = require("Avatar").create(maincha.avatarid)
+        player.id = maincha.id
+        player.avatid = maincha.avatarid
+
+        player.name = maincha.nickname
+        player.attr = maincha.attr
+        player:SetAvatarName(player.name)
+
+        player:SetLife(player.attr.life, player.attr.maxlife)
+        player:setPosition({x = 900, y = 600})
+        player:retain()
+        print(player.id)
+        self.map:addChild(player)
+        self.localPlayer = player
+    end
+
     local viseSize = cc.Director:getInstance():getVisibleSize()
     local mapSize = self.map:getContentSize()
 
     self.hud = require("UI.UIHudLayer").create()
     self:addChild(self.hud, 1)
-    self.hud:openUI("UIFightLayer")
+
+    if sceneMapID > 0 and sceneMapID ~= 205 then
+        self.hud:openUI("UIFightLayer")
+    elseif sceneMapID == 205 then
+        local function onBtnBackTouched(sender, event)
+            local running = cc.Director:getInstance():getRunningScene()
+            local scene = require("SceneLogin").create()
+            cc.Director:getInstance():replaceScene(scene)
+            scene.hud:closeUI("UILogin")
+            scene.hud:openUI("UIMainLayer")
+            MgrPlayer = {}
+        end
+
+        require("UI.UIBaseLayer").createButton({pos = {x = self.visibleSize.width-80, y = self.visibleSize.height-90},
+            icon = "UI/fight/back.png",
+            handle = onBtnBackTouched,
+            parent = self.hud
+        })
+    end
 
     local function tick(detal)
         if self.localPlayer then
@@ -51,17 +111,23 @@ function SceneCity:ctor()
             local posY = 
                 math.min(math.max(viseSize.height - mapSize.height, 
                     cy + viseSize.height / 2 - mapMid.y), 0)
-            self.map:setPosition(posX, posY)            
+            self.map:setPosition(posX, posY)
+        else
+            --print("**********no local player**************")            
         end
         
         local children = self.map:getChildren()
         for _, value in ipairs(children) do
-            local zorder = math.ceil(value:getPositionY())
-            --print(zorder)
-            value:setLocalZOrder(mapSize.height - zorder)
+            if value:getTag() ~= 111 then
+                local zorder = math.ceil(value:getPositionY())
+                --print(zorder)
+                value:setLocalZOrder(mapSize.height - zorder)
+            end
         end
 
-        MgrFight:atkTick(detal)
+        if sceneMapID ~= 205 then
+            MgrFight:atkTick(detal)
+        end
     end
 
     self.schedulerID = cc.Director:getInstance():getScheduler():scheduleScriptFunc(tick, 0, false)
@@ -70,16 +136,32 @@ function SceneCity:ctor()
     local touchBeginPoint = nil
     local function onTouchBegan(touch, event)
         local location = touch:getLocation()        
-        CMD_MOV(cc.WalkTo:map2TilePos(self.map:convertToNodeSpace(location)))
+        local mapPos = self.map:convertToNodeSpace(location)
+        local tilePos = cc.WalkTo:map2TilePos(mapPos)
+        if sceneMapID ~= 205 then
+            if self.localPlayer.playSkillAction == 0 or
+                self.localPlayer.playSkillAction % 10 ~= 0 then
+                if self.localPlayer.playSkillAction % 10 ~= 0 then
+                    print("==============================")
+                    self.localPlayer.playSkillAction = 0
+                end
+                self.localPlayer:GetAvatar3D():stopActionByTag(EnumActionTag.Attack3D)
+                MgrFight.StateFighting = 1
+                CMD_MOV(tilePos)
+            end
+        else
+            self.localPlayer:WalkTo(tilePos)
+        end
+        --[[
         if MgrFight.lockTarget then
             MgrFight.lockTarget = nil
         end
+        ]]
         return true
     end
 
     local function onTouchMoved(touch, event)
         local location = touch:getLocation()
-        --cclog("onTouchMoved: %0.2f, %0.2f", location.x, location.y)
         if touchBeginPoint then
             local cx, cy = self.map:getPosition()
             local viseSize = cc.Director:getInstance():getVisibleSize()
@@ -96,27 +178,24 @@ function SceneCity:ctor()
 
     local function onTouchEnded(touch, event)
         local location = touch:getLocation()
-        --cclog("onTouchEnded: %0.2f, %0.2f", location.x, location.y)
         touchBeginPoint = nil
-        --spriteDog.isPaused = false
         if self.localPlayer then
-            --local cx, cy = self.localPlayer:getPosition()
-            --print(cc.WalkTo)
-            --print(cc.WalkTo:create)
-            --local action = cc.WalkTo:create({x = cx, y = cy}, 
-                --cc.WalkTo:map2TilePos(self.map:convertToNodeSpace(location)), 10)
-            --local action = cc.MoveTo:create(2, location)
-            --self.localPlayer:runAction(action)
             MoveTo(cc.WalkTo:map2TilePos(self.map:convertToNodeSpace(location)))
         end
     end
 
     local listener = cc.EventListenerTouchOneByOne:create()
     listener:registerScriptHandler(onTouchBegan,cc.Handler.EVENT_TOUCH_BEGAN )
-    --listener:registerScriptHandler(onTouchMoved,cc.Handler.EVENT_TOUCH_MOVED )
-    --listener:registerScriptHandler(onTouchEnded,cc.Handler.EVENT_TOUCH_ENDED )
     local eventDispatcher = self:getEventDispatcher()
     eventDispatcher:addEventListenerWithSceneGraphPriority(listener, self)
+    
+    local function onNodeEvent(event)
+        if "exit" == event then
+            cc.Director:getInstance():getScheduler():unscheduleScriptEntry(self.schedulerID)
+            cc.SimpleAudioEngine:getInstance():stopMusic()
+        end
+    end
+    self:registerScriptHandler(onNodeEvent)
 end
 
 return SceneCity

@@ -1,5 +1,6 @@
 MgrSkill = MgrSkill or {}
-MgrSkill.EquipedSkill = MgrSkill.EquipedSkill or {1010, 1020, 1030, 1040}
+MgrSkill.EquipedSkill = MgrSkill.EquipedSkill or {1110, 1120, 1130, 1140, 1150}
+MgrSkill.BaseSkill = MgrSkill.BaseSKill or {1511}
 
 MgrSkill.SkillCD = MgrSkill.SkillCD or {} 
 
@@ -8,15 +9,11 @@ function MgrSkill.SetCD()
 end
 
 function MgrSkill.CanUseSkill(skillID)
-	print("test can use skillID:"..skillID)
 	if MgrSkill.IsSkillInCD(skillID) then
-		print("skill in cd")
 		return false
 	end
 
 	local skillInfo = TableSkill[skillID]
-	print(skillInfo)
-	print(skillInfo.Attack_Types)
 	if skillInfo.Attack_Types == 0 then	--单体类型
 		if MgrFight.lockTarget then
 			if MgrFight.lockTarget.attr.life <= 0 then
@@ -26,11 +23,11 @@ function MgrSkill.CanUseSkill(skillID)
 			return false
 		end
 	end
-	print("can use skill:"..skillID)
+	
 	return true
 end
 
-function MgrSkill.UseSkill(skillID)
+function MgrSkill.UseSkill(skillID, selfPos, selfDir, targets)
 	if MgrSkill.CanUseSkill(skillID) then
 		local curtime = os.clock() * 1000
 		
@@ -51,16 +48,31 @@ function MgrSkill.UseSkill(skillID)
 		MgrSkill.SkillCD[realSkillID] = skillCD
 
 		local function atkEnd()
+            MgrPlayer[maincha.id].playSkillAction = 0
+            MgrPlayer[maincha.id]:DelayIdle(0.1)
 		end
 
-		if (not skillInfo.Touch_Buff) or skillInfo.Touch_Buff == 0 then
-			MgrPlayer[maincha.id]:AttackPlayer(skillID, atkEnd, MgrFight.lockTarget)
-			CMD_USESKILL(skillID, MgrFight.lockTarget.id)
-		else
+		if skillID == 1120 then
+			CMD_USESKILL_DIR(skillID, selfDir, targets)
+		elseif skillInfo.Attack_Types == 3 then --target self
 			CMD_USESKILL(skillID, maincha.id)
+		elseif skillInfo.Attack_Types == 0 then	--target other
+			MgrPlayer[maincha.id]:AttackPlayer(skillID, atkEnd, nil)
+            MgrPlayer[maincha.id].playSkillAction = skillID
+			CMD_USESKILL_POINT(skillID, selfPos.x, selfPos.y, nil)
+		elseif skillInfo.Attack_Types == 1 then	--AOE
+			MgrPlayer[maincha.id]:AttackPlayer(skillID, atkEnd, nil)
+            MgrPlayer[maincha.id].playSkillAction = skillID
+			CMD_USESKILL_POINT(skillID, selfPos.x, selfPos.y, targets)
+		elseif skillInfo.Attack_Types == 2 then	--dir
+            MgrPlayer[maincha.id].playSkillAction = skillID
+			MgrPlayer[maincha.id]:AttackPlayer(skillID, atkEnd, nil)
+			CMD_USESKILL_DIR(skillID, selfDir, targets)
 		end
 		print("Use skill:"..skillID)
+		return true
 	end
+	return false
 end
 
 function MgrSkill.IsSkillInCD(skillID)

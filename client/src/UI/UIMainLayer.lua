@@ -1,3 +1,4 @@
+local comm = require("common.CommonFun")
 local UIMainLayer = class("UIMainLayer", function()
     return require("UI.UIBaseLayer").create()
 end)
@@ -26,22 +27,27 @@ function UIMainLayer:ctor()
         --spr:runAction(cc.RepeatForever:create(animate))
         return spr, animate
     end
-    
+    cc.SimpleAudioEngine:getInstance():stopMusic()
+    comm.playMusic("music/mainlayer.mp3", true)
     cc.SpriteFrameCache:getInstance():addSpriteFrames("UI/main/main.plist","UI/main/main.png")
     
+    local backTag = 100
     local map = cc.Sprite:createWithSpriteFrameName("ditu.png")
     map:setAnchorPoint({x = 0, y = 0})
     --self:setPositionX(-300)
     self:addChild(map)
---[[
-    local land, ani = createAniSprite("GARDEN%d.png", 3, 0.25)
-    land:runAction(cc.RepeatForever:create(ani))
-    ]]
-    local land = cc.Sprite:createWithSpriteFrameName("GARDEN0.png")
-    land:setPosition(240, 335)
+    local maps = {}
+    local landGarden = cc.Sprite:createWithSpriteFrameName("GARDEN0.png")
+    local backSelected = cc.Sprite:createWithSpriteFrameName("gardeN.png")
+    backSelected:setPosition({x = 100, y = 90})
+    backSelected:setVisible(false)
+    landGarden:addChild(backSelected, -1, backTag)
+    maps[1] = landGarden
+    landGarden:setTag(205)
+    landGarden:setPosition(240, 335)
     local rainbow = cc.Sprite:createWithSpriteFrameName("garden1.png")
     rainbow:setPosition({x = 85, y = 82.5})
-    land:addChild(rainbow)
+    landGarden:addChild(rainbow)
     local function rainbowAni()
         local ac0 = cc.FadeTo:create(math.random(3, 6), math.random(50, 80))   
         local dealy0 = cc.DelayTime:create(math.random(2,5))   
@@ -52,55 +58,122 @@ function UIMainLayer:ctor()
                             cc.CallFunc:create(rainbowAni)))
     end
     rainbowAni()
-    map:addChild(land)
+    
+    local iconName = cc.Sprite:createWithSpriteFrameName("1.png")
+    iconName:setPosition(100,50)
+    landGarden:addChild(iconName)
+    map:addChild(landGarden)
 
-    local carLand, carAni = createAniSprite("CAR%d.png", 3, 0.2)
+    local landCar, carAni = createAniSprite("CAR%d.png", 3, 0.2)
+    landCar:setTag(201)
+    maps[2] = landCar
     local function radAni()
         local radTime = math.random(1, 3)
         local ac = cc.Repeat:create(carAni, math.random(1,4))
-        carLand:runAction(cc.Sequence:create(cc.DelayTime:create(radTime), ac, cc.CallFunc:create(radAni)))
+        landCar:runAction(cc.Sequence:create(cc.DelayTime:create(radTime), ac, cc.CallFunc:create(radAni)))
     end
 
-    carLand:runAction(cc.Sequence:create(carAni,cc.CallFunc:create(radAni)))
-    carLand:setPosition(395, 170)
-    map:addChild(carLand)
+    landCar:runAction(cc.Sequence:create(carAni,cc.CallFunc:create(radAni)))
+    landCar:setPosition(395, 170)
+    
+    iconName = cc.Sprite:createWithSpriteFrameName("2.png")
+    iconName:setPosition(240,200)
+    landCar:addChild(iconName)
+    
+    local backSelected = cc.Sprite:createWithSpriteFrameName("CAR.png")
+    backSelected:setPosition({x = 175, y = 130})
+    backSelected:setVisible(false)
+    landCar:addChild(backSelected, -1, backTag)
+    
+    map:addChild(landCar)
 
-    land = cc.Sprite:createWithSpriteFrameName("adventure.png")
-    land:setPosition(575, 410)
-    map:addChild(land)    
+    local landAdventure = cc.Sprite:createWithSpriteFrameName("adventure.png")
+    landAdventure:setTag(204)
+    maps[3] = landAdventure
+    landAdventure:setPosition(575, 410)
+    iconName = cc.Sprite:createWithSpriteFrameName("3.png")
+    iconName:setPosition(140, 80)
+    landAdventure:addChild(iconName)
+    map:addChild(landAdventure)    
+    
+    local backSelected = cc.Sprite:createWithSpriteFrameName("adventure0.png")
+    backSelected:setPosition({x = 145, y = 140})
+    backSelected:setVisible(false)
+    landAdventure:addChild(backSelected, -1, backTag)
 
-    land, ani = createAniSprite("tisk%d.png", 4, 0.2)
+    local landTisk, ani = createAniSprite("tisk%d.png", 4, 0.2)
+    landTisk:setTag(203)
+    maps[4] = landTisk
+    landTisk:runAction(cc.RepeatForever:create(ani))
+    landTisk:setPosition(900, 450)
+    iconName = cc.Sprite:createWithSpriteFrameName("4.png")
+    iconName:setPosition(100, -10)
+    landTisk:addChild(iconName)    
+    map:addChild(landTisk)
+    
+    local backSelected = cc.Sprite:createWithSpriteFrameName("TISK.png")
+    backSelected:setPosition({x = 115, y = 100})
+    backSelected:setVisible(false)
+    landTisk:addChild(backSelected, -1, backTag)
+
+    local landAncient = cc.Sprite:createWithSpriteFrameName("ancient.png")
+    landAncient:setTag(202)
+    maps[5] = landAncient
+    landAncient:setPosition(1140, 380)
+    map:addChild(landAncient)
+    
+    local backSelected = cc.Sprite:createWithSpriteFrameName("ancient0.png")
+    backSelected:setPosition({x = 138, y = 85})
+    backSelected:setVisible(false)
+    landAncient:addChild(backSelected, -1, backTag)
+    
+    local land, ani = createAniSprite("ancient%d.png", 4, 0.5)
     land:runAction(cc.RepeatForever:create(ani))
-    land:setPosition(900, 450)
-    map:addChild(land)
-
-    land = cc.Sprite:createWithSpriteFrameName("ancient.png")
     land:setPosition(1140, 380)
     map:addChild(land)
     
-    land, ani = createAniSprite("ancient%d.png", 4, 0.5)
-    land:runAction(cc.RepeatForever:create(ani))
-    land:setPosition(1140, 380)
-    map:addChild(land)
+    iconName = cc.Sprite:createWithSpriteFrameName("5.png")
+    iconName:setPosition(1140, 300)
+    map:addChild(iconName)    
 
-    land, ani = createAniSprite("live%d.png", 4, 0.15)
-    land:runAction(cc.RepeatForever:create(ani))
-    land:setPosition(1080, 180)
-    map:addChild(land)
+    local landLive, ani = createAniSprite("live%d.png", 4, 0.15)
+    landLive:setTag(0)
+    maps[6] = landLive
+    landLive:runAction(cc.RepeatForever:create(ani))
+    landLive:setPosition(1080, 180)
+    iconName = cc.Sprite:createWithSpriteFrameName("6.png")
+    iconName:setPosition(200, 180)
+    landLive:addChild(iconName)    
+    map:addChild(landLive)
+    
+    local backSelected = cc.Sprite:createWithSpriteFrameName("live.png")
+    backSelected:setPosition({x = 175, y = 128})
+    backSelected:setVisible(false)
+    landLive:addChild(backSelected, -1, backTag)
     
     local bTouchMoved = false
     local touchBeginPoint = nil
+    local beginPoint = nil
+    local chooseMap = nil
     local function onTouchBegan(touch, event)
         bTouchMoved = false
         local location = touch:getLocation()
         touchBeginPoint = {x = location.x, y = location.y}
-        --CMD_ENTERMAP(1)
+        beginPoint = touchBeginPoint
+        
+        for key, value in pairs(maps) do
+            local box = value:getBoundingBox()
+            local nodePos = value:getParent():convertToNodeSpace(beginPoint)
+            if cc.rectContainsPoint(box, nodePos) then
+                chooseMap = value
+                chooseMap:getChildByTag(backTag):setVisible(true)
+                break
+            end
+        end
         return true
     end
 
     local function onTouchMoved(touch, event)
-        bTouchMoved = true
-
         local location = touch:getLocation()
         --cclog("onTouchMoved: %0.2f, %0.2f", location.x, location.y)
         if touchBeginPoint then
@@ -109,12 +182,26 @@ function UIMainLayer:ctor()
             posX = math.max(math.min(0, posX), self.visibleSize.width - map:getContentSize().width)
             map:setPositionX(posX)
             touchBeginPoint = {x = location.x, y = location.y}
+            if cc.pGetDistance(beginPoint,touchBeginPoint) > 20 
+                and not bTouchMoved 
+                and chooseMap then
+                bTouchMoved = true
+                chooseMap:getChildByTag(backTag):setVisible(false)
+            end
         end
     end
 
     local function onTouchEnded(touch, event)
-        if not bTouchMoved then
-            CMD_ENTERMAP(1)
+        if not bTouchMoved and chooseMap then
+            local tag = chooseMap:getTag()
+            if tag == 205 then
+                local scene = require("SceneLoading").create(tag)
+                cc.Director:getInstance():replaceScene(scene)
+            elseif tag > 0 then
+                CMD_ENTERMAP(tag)
+            end
+            chooseMap:getChildByTag(backTag):setVisible(false)
+            print("choose map:"..tag)
         end
     end
 
@@ -122,13 +209,24 @@ function UIMainLayer:ctor()
     listener:registerScriptHandler(onTouchBegan,cc.Handler.EVENT_TOUCH_BEGAN )
     listener:registerScriptHandler(onTouchMoved,cc.Handler.EVENT_TOUCH_MOVED )
     listener:registerScriptHandler(onTouchEnded,cc.Handler.EVENT_TOUCH_ENDED )
+    listener:setSwallowTouches(true)
     local eventDispatcher = self:getEventDispatcher()
     eventDispatcher:addEventListenerWithSceneGraphPriority(listener, self)
+    
+    local function onNodeEvent(event)
+        if "exit" == event then
+            --cc.Director:getInstance():getScheduler():unscheduleScriptEntry(self.schedulerID)
+            cc.SimpleAudioEngine:getInstance():stopMusic()
+        end
+    end
+    self:registerScriptHandler(onNodeEvent)
     
     self:createLeftTop()
     self:createRightTop()
     self:createRightBottom()
     self:createLeftBottom()
+    
+    self:UpdateInfo()
 end
 
 local function onHeadTouched(sender, type)
@@ -138,48 +236,16 @@ local function onHeadTouched(sender, type)
     hud:openUI("UICharacter")
 end
 
-local function onShopTouched(sender, type)
-    print("TODO on onShopTouched")
-end
-
-local function onGiftTouched(sender, type)
-    print("TODO on gift")
-end
-
-local function onActivityTouched(sender, type)
-    print("TODO onActivityTouched")
-end
-
-local function onFirstPayTouched(sender, type)
-    print("TODO onFirstPayTouched")
-end
-
-local function onOnlineTouched(sender, type)
-    print("TODO onOnlineTouched")
-end
-
-local function onBagTouched(sender, type)
-	print("TODO onBagTouched")
-end
-
-local function onEquipTouched(sender, type)
-    print("TODO onEquipTouched")
-end
-
-local function onSkillTouched(sender, type)
-    print("TODO onSkillTouched")
-end
-
-local function onLifeTouched(sender, type)
-    print("TODO onLifeTouched")
-end
-
-local function onFriendTouched(sender, type)
-    print("TODO onFriendTouched")
-end
-
-local function onSystemTouched(sender, type)
-    print("TODO onSystemTouched")
+function UIMainLayer:UpdateInfo()
+    self.lblLevel:setString(maincha.attr.level)
+    self.lblFightValue:setString(maincha.attr.combat_power)
+    self.lblaction:setString(maincha.attr.action_force)
+    self.lblpearl:setString(maincha.attr.pearl)
+    self.lblshell:setString(maincha.attr.shell)
+    
+    local expInfo = TableExperience[maincha.attr.level]
+    self.exppro:setPercentage(maincha.attr.exp/expInfo.Experience * 100)
+    self.lblExp:setString(maincha.attr.exp.."/"..expInfo.Experience)
 end
 
 function UIMainLayer:createLeftTop()    
@@ -188,51 +254,109 @@ function UIMainLayer:createLeftTop()
 	self:addChild(nodeLeftTop)
     
     self.createSprite("UI/main/infoBack.png", {x = 102, y = -82}, {nodeLeftTop})
-    local iconHead = self.createSprite("UI/main/CATF.png", {x = 61, y = -56}, {nodeLeftTop})
+
+    local headPath = string.format("UI/main/head%d.png",maincha.avatarid)
+    self.createButton{icon = headPath,
+        pos = {x = 61, y = -56},
+        ignore = false,
+        handle = onHeadTouched,
+        parent = nodeLeftTop
+    }
+    
     local iconVip = self.createSprite("UI/main/vip0.png", {x = 160, y = -50}, {nodeLeftTop})
-    local lblLevel = self.createBMLabel("fonts/LV.fnt", "36", {x = 160, y = -82}, {nodeLeftTop, {x = 0, y = 0.5}})
-    local lblSelfName = self.createLabel("番茄青椒土豆丝", nil, {x = 100, y = -118}, nil, {nodeLeftTop})
-    local lblFightValue = self.createBMLabel("fonts/ZDL.fnt", "23145656", {x = 105, y = -150}, {nodeLeftTop, {x = 0, y = 0.5}}) 
+    self.lblLevel = self.createBMLabel("fonts/LV.fnt", maincha.attr.level, {x = 160, y = -82}, {nodeLeftTop, {x = 0, y = 0.5}})
+    local lblSelfName = self.createLabel(maincha.nickname, nil, {x = 100, y = -118}, nil, {nodeLeftTop})
+    lblSelfName:setColor{r = 0, g = 0, b = 0}
+    self.lblFightValue = self.createBMLabel("fonts/ZDL.fnt", maincha.attr.combat_power or 10, {x = 105, y = -150}, {nodeLeftTop, {x = 0, y = 0.5}}) 
     
     local function add(sender, event)
         print("add")
     end
+
+    local sprite = self.createSprite("UI/character/heng.png", {x = 220 , y = -30},
+        {nodeLeftTop, {x = 0, y = 0.5}})
+    sprite:setScaleX(0.9)
+    local bk = self.createSprite("UI/main/tl.png", {x = 250, y = -30}, {nodeLeftTop})
+    self.lblaction = self.createBMLabel("fonts/tili.fnt", "75646645", {x = 111, y = 24}, {bk})        
+    self.createButton{icon = "UI/common/add.png",
+        pos = {x = 163, y = 9},
+        handle = add,
+        parent = bk
+    }
+
+    local sprite = self.createSprite("UI/character/heng.png", {x = 440, y = -30},
+        {nodeLeftTop, {x = 0, y = 0.5}})
+    sprite:setScaleX(0.9)
+    bk = self.createSprite("UI/main/zz.png", {x = 470 , y = -30}, {nodeLeftTop})
+    self.lblpearl = self.createBMLabel("fonts/tili.fnt", "75646645", {x = 111, y = 20}, {bk})        
+    self.createButton{icon = "UI/common/add.png",
+        pos = {x = 163, y = 3},
+        handle = add,
+        parent = bk
+    }
+
+    local sprite = self.createSprite("UI/character/heng.png", {x = 660, y = -30},
+        {nodeLeftTop, {x = 0, y = 0.5}})
+    sprite:setScaleX(0.9)
+    bk = self.createSprite("UI/main/bk.png", {x = 690, y = -30}, {nodeLeftTop})
+    self.lblshell = self.createBMLabel("fonts/tili.fnt", "75646645", {x = 111, y = 25}, {bk})        
+    self.createButton{icon = "UI/common/add.png",
+        pos = {x = 170, y = 7},
+        handle = add,
+        parent = bk
+    }
     
-    for i = 1, 3 do
-        local bk = self.createSprite("UI/main/bk.png", {x = 100 + 220 * i , y = -30}, {nodeLeftTop})
-        local lbl = self.createBMLabel("fonts/tili.fnt", "75646645", {x = 111, y = 22}, {bk})        
-        self.createButton{icon = "UI/main/add.png",
-            pos = {x = 170, y = 3},
-            handle = add,
-            parent = bk
-        }
-        --bk:addChild(lbl)
+    local hud = cc.Director:getInstance():getRunningScene().hud
+
+    local function onHDTouched(sender, event)
+        hud:openUI("UISign")
     end
-    
     self.createButton{icon = "UI/main/hd.png",
         pos = {x = 220, y = -120},
-        handle = add,
+        handle = onHDTouched,
         parent = nodeLeftTop
     }
+    self.createSprite("UI/main/hdd.png", {x = 255, y = -120}, {nodeLeftTop})
     
+    local function onOnlineTouched(sender, event)
+        --hud:openUI("UISign")
+    end
     self.createButton{icon = "UI/main/online.png",
         pos = {x = 350, y = -120},
-        handle = add,
+        handle = onOnlineTouched,
         parent = nodeLeftTop
     }
+    self.createSprite("UI/main/zx.png", {x = 380, y = -120}, {nodeLeftTop})
     
+    local function onFirstTouched(sender, event)
+    --hud:openUI("UISign")
+    end
     self.createButton{icon = "UI/main/first.png",
-        pos = {x = 520, y = -120},
-        handle = add,
+        pos = {x = 480, y = -120},
+        handle = onFirstTouched,
         parent = nodeLeftTop
     }
+    self.createSprite("UI/main/sc.png", {x = 510, y = -120}, {nodeLeftTop})
     
+    local function onGiftTouched(sender, event)
+    --hud:openUI("UISign")
+    end
     self.createButton{icon = "UI/main/gift.png",
-        pos = {x = 670, y = -120},
-        handle = add,
+        pos = {x = 600, y = -120},
+        handle = onGiftTouched,
+        parent = nodeLeftTop
+    }    
+    self.createSprite("UI/main/lw.png", {x = 625, y = -120}, {nodeLeftTop})
+    
+    local function onMailTouched(sender, event)
+        hud:openUI("UISign")
+    end
+    self.createButton{icon = "UI/main/yj.png",
+        pos = {x = 720, y = -120},
+        handle = onMailTouched,
         parent = nodeLeftTop
     }
-    
+    self.createSprite("UI/main/mail.png", {x = 755, y = -120}, {nodeLeftTop})
 end
 
 function UIMainLayer:createRightTop()
@@ -240,9 +364,13 @@ function UIMainLayer:createRightTop()
     nodeRightTop:setPosition(self.visibleSize.width, self.visibleSize.height)    
     self:addChild(nodeRightTop)
     
+    local function onShopTouched(...)
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        hud:openUI("UIShop")
+    end
     self.createButton{icon = "UI/main/mall.png",
         pos = {x = -100, y = -100},
-        handle = add,
+        handle = onShopTouched,
         parent = nodeRightTop
     }
 end
@@ -252,75 +380,130 @@ function UIMainLayer:createRightBottom()
     nodeRightButtom:setPosition(self.visibleSize.width, 10)    
     self:addChild(nodeRightButtom)
     
-    local funcNode = cc.Node:create()
-    funcNode:setPositionY(10)
-    nodeRightButtom:addChild(funcNode)
+    local funcNodeH = cc.Node:create()
+    funcNodeH:setPositionY(10)
+    nodeRightButtom:addChild(funcNodeH)
+    
+    local funcNodeV = cc.Node:create()
+    funcNodeV:setPositionY(10)
+    nodeRightButtom:addChild(funcNodeV)
     
     local function toggleHide(sender, event)
-        local posX, posY = funcNode:getPosition()
+        local posX, posY = funcNodeH:getPosition()
         local moveAc = nil
         if posX == 0 then
             moveAc = cc.MoveTo:create(0.3, {x = 620, y = posY})
         else
             moveAc = cc.MoveTo:create(0.3, {x = 0, y = posY})
         end
-        funcNode:runAction(cc.EaseOut:create(moveAc, 5))
+        funcNodeH:runAction(cc.EaseOut:create(moveAc, 5))
+        
+        posX, posY = funcNodeV:getPosition()
+        if posY == -400 then
+            moveAc = cc.MoveTo:create(0.3, {x = posX, y = 10})
+        else
+            moveAc = cc.MoveTo:create(0.3, {x = posX, y = -400})
+        end
+        funcNodeV:runAction(cc.EaseOut:create(moveAc, 5))
+    end
+
+    local function onBagTouched( ... )
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        hud:openUI("UIBag")
     end
     
+    local function onEquipTouched( ... )
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        hud:openUI("UIEquip")
+    end
+    
+    local function onSkillTouched( ... )
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        hud:openUI("UISkillLayer")
+    end
+
     local toggleBtn = self.createButton{icon = "UI/main/cat.png",
         pos = {x = -88, y = 0},
         handle = toggleHide,
         parent = nodeRightButtom
     }
-    self.createSprite("UI/main/expBack.png", {x = -9, y = 0}, {self, {x = 0, y = 0}})
-    self.createSprite("UI/main/exp.png", {x = 0, y = 0}, {self, {x = 0, y = 0}})    
-
+    local expback = self.createSprite("UI/main/expBack.png", 
+        {x = -9, y = -2}, {self, {x = 0, y = 0}})
+    expback:setScaleX(self.visibleSize.width/DesignSize.width)
+    self.createSprite("UI/main/exp.png", {x = -5, y = 0}, {self, {x = 0, y = 0}})
 
     local toggleBtn = self.createButton{icon = "UI/main/bag.png",
         pos = {x = -168, y = 0},
-        handle = toggleHide,
-        parent = funcNode
+        handle = onBagTouched,
+        parent = funcNodeH
     }
 
     local toggleBtn = self.createButton{icon = "UI/main/wax.png",
         pos = {x = -258, y = 0},
-        handle = toggleHide,
-        parent = funcNode
+        handle = onEquipTouched,
+        parent = funcNodeH
     }
     local toggleBtn = self.createButton{icon = "UI/main/others.png",
         pos = {x = -348, y = 0},
         handle = toggleHide,
-        parent = funcNode
+        parent = funcNodeH
     }
     local toggleBtn = self.createButton{icon = "UI/main/skill.png",
         pos = {x = -438, y = 0},
-        handle = toggleHide,
-        parent = funcNode
+        handle = onSkillTouched,
+        parent = funcNodeH
     }
     local toggleBtn = self.createButton{icon = "UI/main/friend.png",
         pos = {x = -535, y = 0},
         handle = toggleHide,
-        parent = funcNode
+        parent = funcNodeH
     }
-    
+
+    local function onSettingTouched( ... )
+        local runScene = cc.Director:getInstance():getRunningScene()
+        runScene.hud:openUI("UISetting")
+    end
     local toggleBtn = self.createButton{icon = "UI/main/sz.png",
         pos = {x = -618, y = 0},
-        handle = toggleHide,
-        parent = funcNode
+        handle = onSettingTouched,
+        parent = funcNodeH
+    }
+    
+    local function onDayMissionTouched( ... )
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        hud:openUI("UIDayMission")
+    end
+    local toggleBtn = self.createButton{icon = "UI/main/mrrw.png",
+        pos = {x = -91, y = 120},
+        handle = onDayMissionTouched,
+        parent = funcNodeV
+    }
+    
+    local function onNewTouched( ... )
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        hud:openUI("UIDayMission")
+    end
+    local toggleBtn = self.createButton{icon = "UI/main/xs.png",
+        pos = {x = -91, y = 210},
+        handle = onNewTouched,
+        parent = funcNodeV
     }
     
     local barSprite = cc.Sprite:create("UI/main/exppro.png")
     local exppro = cc.ProgressTimer:create(barSprite)
     exppro:setType(cc.PROGRESS_TIMER_TYPE_BAR)
-    --exppro:setScaleX(920/586)
+    exppro:setScaleX(self.visibleSize.width/DesignSize.width)
+    --exppro:setScaleX(1.3)
     exppro:setAnchorPoint(0, 0)
-    exppro:setPosition(55, 0)
+    exppro:setPosition(42, 1)
     exppro:setMidpoint({x = 0, y = 0.5})
     exppro:setBarChangeRate({x = 1, y = 0})
     exppro:setPercentage(60)    
     self:addChild(exppro)
+    self.exppro = exppro
     
-    self.createBMLabel("fonts/ttt.fnt", "365464/564465", {x = 480, y = 0}, {self, {x = 0.5, y = 0}})
+    self.lblExp = self.createBMLabel("fonts/ttt.fnt", "365464/564465", 
+        {x = self.visibleSize.width/2, y = 2}, {self, {x = 0.5, y = 0}})
 end
 
 function UIMainLayer:createLeftBottom()
@@ -340,6 +523,26 @@ function UIMainLayer:createLeftBottom()
     lbl = self.createLabel("5v5缺个剑，35以上的来", 14, {x = 175, y = 60}, nil, {nodeLeftBottom, {x = 0, y = 0.5}})
     lbl = self.createLabel("[私聊]jeenza：你今天飞车岛刷了没", 14, {x = 80, y = 40}, nil, {nodeLeftBottom,{x = 0, y = 0.5}})
     lbl:setColor(red)
+
+    local function onTextHandle(typestr)
+        if typestr == "began" then
+        elseif typestr == "changed" then
+
+        elseif typestr == "ended" then
+            CMD_CHAT(self.txtInput:getText())
+        elseif typestr == "return" then
+            self.txtInput:setText("")
+        end
+        --return true
+    end
+
+    self.txtInput = ccui.EditBox:create({width = 255, height = 60},
+        "UI/login/txtInput.png")
+        --self.createScale9Sprite("UI/login/txtInput.png", nil, {widht = 255, height = 55}, {}))
+    self.txtInput:setPosition(100, 20)
+    self.txtInput:setAnchorPoint(0, 0.5)
+    self.txtInput:registerScriptEditBoxHandler(onTextHandle)
+    nodeLeftBottom:addChild(self.txtInput)
 end
 
 return UIMainLayer

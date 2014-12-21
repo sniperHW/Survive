@@ -2,8 +2,13 @@ local UIBag = class("UIBag", function()
     return require("UI.UIBaseLayer").create()
 end)
 
+local bagSateNormal = 1
+local bagStateTake = 2
+local bagState = bagSateNormal
+
 function UIBag:create()
     local layer = UIBag.new()
+    layer:setSwallowTouch()
     return layer
 end
 
@@ -12,42 +17,136 @@ function UIBag:ctor()
     self.origin = cc.Director:getInstance():getVisibleOrigin()
     self.schedulerID = nil
     self:createBack()
+    self:setSwallowTouch() 
     self:createEquip()
     self:createBag()
-    self:createBottom()
+    self.createLabel(Lang.Bag, 24, {x = 490, y = 550}, nil, {self.nodeMid})
 end
- 
+
 function UIBag:createEquip()
     local nodeEquip = cc.Node:create()
     nodeEquip:setPosition(40,60)
     self.nodeMid:addChild(nodeEquip)
     self.nodeEquip = nodeEquip
+    self.btnBody = {}
+    self.iconBody = {}
+    self.lblBodyNum = {}
     
-    self.createScale9Sprite("UI/common/bg3.png", nil, {width = 380, height = 550}, {nodeEquip})
+    local sprite = self.createSprite("UI/bag/dw1.png", {x = 295, y = 318}, {self.nodeMid})
+    sprite:setLocalZOrder(-1)
     
     local function onEquipTouched(sender, type)
+        local btnIdx = sender:getTag()
+        if btnIdx > 4 and maincha.equip[btnIdx] == nil then
+            bagState = bagStateTake
+            self:UpdateBag()
+        else    
+            local cellPos = sender:getPosition3D()
+            local parent = sender:getParent()
+            local pos = parent:convertToWorldSpace({x = cellPos.x, y = cellPos.y})
+            
+            local hud = cc.Director:getInstance():getRunningScene().hud
+            hud:showHint(EnumHintType.body, sender:getTag(), pos)
+        end
+    end
+    
+    local back0 = "UI/bag/icon.png"
+    local back1 = "UI/bag/icon2.png"
+    local function createItem(pos, btnIdx, iconPath)
+        self.btnBody[btnIdx] = self.createButton{pos = {x = pos.x, y = pos.y},--{x = 38, y = 35}, 
+            icon = iconPath, 
+            ignore = true,
+            handle = onEquipTouched, parent = nodeEquip}  
+        self.btnBody[btnIdx]:setTag(btnIdx)
+        self.btnBody[btnIdx]:setZoomOnTouchDown(false)
+        if iconPath == back1 then
+            self.btnBody[btnIdx]:setEnabled(false)
+        end
         
+        self.iconBody[btnIdx] = self.createSprite(iconPath, {x = pos.x + 38, y = pos.y + 35}, 
+            {nodeEquip})
+        self.iconBody[btnIdx].qualityIcon = 
+            self.createSprite(QualityIconPath[1], 
+                {x = 0, y = 0}, {self.iconBody[btnIdx], {x = 0, y = 0}})
+        
+        self.lblBodyNum[btnIdx] = self.createLabel("5", 16, 
+            {x = pos.x + 60, y = pos.y + 20}, nil, {nodeEquip, {x = 1, y = 0.5}})  
+        self.lblBodyNum[btnIdx]:enableOutline(ColorBlack, 2)
+        
+        self.iconBody[btnIdx]:setScale(0.5)
+    end
+--[[
+    1，时装
+    2，武器
+    3，腰带
+    4，衣服
+]]    
+
+    createItem({x = 110, y = 350}, 1, "UI/bag/icon-1.png")
+    createItem({x = 330, y = 350}, 2, "UI/bag/icon-2.png")
+    createItem({x = 110, y = 250}, 3, "UI/bag/icon-3.png")
+    createItem({x = 330, y = 250}, 4, "UI/bag/icon-4.png")
+    
+    for k = 5, 10 do
+        local idx = k - 5
+        local iconPath = back0
+        if k < 8 then
+            iconPath = back0
+        elseif maincha.attr and maincha.attr.vip 
+            and maincha.attr.vip > 0 then
+            iconPath = back0
+        else
+            iconPath = back1
+        end
+        createItem({x = 110 + (idx % 3) * 110, y = 155 + math.floor(idx/3) * (-95)}, 
+            k, iconPath)
     end
     
-    local function createItem(pos, btnIdx)
-        local back = self.createSprite("UI/common/item_back.png", {x = pos.x, y = pos.y}, 
-            {nodeEquip, {x = 0, y = 0}})
-        self[btnIdx] = self.createButton{pos = {x = 0, y = 0}, 
-            icon = "UI/item/item0.png", 
-            handle = onEquipTouched, parent = back}        
+    if maincha.equip[2] then
+        self.equipid = maincha.equip[2].id 
+    else
+        self.equipid = 0
     end
     
-    createItem({x = 10, y = 400}, "equip")
-    createItem({x = 10, y = 300}, "closth")
-    createItem({x = 290, y = 400}, "belt")
-    createItem({x = 290, y = 300}, "dress")
+    self.avatar = require("Avatar").create(maincha.avatarid or 2, maincha.equip[2])
+    self.avatar:setPosition(260, 260)
+    self.avatar:getChildByTag(EnumAvatar.Tag3D):setRotation3D{x = 0, y = 0, z = 0}
+    nodeEquip:addChild(self.avatar)
+    self:UpdateEquip()
+end
+
+function UIBag:UpdateEquip()
+    local bag = maincha.equip
     
-    for k = 0, 5 do
-        createItem({x = 10 + (k % 3) * 140, y = 20 + math.floor(k/3) * 100}, "itemFight"..k)
-    end
-    
-    local player = self.createSprite("UI/Character/char.jpg", {x = 190, y = 360}, {nodeEquip})
-    player:setScale(0.6)
+   for i = 1, 10 do
+        local bagCell = bag[i]
+        if bagCell then
+            local itemid = bagCell.id
+            local itemInfo = TableItem[itemid]
+            local iconPath = "icon/itemIcon/"..itemInfo.Icon..".png"
+            self.iconBody[i]:setVisible(true)
+            self.iconBody[i]:setTexture(iconPath)
+            self.iconBody[i].qualityIcon:setTexture(QualityIconPath[itemInfo.Quality])
+            if itemInfo.Bag_Type ~= 1 then
+                self.lblBodyNum[i]:setVisible(true)
+                self.lblBodyNum[i]:setString(bagCell.count)
+            else
+                self.lblBodyNum[i]:setVisible(false)
+            end
+        else
+            self.iconBody[i]:setVisible(false)
+            self.lblBodyNum[i]:setVisible(false)
+        end
+   end
+   
+   if maincha.equip[2] and maincha.equip[2].id ~= self.equipid then
+        self.avatar:removeFromParent()
+        self.equipid = maincha.equip[2].id
+        self.avatar = require("Avatar").create(maincha.avatarid or 2, maincha.equip[2])
+        self.avatar:setPosition(260, 260)
+        self.avatar:getChildByTag(EnumAvatar.Tag3D):setRotation3D{x = 0, y = 0, z = 0}
+        self.nodeEquip:addChild(self.avatar)
+   end
 end
 
 function UIBag:createBag()
@@ -55,89 +154,195 @@ function UIBag:createBag()
     nodeBag:setPosition(440,60)
     self.nodeMid:addChild(nodeBag)
     self.nodeBag = nodeBag
-   nodeBag.btnTab = {nil, nil, nil, nil}
+    nodeBag.btnTab = {nil, nil, nil, nil}
+    self.curBagItemsIdx = {}
+    self.curBagType = 0 -- all
     
-    self.createScale9Sprite("UI/common/bg3.png", nil, {width = 480, height = 550}, {nodeBag})
+    --self.createScale9Sprite("UI/bag/dw2.png", nil, {width = 480, height = 550}, {nodeBag})
+    local sprite = self.createSprite("UI/bag/dw2.png", {x = 660, y = 315}, {self.nodeMid})
+    sprite:setLocalZOrder(-1)
+    self.createSprite("UI/common/split.png", {x = 50, y = 258}, {nodeBag})
+    self.createSprite("UI/bag/rightback.png", {x = 240, y = 238}, {nodeBag})
     local function onTabTouched(sender, type)
     	for i = 0, 3 do
             self.nodeBag.btnTab[i]:setEnabled(
                 self.nodeBag.btnTab[i] ~= sender)
+            if self.nodeBag.btnTab[i] == sender then
+                self.curBagType = i     
+                self:UpdateBag()    
+            end
     	end
     end
     
-
     local function createTab(strTitle, i)
         local btnTab = self.createButton{title = strTitle,
-                            pos = { x = 20 + 110 * i, y = 460},
-                            icon = "UI/common/tab0.png",
+                            pos = { x = 60 + 80 * i, y = 408},
+                            --icon = "UI/common/tab0.png",
                             handle = onTabTouched,
                             parent = nodeBag
         }
-        btnTab:setBackgroundSpriteForState(cc.Scale9Sprite:create("UI/common/tab1.png"), 
-                                        cc.CONTROL_STATE_DISABLED)     
+        btnTab:setPreferredSize({width = 120, height = 27})
+        btnTab:setBackgroundSpriteForState(
+            ccui.Scale9Sprite:create("UI/bag/dianzhong.png"), 
+            cc.CONTROL_STATE_DISABLED)
+        btnTab:setTitleColorForState({r = 255, g = 255, b = 0}, cc.CONTROL_STATE_DISABLED)     
         btnTab:setEnabled(i ~= 0)      
         self.nodeBag.btnTab[i] = btnTab                                                  
     end
-    
+   
     createTab(Lang.All, 0)
     createTab(Lang.Equip, 1)
     createTab(Lang.Material, 2)
-    createTab(Lang.Gemstone, 3)
-    
+    createTab(Lang.Special, 3)
+   
     local function numOfCells(table)
-        return 10
+        return 13
     end
 
     local function sizeOfCellIdx(table, idx)
-        return 90, 460  --left->height, right->width
+        return 70, 460  --left->height, right->width
     end
 
+    local bagdata = maincha.bag
     local function cellOfIdx(table, idx)
         local cell = table:dequeueCell()
-        
+
         local function createItem(pos, btnIdx)
-            local back = self.createSprite("UI/common/item_back.png", {x = pos.x, y = pos.y}, 
-                {cell, {x = 0, y = 0}})
-            cell.item[btnIdx] = self.createSprite("UI/item/item0.png", {x = pos.x, y = pos.y}, 
-                {cell, {x = 0, y = 0}})  
-            --cell.item[btnIdx]:setScale(1.5)
+            cell.item[btnIdx] = {}
+            local back = self.createSprite("UI/bag/iconB.png", 
+                {x = pos.x, y = pos.y}, 
+                {cell})
+                
+            cell.item[btnIdx].selEff = self.createSprite("UI/bag/select.png",
+                {x = pos.x, y = pos.y}, {cell})    
+            
+            cell.item[btnIdx].selEff:setVisible(false)
+            cell.item[btnIdx].icon = self.createSprite("icon/itemIcon/beixin.png", 
+                {x = pos.x, y = pos.y}, 
+                {cell})  
+
+            cell.item[btnIdx].icon.qualityIcon = 
+                self.createSprite(QualityIconPath[1], 
+                    {x = 0, y = 0}, {cell.item[btnIdx].icon, {x = 0, y = 0}})
+                    
+            cell.item[btnIdx].lblNum = self.createLabel("100", 16, 
+                {x = pos.x + 22, y = pos.y - 16}, nil, {cell, {x = 1, y = 0.5}})  
+            cell.item[btnIdx].lblNum:enableOutline(ColorBlack, 2)
+            cell.item[btnIdx].icon:setScale(0.5)
         end        
         
         if cell == nil then
             cell = cc.TableViewCell:create()
             cell.item = {}
-            for i = 0, 4 do
-                createItem({x = 10 + i * 90, y = 4}, i)
+            for i = 1, 4 do
+                createItem({x = 53 + i * 70, y = 37}, i)
             end
         end
+
+        if bagdata then
+            for i = 1, 4 do
+                local bagIdx = self.curBagItemsIdx[idx * 4 + i]
+                if bagIdx and nil ~= bagdata[bagIdx] then
+                    local itemInfo = TableItem[bagdata[bagIdx].id]
+                    local iconPath = "icon/itemIcon/"..itemInfo.Icon..".png"
+                    local textureCache = cc.Director:getInstance():getTextureCache()
+                    cell.item[i].icon:setTexture(textureCache:addImage(iconPath))
+                    cell.item[i].icon:setVisible(true)
+                    cell.item[i].icon.qualityIcon:setTexture(QualityIconPath[itemInfo.Quality])
+                    if itemInfo.Bag_Type ~= 1 then
+                        cell.item[i].lblNum:setVisible(true)
+                        cell.item[i].lblNum:setString(bagdata[bagIdx].count)
+                    else
+                        cell.item[i].lblNum:setVisible(false)
+                    end
+                    
+                    if bagState == bagStateTake then
+                        cell.item[i].selEff:setVisible(itemInfo.Tag == 0)
+                    else
+                        cell.item[i].selEff:setVisible(false)
+                    end
+                else
+                    cell.item[i].icon:setVisible(false)
+                    cell.item[i].lblNum:setVisible(false)
+                    cell.item[i].selEff:setVisible(false)
+                end
+            end
+        else
+            for i = 1, 4 do
+                cell.item[i]:setVisible(false)
+            end
+        end
+
         return cell
     end
 
-    local tableAchieve = cc.TableView:create({width = 460, height = 450})
-    tableAchieve:setVerticalFillOrder(cc.TABLEVIEW_FILL_TOPDOWN)
-    tableAchieve:setPosition(10, 30)
-    tableAchieve:registerScriptHandler(numOfCells, cc.NUMBER_OF_CELLS_IN_TABLEVIEW)
-    tableAchieve:registerScriptHandler(sizeOfCellIdx, cc.TABLECELL_SIZE_FOR_INDEX)
-    tableAchieve:registerScriptHandler(cellOfIdx, 
+    local function onCellTouched(table, tableviewcell)
+        local touchPoint = tableviewcell:getTouchedPoint()
+        local cellIdx = tableviewcell:getIdx()
+
+        for i, value in pairs(tableviewcell.item) do
+            local cellPos = value.icon:getPosition3D()
+            local modeX = touchPoint.x - cellPos.x
+            local modeY = touchPoint.y - cellPos.y
+            local pos = tableviewcell:convertToWorldSpace({x = cellPos.x, y = cellPos.y})
+
+            if modeX > -33 and modeX < 33 and modeY > -33 and modeY < 33 then
+                if  self.curBagItemsIdx[cellIdx * 4 + i] then
+                    local bagIdx = self.curBagItemsIdx[cellIdx * 4 + i] 
+                    local itemInfo = TableItem[bagdata[bagIdx].id]
+                    if itemInfo.Tag == 0 and bagState == bagStateTake then
+                        CMD_LOADBATTLEITEM(bagdata[bagIdx].bagpos)
+                        bagState = bagSateNormal
+                    else
+                        local hud = cc.Director:getInstance():getRunningScene().hud
+                        hud:showHint(1, self.curBagItemsIdx[cellIdx * 4 + i], pos)
+                        break
+                    end
+                end
+            end
+        end
+    end
+
+    local tableBag = cc.TableView:create({width = 460, height = 300})
+    tableBag:setDelegate()
+    tableBag:setVerticalFillOrder(cc.TABLEVIEW_FILL_TOPDOWN)
+    tableBag:setPosition(10, 100)
+    tableBag:registerScriptHandler(numOfCells, cc.NUMBER_OF_CELLS_IN_TABLEVIEW)
+    tableBag:registerScriptHandler(sizeOfCellIdx, cc.TABLECELL_SIZE_FOR_INDEX)
+    tableBag:registerScriptHandler(onCellTouched, cc.Handler.TABLECELL_TOUCHED - cc.Handler.SCROLLVIEW_SCROLL)
+    tableBag:registerScriptHandler(cellOfIdx, 
         cc.Handler.TABLECELL_AT_INDEX - cc.Handler.SCROLLVIEW_SCROLL)   --TODO cocos2dx lua bug
-    nodeBag:addChild(tableAchieve)
-    tableAchieve:reloadData()
+    nodeBag:addChild(tableBag)
+    self.tableBag = tableBag
+    
+    local function onAddTouched(sender, event)
+    end
+    
+    self.lblSoul = self.createBMLabel("fonts/tili.fnt", maincha.attr.soul or -1, {x = 190, y = 62}, {nodeBag})
+    self.createButton{icon = "UI/common/add.png",
+        pos = {x = 230, y = 45},
+        handle = onAddTouched,
+        parent = nodeBag
+    }
+
+    self:UpdateBag()
 end
 
-function UIBag:createBottom()
-    local nodeBottom = cc.Node:create()
-    nodeBottom:setPosition(40,10)
-    self.nodeMid:addChild(nodeBottom)
-    self.nodeBottom = nodeBottom
-    self.createScale9Sprite("UI/common/long_bk.png", nil, 
-                            {width = 880, height = 40}, {nodeBottom})
-                            
-    self.createSprite("UI/common/shell.png", {x = 50, y = 25}, {nodeBottom})    
-    self.lblShell = self.createLabel(123456, nil, {x = 80, y = 20}, nil, {nodeBottom, {x = 0, y = 0.5}})                        
-    self.createSprite("UI/common/pearl.png", {x = 350, y = 25}, {nodeBottom})    
-    self.lblPearl = self.createLabel(123456, nil, {x = 380, y = 20}, nil, {nodeBottom, {x = 0, y = 0.5}}) 
-    self.createSprite("UI/common/soul.png", {x = 600, y = 25}, {nodeBottom})   
-    self.lblSoul = self.createLabel(123456, nil, {x = 630, y = 20}, nil, {nodeBottom, {x = 0, y = 0.5}}) 
+function UIBag:UpdateBag()
+    self.curBagItemsIdx = {}   
+    for i = 1, #maincha.bag do
+        if self.curBagType == 0 then
+            table.insert(self.curBagItemsIdx, i)
+        else
+            local itemInfo = TableItem[maincha.bag[i].id]
+            if itemInfo.Bag_Type == self.curBagType then
+                table.insert(self.curBagItemsIdx, i)    
+            end
+        end
+    end
+
+    self.tableBag:reloadData()
+    self.lblSoul:setString(maincha.attr.soul or -1)
 end
 
 return UIBag

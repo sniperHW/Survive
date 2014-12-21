@@ -1,0 +1,22 @@
+TableShop = TableShop or { 
+[1] = { ["Goods_ID"] = 5016, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 1},
+[2] = { ["Goods_ID"] = 5016, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 1},
+[3] = { ["Goods_ID"] = 5016, ["Number"] = 2, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 1},
+[4] = { ["Goods_ID"] = 5016, ["Number"] = 2, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 1},
+[5] = { ["Goods_ID"] = 5016, ["Number"] = 2, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 1},
+[6] = { ["Goods_ID"] = 5016, ["Number"] = 2, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 1},
+[7] = { ["Goods_ID"] = 5016, ["Number"] = 2, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 1},
+[8] = { ["Goods_ID"] = 5016, ["Number"] = 2, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 1},
+[9] = { ["Goods_ID"] = 5016, ["Number"] = 2, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 1},
+[10] = { ["Goods_ID"] = 5016, ["Number"] = 2, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 1},
+[11] = { ["Goods_ID"] = 5606, ["Number"] = 10, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 2},
+[12] = { ["Goods_ID"] = 5606, ["Number"] = 10, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 2},
+[13] = { ["Goods_ID"] = 5606, ["Number"] = 10, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 2},
+[14] = { ["Goods_ID"] = 5606, ["Number"] = 10, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 2},
+[15] = { ["Goods_ID"] = 5606, ["Number"] = 10, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 2},
+[16] = { ["Goods_ID"] = 5606, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 2},
+[17] = { ["Goods_ID"] = 5606, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 2},
+[18] = { ["Goods_ID"] = 5606, ["Number"] = 1, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 2},
+[19] = { ["Goods_ID"] = 5606, ["Number"] = 2, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 2},
+[20] = { ["Goods_ID"] = 5606, ["Price"] = 100, ["Conditions"] = 1, ["Type"] = 2}
+}

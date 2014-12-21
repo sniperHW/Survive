@@ -1,5 +1,3 @@
-require "Cocos2d"
-require "Cocos2dConstants"
 
 local GameScene = class("GameScene",function()
     return cc.Scene:create()
@@ -11,7 +9,6 @@ function GameScene.create()
     scene:addChild(scene:createLayerMenu())
     return scene
 end
-
 
 function GameScene:ctor()
     self.visibleSize = cc.Director:getInstance():getVisibleSize()
@@ -72,7 +69,7 @@ function GameScene:createLayerFarm()
     layerFarm:addChild(bg)
 
     -- add land sprite
-   for i = 0, 3 do
+    for i = 0, 3 do
         for j = 0, 1 do
             local spriteLand = cc.Sprite:create("land.png")
             spriteLand:setPosition(200 + j * 180 - i % 2 * 90, 10 + i * 95 / 2)

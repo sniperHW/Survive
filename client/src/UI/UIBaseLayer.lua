@@ -6,23 +6,30 @@ end)
   
 function UIBaseLayer.create()
     local layer = UIBaseLayer.new() 
+
     return layer
 end 
+
+function UIBaseLayer:setSwallowTouch()
+    local function onTouchBegan(touch, event)
+        return true
+    end
+
+    local listener = cc.EventListenerTouchOneByOne:create()
+    listener:registerScriptHandler(onTouchBegan,cc.Handler.EVENT_TOUCH_BEGAN)
+    listener:setSwallowTouches(true)
+    local eventDispatcher = self:getEventDispatcher()
+    eventDispatcher:addEventListenerWithSceneGraphPriority(listener, self)
+end
 
 function UIBaseLayer:createBack()
     local function onBtnCloseTouched(sender, type)
         cc.Director:getInstance():getRunningScene().hud:closeUI(self.class.__cname)
     end
-
+ 
     local size = self.visibleSize
-    self.back = cc.Sprite:create("UI/common/bg.jpg")
+    self.back = cc.Sprite:create("UI/common/bg.png")
     self.back:setAnchorPoint(0, 0)
-    self:addChild(self.back)
-
-    self.btnClose = self.createButton{pos = {x = size.width - 50, y = size.height - 50},
-        icon = "UI/common/close.png",
-        handle = onBtnCloseTouched,
-        parent = self }
 
     self.nodeMid = cc.Node:create()
     self.nodeMid:setPositionX((self.visibleSize.width - DesignSize.width)/2)
@@ -31,6 +38,13 @@ function UIBaseLayer:createBack()
         self.nodeMid:setScale(0.9)
         self.nodeMid:setPositionX(0)
     end
+    self.nodeMid:addChild(self.back)
+    
+    self.btnClose = self.createButton{pos = {x = 805, y = 510},
+        icon = "UI/common/close.png",
+        handle = onBtnCloseTouched,
+        parent = self.nodeMid}
+    self.btnClose:setLocalZOrder(1)
     --self.back:setScaleX(self.visibleSize.width/960)
 end
 
@@ -39,8 +53,11 @@ argu1 parent
 argu2 anchorPos
 --]]
 
-function UIBaseLayer.createLabel(content, fontSize, pos, aligh, extra)
+function UIBaseLayer.createLabel(content, fontSize, pos, aligh, extra, demen)
 	local label = cc.Label:create()
+    if demen then
+        label:setDimensions(demen.width, demen.height)
+    end
 	label:setString(content)
     label:setSystemFontSize(fontSize or 20)
     label:setPosition(pos)
@@ -122,10 +139,13 @@ function UIBaseLayer.createButton(btnopt)
                                         btnopt.fontSize or 20)
     btn:ignoreAnchorPointForPosition(btnopt.ignore == nil or btnopt.ignore == true)                                        
     btn:setPosition(btnopt.pos)
-    local texture = cc.Director:getInstance():getTextureCache():addImage(btnopt.icon)
-    btn:setPreferredSize(texture:getContentSize())
-    btn:setBackgroundSpriteForState(ccui.Scale9Sprite:create(btnopt.icon), 
-                                        cc.CONTROL_STATE_NORMAL)
+    if btnopt.icon then
+        local texture = cc.Director:getInstance():getTextureCache():addImage(btnopt.icon)
+        btn:setPreferredSize(texture:getContentSize())
+        btn:setBackgroundSpriteForState(ccui.Scale9Sprite:create(btnopt.icon), 
+                                            cc.CONTROL_STATE_NORMAL)
+    end
+    
     if btnopt.handle then
         btn:registerControlEventHandler(btnopt.handle, cc.CONTROL_EVENTTYPE_TOUCH_UP_INSIDE)
     end

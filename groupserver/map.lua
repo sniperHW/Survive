@@ -1,5 +1,10 @@
-local Game = require "Survive.groupserver.game"
+local Game = require "SurviveServer.groupserver.game"
 local RPC = require "lua.rpc"
+local LinkQue = require "lua.linkque"
+local Sche = require "lua.sche"
+local NetCmd = require "SurviveServer.netcmd.netcmd"
+local Bag = require "SurviveServer.groupserver.bag"
+require "SurviveServer.common.TableMap"
 
 
 --地图实例
@@ -17,15 +22,15 @@ local maps = {} --所有的地图实例
 local mapinstance = {}
 
 function mapinstance:new(game,size,max,id,type)
-  local o = {}   
-  setmetatable(o, self)
-  self.__index = self
-  o.game = game
-  o.size = size
-  o.id = id
-  o.type = type
-  o.max = max
-  return o
+	local o = {}   
+	setmetatable(o, self)
+	self.__index = self
+	o.game = game
+	o.size = size
+	o.id = id
+	o.type = type
+	o.max = max
+	return o
 end
 
 function mapinstance:AddPlyCount(count)
@@ -34,6 +39,13 @@ end
 
 function mapinstance:SubPlyCount(count)
 	self.size = self.size - count
+	if self.size == 0 then
+		local m = maps[self.type]
+		if m then
+			print("release map instance",self.id) 
+			m[self.id] = nil
+		end
+	end
 end
 
 
@@ -53,219 +65,227 @@ local function GetInstanceByType(type,count)
 	return {Game.GetMinGame(),nil}
 end
 
+local function PackPlayer(ply)
+	local gatesession = nil
+	if ply.gatesession then
+		gatesession = {name=ply.gatesession.gate.name,id=ply.gatesession.sessionid}
+	end
+	return 	{
+			nickname=ply.nickname,
+			actname=ply.actname,
+			gatesession = gatesession,
+			groupsession = ply.groupsession,
+			avatid = ply.avatarid,--暂时设置
+			fashion = ply.bag:GetItemId(Bag.fashion),
+			weapon = {id = ply.bag:GetItemId(Bag.weapon),count = ply.bag:GetItemCount(Bag.weapon),attr = ply.bag:GetItemAttr(Bag.weapon)},			
+			attr = ply.attr:Pack2Game(),
+			skills = ply.skills:GetSkills(),
+			battleitem = ply.bag:FetchBattleItem()
+		}	
+end
 
-local function EnterMap(ply,type)
-	print("EnterMap")
-	--暂时不处理需要配对进入的地图类型
-	local m = GetInstanceByType(type,1)
+local function EnterMapOpen(ply,maptype,mapdef)
+	print("EnterMapOpen")
+	local m = GetInstanceByType(maptype,1)
 	if not m[1] then
 		return false,"no instance"
 	end	
 	local game = m[1]
 	local instance = m[2]	
-	local plys = {
-		{
-			nickname=ply.nickname,
-			actname=ply.actname,
-			gatesession = {name=ply.gatesession.gate.name,id=ply.gatesession.sessionid},
-			groupsession = ply.groupsession,
-			avatid = ply.avatarid,--暂时设置
-			attr = ply.attr:Pack2Game()
-		}		
-	}
+	local plys = {PackPlayer(ply)}
 	local mapid = 0
 	if instance then
+		print("got instance",instance.id)
 		mapid = instance.id
 		instance:AddPlyCount(1)
 	end
 	local rpccaller = RPC.MakeRPC(game.sock,"EnterMap")	
-	local err,ret = rpccaller:Call(mapid,type,plys)
+	local err,ret = rpccaller:Call(mapid,maptype,plys)
 	if err or not ret[1] then
 		if instance then
 			instance:SubPlyCount(1)
 		end
+		--notify ply entermap failed
 		return false,err or ret[2]
 	end
 	mapid = ret[2]
-	gameids = ret[3]
-	print(ply.actname .. " EnterMap id ",gameids[1]) 
+	local gameids = ret[3]
+	log_groupserver:Log(CLog.LOG_ERROR,string.format("EnterMapOpen %s gameid %d gamename [%s]",ply.actname,gameids[1],game.name))
 	Game.Bind(game,ply,gameids[1])
 	if not instance then
-		print("create new map instance",mapid)
-		instance = mapinstance:new(game,1,200,mapid,type)
-		local m = maps[type]
+		log_groupserver:Log(CLog.LOG_ERROR,string.format("EnterMapOpen create new map [%d] instance %d",maptype,mapid))			
+		instance = mapinstance:new(game,1,mapdef["MaxPly"],mapid,maptype)
+		local m = maps[maptype]
 		if not m then
 			m = {}
-			maps[type] = m
+			maps[maptype] = m
 		end
-		m[instance] = instance
-		
+		m[mapid] = instance
 	end
+	ply.mapinstance = instance
+	ply.status = playing
 	return true
 end
 
+local function EnterMapPersonal(ply,maptype,mapdef)
+	--notify client approve 
+	local wpk = CPacket.NewWPacket(64)
+	wpk:Write_uint16(NetCmd.CMD_GC_ENTERPSMAP)
+	wpk:Write_uint16(maptype)
+	ply:Send2Client(wpk)	
+end
+
+local MapReqQues = {}
+local ReqQue = {}
+function ReqQue:new(maptype,mapdef)
+	local o = {}   
+	setmetatable(o, self)
+	self.__index = self
+	o.que = LinkQue.New()
+	o.maxWait = mapdef["MaxWait"] or 5000
+	o.plyMax = mapdef["MaxPly"]
+	o.maptype = maptype
+	MapReqQues[maptype]  = o
+	return o
+end
+
+function ReqQue:Push(ply)
+	ply.status = queueing
+	ply.ReqTick = C.GetSysTick()
+	self.que:Push(ply)
+end
+
+function ReqQue:Remove(ply)
+	self.que:Remove(ply)
+	ply.ReqTick = nil
+end
+
+function ReqQue:ProcessEnter()
+	local size = self.que:Len()
+	if size > self.plyMax then size = self.plyMax end
+	local plys = {}
+	local tmp = {}	
+	for i = 1,size do
+		local ply = self.que:Pop()
+		ply.ReqTick = nil
+		local gsession =  ply.gatesession
+		if gsession then
+			gsession = {name=gsession.gate.name,id=gsession.sessionid}
+		else
+			gsession = nil
+		end
+		table.insert(plys,PackPlayer(ply))
+		table.insert(tmp,ply)
+	end
+	local game = Game.GetMinGame()
+	local err,ret
+	if game then
+		local rpccaller = RPC.MakeRPC(game.sock,"EnterMap")	
+		err,ret = rpccaller:Call(0,self.maptype,plys)
+	end
+	if not game or err or not ret[1] then
+		if err then
+			print(err)
+		end
+		for k,v in pairs(tmp) do
+			v.status = playing
+		end
+		tmp = {}
+		return
+	end	
+	local mapid = ret[2]
+	local gameids = ret[3] 	
+	instance = mapinstance:new(game,size,self.plyMax,mapid,self.maptype)
+	local m = maps[self.maptype]
+	if not m then
+		m = {}
+		maps[self.maptype] = m
+	end
+	m[mapid] = instance
+	for i=1,size do
+		Game.Bind(game,tmp[i],gameids[i])
+		tmp[i].mapinstance = instance
+		tmp[i].status = playing
+		log_groupserver:Log(CLog.LOG_ERROR,string.format("EnterMapMutil %s gameid %d gamename [%s]",tmp[i].actname,gameids[1],game.name))
+	end
+	log_groupserver:Log(CLog.LOG_ERROR,string.format("EnterMapMutil create new map [%d] instance %d",self.maptype,mapid))			
+end
+
+function ReqQue:Tick()
+	while true do
+		if self.que:Len() >= self.plyMax then
+			self:ProcessEnter()
+		else	
+			break
+		end
+	end
+	local tick = C.GetSysTick()
+	local f = self.que:Front()
+	if f and tick >= f.ReqTick + self. maxWait then
+		self:ProcessEnter()
+	end
+end
+
+local function EnterMapMutil(ply,maptype,mapdef)
+	local q = MapReqQues[maptype] or ReqQue:new(maptype,mapdef)
+	q:Push(ply)
+	return true
+end
+
+local function EnterMap(ply,type)
+	print("EnterMap",type)
+	local mapdef = TableMap[type]
+	if not mapdef then
+		return false,"undefine map type:" .. type
+	end
+
+	local fishing_start =  ply.attr:Get("fishing_start")
+	local gather_start =  ply.attr:Get("gather_start")
+	local sit_start = ply.attr:Get("sit_start")
+	if (fishing_start and fishing_start ~=0) or (gather_start and gather_start ~= 0) or (sit_start and sit_start ~=0) then
+	    	return false,"alreay in fishing or gather"
+	end
+	local playtype = mapdef["PlayType"]
+	if playtype == "open" then
+		return 	EnterMapOpen(ply,type,mapdef)
+	elseif playtype == "personal" then
+		return EnterMapPersonal(ply,type,mapdef)
+	elseif playtype == "mutil" then
+		return EnterMapMutil(ply,type,mapdef)
+	else
+		return false,"undefine playtype"
+	end
+end
+
+local function LeaveMap(ply)
+	local err,ret
+	local rpccaller = RPC.MakeRPC(ply.gamesession.game.sock,"LeaveMap")	
+	err,ret = rpccaller:Call(ply.gamesession.sessionid)
+	if not err then
+		ply.mapinstance:SubPlyCount(1)
+		Game.UnBind(ply)
+		ply.mapinstance = nil
+		local wpk = CPacket.NewWPacket(256)
+		wpk:Write_uint16(NetCmd.CMD_GC_BACK2MAIN)
+		ply:Send2Client(wpk)	
+		print("leave map success")
+	end
+	return ret
+end
+
+Sche.Spawn( function ()
+	while true do
+		for k,v in pairs(MapReqQues) do
+			local ret,err = pcall(v.Tick,v)
+			if not ret then
+				log_groupserver:Log(CLog.LOG_ERROR,err)
+			end
+		end
+		Sche.Sleep(1000)
+	end
+end)
 
 return {
 	EnterMap = EnterMap,
+	LeaveMap = LeaveMap,
 }
-
-
---[[
-local gamemaps = {} --gameserver上的所有map实例
-local maps = {}     --所有map实例
-
-
---获取一个能容纳plycount个玩家的type类型地图实例
---返回{game,mapid}
---如果找不到合适的实例game为运行着最少实例的gameserver,mapid为0
-local function getInstanceByType(type,plycount)
-	local m = maps[type]
-	if m then
-		for k,v in pairs(m) do
-			if v.plymax - v.plycount >= plycount then
-				return {v.game,v.mapid}
-			end
-		end
-	end
-	
-	if not gamemaps then
-		return nil
-	end
-
-	local game = Game.GetMinGame()
-	if not game then
-		return nil
-	end
-	
-	return {game,0}
-end
-
-local function onGameDisconnect(game)
-	for k,v in pairs(gamemaps[game]) do
-		local type = v.type
-		for k1,v1 in pairs(maps[type]) do
-			if v1.game == game then
-				maps[type][k1] = nil
-			end
-		end
-	end	
-	gamemaps[game] = nil 
-end
-
-local function addInstance(game,type,mapid,plymax,plycount)
-	local instance = {game=game,mapid=mapid,plycount=plycount,plymax=plymax,type=type}	
-	local m = maps[type]
-	if not m then
-		m = {}
-		maps[type] = m
-	end
-	m[mapid] = instance	
-	local g = gamemaps[game]
-	if not g then
-		g = {}
-		gamemaps[game] = g
-	end	
-	g[mapid] = instance
-	GroupApp.grouplog(LOG_INFO,"addInstance " .. type .. " " .. mapid)
-	if not game.onGameDisconnect then
-		game.onGameDisconnect = onGameDisconnect
-	end
-end
-
-local function remInstance(game,type,mapid)
-	local m = maps[type]
-	if m then
-		m[mapid] = nil
-	end	
-	local g = gamemaps[game]
-	if g then
-		local m = g.maps[mapid]
-		g.maps[mapid] = nil
-	end
-end
-
-
-local function addMapPlyCount(type,mapid,count)
-	local m = maps[type]
-	if m then
-		local ins = m[mapid]
-		if ins then
-			ins.plycount = ins.plycount + count
-			return true
-		end
-	end
-	return false
-end
-
-local function subMapPlyCount(type,mapid,count)
-	local m = maps[type]
-	if m then
-		local ins = m[mapid]
-		if ins then
-			ins.plycount = ins.plycount - count
-			if ins.plycount == 0 then
-				--没玩家了，销毁实例
-				m[mapid] = nil
-			end
-			return true
-		end
-	end
-	return false	
-end
-
---local Cjson = require "cjson"
-local function enterMap(ply,type)
-	--暂时不处理需要配对进入的地图类型
-	local m = getInstanceByType(type,1)
-	if not m then
-		return false
-	end	
-	local mapid = m[2]
-	local game = m[1]
-	local gate = Gate.GetGateByConn(ply.agent.conn)	
-	local paramply = {
-		{
-			nickname=ply.nickname,
-			actname=ply.actname,
-			gate = {name=gate.name,id=ply.agent.id},
-			groupid = ply.groupid,
-			avatid = 1,--暂时设置
-			attr = ply.attr:Pack2Game()
-		}
-	}
-	local param = {mapid,type,paramply}
-	local r = Rpc.RPCCall(game.conn,"EnterMap",param,{OnRPCResponse=function (_,ret,err)
-		if err then
-			if mapid ~= 0 then 
-				subMapPlyCount(type,mapid,1) 
-			end	
-			Game.RemoveGamePly(ply,game)			
-			GroupApp.grouplog(LOG_INFO,ply.actname .. " enter map " .. type .. " error:" .. err)
-		else
-			if mapid == 0 then
-				mapid = ret[1]
-				addInstance(game,type,mapid,200,1)
-				addMapPlyCount(type,mapid,1)
-			end
-			ply.game = {conn=game.conn,id=ret[2][1]}
-		end
-		ply.status = stat_playing
-	end})
-	if r then
-		if mapid ~= 0 then  
-			addMapPlyCount(type,mapid,1)
-		end
-		Game.InsertGamePly(ply,game)	
-	end
-	return r
-end
-
-return {
-	GetInstanceByType = getInstanceByType,
-	AddInstance = addInstance,
-	OnGameDisconnect = onGameDisconnect,
-	AddMapPlyCount = addMapPlyCount,
-	SubMapPlyCount = subMapPlyCount,
-	RemInstance = remInstance,
-	EnterMap = enterMap,
-}]]--

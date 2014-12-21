@@ -1,27 +1,19 @@
-local Que = require "lua.queue"
-local NetCmd = require "Survive.netcmd.netcmd"
-local Time = require "lua.time"
-local freeidx = Que.New()
+local LinkQue = require "lua.linkque"
+local NetCmd = require "SurviveServer.netcmd.netcmd"
+local IdMgr = require "SurviveServer.common.idmgr"
+--local freeidx = LinkQue.New()
 
 local id2player = {}
 local sock2player = {}
-
---限制gateserver最大连接数4096
-for i=1,4096 do
-	freeidx:Push({v=i})
-end
+local freeidx = IdMgr.New(4096)
 
 local function GetIdx()
-	local n = freeidx:Pop()
-	if n then 
-		return n.v
-	else
-		return nil
-	end
+	return freeidx:Get()
 end
 
 local function ReleaseIdx(idx)
-	freeidx:Push({v=idx})
+	print("ReleaseIdx",idx)
+	freeidx:Release(idx)
 end
 
 local verifying = 1
@@ -40,7 +32,7 @@ function player:new()
 	 local o = {}   
 	 setmetatable(o, self)
 	 self.__index = self
-	 o.sessionid = bit32.lshift(idx,16) + bit32.band(Time.SysTick(),0x0000FFFF)
+	 o.sessionid = bit32.lshift(idx,16) + bit32.band(C.GetSysTick(),0x0000FFFF)
 	 return o
 end
 
@@ -78,26 +70,30 @@ local function NewGatePly(sock)
 end
 
 local function ReleasePlayer(ply)
-	if ply.sessionid then	
-		print("ReleasePlayer")	
+	if ply.sessionid then
 		--通知group和game连接断开
-		local wpk = CPacket.NewWPacket(64);
-		wpk:Write_uint16(NetCmd.CMD_AG_CLIENT_DISCONN);
-		wpk:Write_uint16(ply.groupsession);
-		Send2Group(wpk)		
+		if ply.groupsession then
+			local wpk = CPacket.NewWPacket(64);
+			wpk:Write_uint16(NetCmd.CMD_AG_CLIENT_DISCONN);
+			wpk:Write_uint16(ply.groupsession);
+			Send2Group(wpk)
+		end		
 		id2player[ply.sessionid] = nil
-		sock2player[ply.sock] = nil
 		ReleaseIdx(ply:GetId())
 		ply.sessionid = nil
+	else
+		print("no sessionid")
 	end
 end
 
 local function OnPlayerDisconnected(sock,errno)
-	print("OnPlayerDisconnected")
 	local ply = GetPlayerBySock(sock)
 	if not ply then
 		return
-	end	
+	end
+	sock2player[ply.sock] = nil
+	ply.sock = nil
+	log_gateserver:Log(CLog.LOG_ERROR,string.format("[%s] [%s] client disconnected:",ply.status,ply.actname or "unknow"))		
 	if ply.status == verifying or ply.status == login2group then
 		ply.status = releasing	
 	else

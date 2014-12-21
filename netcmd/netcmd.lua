@@ -1,111 +1,3 @@
---[[
-#ifndef _NETCMD_H
-#define _NETCMD_H
-
-enum{
-	//client <-> agent
-	CMD_CA_BEGIN = 0,
-	CMD_CA_LOGIN,
-	CMD_CA_END,
-
-	CMD_AC_BEGIN = 100,
-	CMD_AC_END,
-
-	//client <-> game
-	CMD_CS_BEGIN = 200,
-	CMD_CS_MOV,
-	CMD_CS_USESKILL,
-	CMD_CS_END,
-
-	CMD_SC_BEGIN = 300,
-	CMD_SC_ENTERMAP,
-	CMD_SC_ENTERSEE,
-	CMD_SC_LEAVESEE,
-	CMD_SC_MOV,
-	CMD_SC_MOV_ARRI,
-	CMD_SC_MOV_FAILED,
-	CMD_SC_NOTIATK,        
-	CMD_SC_NOTIATKSUFFER,   
-	CMD_SC_NOTISUFFER,      
-	CMD_SC_ATTRUPDATE,
-	CMD_SC_END,
-
-	//client <-> group
-	CMD_CG_BEGIN = 400,
-	CMD_CG_CREATE,
-	CMD_CG_ENTERMAP,  
-	CMD_CG_END,
-
-	CMD_GC_BEGIN = 500,
-	CMD_GC_CREATE,
-	CMD_GC_BEGINPLY,
-	CMD_GC_ATTRUPDATE,
-	CMD_GC_ERROR,
-	CMD_GC_END,
-
-	//gate <-> group
-	CMD_AG_BEGIN = 600,
-	CMD_AG_LOGIN,                  
-	CMD_AG_PLYLOGIN,
-	CMD_AG_CLIENT_DISCONN,       
-	CMD_AG_END,
-
-	CMD_GA_BEGIN = 700,
-	CMD_GA_NOTIFYGAME,
-	CMD_GA_BUSY,
-	CMD_GA_PLY_INVAILD,
-	CMD_GA_CREATE,
-	CMD_GA_END,
-
-	//game <-> group
-
-	CMD_GAMEG_BEGIN = 800,
-	CMD_GAMEG_LOGIN,                  
-	CMD_GAMEG_END,
-
-	CMD_GGAME_BEGIN = 900,
-	CMD_GGAME_CLIDISCONNECTED,
-	//CMD_GGAME_ENTERMAP,
-	//CMD_GGAME_LEAVEMAP,
-	//CMD_GGAME_DESTROYMAP,
-	CMD_GGAME_END,
-
-	//game <-> gate
-
-	CMD_AGAME_BEGIN = 1000,
-	CMD_AGAME_LOGIN,                 
-	CMD_AGAME_END,
-
-	CMD_GAMEA_BEGIN = 1100,
-	CMD_GAMEA_LOGINRET,              
-	CMD_GAMEA_END,
-
-	//dummy cmd
-	DUMMY_ON_GATE_DISCONNECTED = 1200,
-	DUMMY_ON_GAME_DISCONNECTED,
-	DUMMY_ON_CHAT_CONNECTED,
-	DUMMY_ON_DAEMON_DISCONNECTED,
-	DUMMY_ON_ROUTER_CONNECTED,
-	DUMMY_ON_ROUTER_DISCONNECTED,   
-	DUMMY_ON_MG_DISCONNECTED,    //管理客户端断开连接	
-	//rpc
-	CMD_RPC_CALL = 1300,
-	CMD_RPC_RESPONSE,
-	
-	//管理系统
-	//router <-> daemon	
-	CMD_MG_LOGIN = 1400, //登录管理系统
-	CMD_MG_START,        //启动进程
-	CMD_MG_STOP,         //关闭进程
-	CMD_MG_KILL,         //杀死进程
-	CMD_MG_GET_MACHINE_INFO,//获取机器进程信息
-	CMD_GM_GLOBAL_INFO,  //全局信息
-	CMD_GM_MACHINE_INFO, //机器进程信息
-	CMD_GM_PROCESS_INFO, //具体进程信息	
-};
-#endif
-]]--
-
 local cmd_num = 0
 
 local function SetCmdNum(num)
@@ -130,7 +22,7 @@ local netcmd = {
 	CMD_CS_MOV = NextCmdNum(),
 	CMD_CS_USESKILL = NextCmdNum(),
 	CMD_CS_END = NextCmdNum(),
-	
+
 	CMD_SC_BEGIN = SetCmdNum(300),
 	CMD_SC_ENTERMAP = NextCmdNum(),
 	CMD_SC_ENTERSEE = NextCmdNum(),
@@ -140,10 +32,12 @@ local netcmd = {
 	CMD_SC_MOV_FAILED = NextCmdNum(),
 	CMD_SC_NOTIATK = NextCmdNum(),
 	CMD_SC_NOTIATKSUFFER = NextCmdNum(),   
-	CMD_SC_NOTISUFFER = NextCmdNum(),      
+	CMD_SC_NOTISUFFER = NextCmdNum(),
+	CMD_SC_NOTIATKSUFFER2 = NextCmdNum(),
 	CMD_SC_ATTRUPDATE = NextCmdNum(),
 	CMD_SC_BUFFBEGIN = NextCmdNum(),
 	CMD_SC_BUFFEND = NextCmdNum(),
+	CMD_SC_DIR = NextCmdNum(),
 	--CMD_SC_CREATE_ERROR = NextCmdNum(),	
 	CMD_SC_END = NextCmdNum(),
 	--client <-> group
@@ -151,13 +45,44 @@ local netcmd = {
 	CMD_CG_BEGIN = SetCmdNum(400),
 	CMD_CG_CREATE = NextCmdNum(),
 	CMD_CG_ENTERMAP = NextCmdNum(),
+	CMD_CG_LEAVEMAP = NextCmdNum(),
+	CMD_CG_PMAP_BALANCE = NextCmdNum(),
+	CMD_CG_USEITEM = NextCmdNum(),
+	CMD_CG_REMITEM = NextCmdNum(),
+	CMD_CG_SWAP = NextCmdNum(),
+	CMD_CG_ADDPOINT = 	NextCmdNum(),
+	CMD_CG_CHAT = NextCmdNum(),
+	CMD_CG_HOMEACTION = NextCmdNum(),
+	CMD_CG_HOMEBALANCE = NextCmdNum(),
+	CMD_CG_EQUIP_UPRADE = NextCmdNum(),
+	CMD_CG_EQUIP_ADDSTAR = NextCmdNum(),
+	CMD_CG_EQUIP_INSET = NextCmdNum(),
+	CMD_CG_EQUIP_UNINSET = NextCmdNum(),
+	CMD_CG_LOADBATTLEITEM = NextCmdNum(),
+	CMD_CG_UNLOADBATTLEITEM = NextCmdNum(),
+	CMD_CG_UPGRADESKILL = NextCmdNum(),
+	CMD_CG_UNLOCKSKILL = NextCmdNum(),
+	CMD_CG_EVERYDAYSIGN = NextCmdNum(),
+	CMD_CG_EVERYDAYTASK = NextCmdNum(),
+	CMD_CG_EVERYDAYTASK_GETAWARD = NextCmdNum(),
 	CMD_CG_END = NextCmdNum(), 
 	
 	CMD_GC_BEGIN = SetCmdNum(500),
 	CMD_GC_CREATE = NextCmdNum(),
 	CMD_GC_BEGINPLY = NextCmdNum(), 
 	CMD_GC_ATTRUPDATE = NextCmdNum(), 
+	CMD_GC_BACK2MAIN = NextCmdNum(),
+	CMD_GC_ENTERPSMAP = NextCmdNum(),
+	CMD_GC_BAGUPDATE = NextCmdNum(),
 	CMD_GC_ERROR = NextCmdNum(), 
+	CMD_GC_HOMEACTION_RET = NextCmdNum(),
+	CMD_GC_HOMEBALANCE_RET = NextCmdNum(),
+	CMD_GC_SKILLUPDATE = NextCmdNum(),
+	CMD_GC_ADDSKILL = NextCmdNum(),	
+	CMD_GC_NOTIOPSUCCESS = NextCmdNum(),
+	CMD_GC_EVERYDAYSIGN = NextCmdNum(),
+	CMD_GC_EVERYDAYTASK = NextCmdNum(),
+	CMD_GC_EVERTDAYTASK_AWARD = NextCmdNum(),
 	CMD_GC_END = NextCmdNum(),
 	--group <-> gate
 	CMD_AG_BEGIN = 	SetCmdNum(600),
@@ -172,9 +97,12 @@ local netcmd = {
 
 	CMD_GGAME_BEGIN = SetCmdNum(900),
 	CMD_GGAME_CLIDISCONNECTED = NextCmdNum(),
-	CMD_GGAME_END = NextCmdNum(),		 		
-			
+	CMD_GGAME_END = NextCmdNum(),			 		
+	CMD_CC_CONNECT_SUCCESS = 65534,
+   	CMD_CC_CONNECT_FAILED = 65533,
+   	CMD_CC_DISCONNECTED = 65532, 	 				
 }
+
 
 --用于生成netcmd.h文件
 --[[local function GenC_NetCmd()
@@ -193,6 +121,11 @@ end
 
 netcmd.GenC_NetCmd = GenC_NetCmd
 ]]--
+
+noti_equipupgrade_success = 1
+noti_equipaddstar_success = 2
+noti_equipinst_success = 3
+noti_equipuninst_success = 4
 
 return netcmd
 

@@ -1,5 +1,5 @@
 --package.cpath = "Survive/?.so"
-local Db = require "Survive.common.db"
+local Db = require "SurviveServer.common.db"
 local Cjson = require "cjson"
 local Sche = require "lua.sche"
 --local Base64 = require "base64"

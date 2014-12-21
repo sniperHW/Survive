@@ -29,12 +29,12 @@ typedef struct AStarNode{
 	kn_dlist_node     list_node;
 	struct heapele    heap;
 	struct AStarNode *parent;
-	double G;      //从初始点到当前点的开销
-	double H;      //从当前点到目标点的估计开销
-	double F;
-	int    x;
-	int    y;
-	int    value;	 
+	float G;      //从初始点到当前点的开销
+	float H;      //从当前点到目标点的估计开销
+	float F;
+	uint32_t  x:16;
+	uint32_t  y:15;
+	uint32_t  block:1;	 
 }AStarNode;
 
 typedef struct{
@@ -49,4 +49,5 @@ typedef struct{
 
 AStar_t create_AStar(int xsize,int ysize,int *values);
 int     find_path(AStar_t,int x,int y,int x1,int y1,kn_dlist *path);
+int     isblock(AStar_t,int x,int y);
 #endif

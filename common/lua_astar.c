@@ -72,7 +72,7 @@ static int lua_create_astar(lua_State *L){
 				return 1;
 			}
 			coli[i] = atol(buf);
-			if(coli[i]) coli[i] = 0xFFFFFFFF;
+			//if(coli[i]) coli[i] = 0xFFFFFFFF;
 		}				
 		AStar_t astar = create_AStar(xcount,ycount,coli);
 		lua_pushlightuserdata(L,astar);
@@ -108,10 +108,65 @@ static int lua_findpath(lua_State *L){
 	return 1;
 }
 
+#define PushPoint(L,X,Y,I)\
+	lua_newtable(L);\
+              lua_pushinteger(L,X);\
+              lua_rawseti(L,-2,1);\
+              lua_pushinteger(L,Y);\
+              lua_rawseti(L,-2,2);\
+              lua_rawseti(L,-2,(I)) 
+
+static int lua_lineto(lua_State *L){
+	AStar_t astar = lua_touserdata(L,1);
+	int x1 = lua_tonumber(L,2);
+	int y1 = lua_tonumber(L,3);
+	int x2 = lua_tonumber(L,4);
+	int y2 = lua_tonumber(L,5);
+
+	if(x1 == y2 && x2 == y2){
+		lua_newtable(L);
+	              PushPoint(L,x1,y1,1);	
+		return 1;
+	}
+	int dx = x2 - x1;
+	int dy = y2 - y1;
+	int ux = ((dx > 0) << 1) - 1;//x的增量方向，取或-1
+	int uy = ((dy > 0) << 1) - 1;//y的增量方向，取或-1
+	int x = x1, y = y1, eps;//eps为累加误差
+
+	int i = 1;
+	lua_newtable(L);
+	eps = 0;dx = abs(dx); dy = abs(dy); 
+	if (dx > dy) {
+	        for (x = x1; x != x2; x += ux){
+	            eps += dy;
+	            if ((eps << 1) >= dx){
+	              y += uy; eps -= dx;
+	            }
+	            if(astar && isblock(astar,x,y)) return 1;
+	            PushPoint(L,x,y,i++);
+	        }
+	}else{
+	        for (y = y1; y != y2; y += uy){
+	            eps += dx;
+	            if ((eps << 1) >= dy){
+	              x += ux; eps -= dy;              
+	            }
+	            if(astar && isblock(astar,x,y)) return 1;
+	            PushPoint(L,x,y,i++);    
+	        }
+	}
+	if(!astar || ! isblock(astar,x2,y2)){
+	              PushPoint(L,x2,y2,i);
+              } 	
+	return 1;      
+}
+
 int luaopen_astar(lua_State *L) {
     luaL_Reg l[] = {
         {"findpath", lua_findpath},
         {"create", lua_create_astar},
+        {"lineto",lua_lineto},
         {NULL, NULL}
     };
     luaL_newlib(L, l);

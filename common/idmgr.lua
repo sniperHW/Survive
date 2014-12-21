@@ -1,11 +1,11 @@
-local Que = require "lua.queue"
+local LinkQue = require "lua.linkque"
 local idmgr = {}
 
 function idmgr:new(size)
   local o = o or {}   
   setmetatable(o, self)
   self.__index = self
-  o.idx = Que.New()
+  o.idx = LinkQue.New()
   for i=1,size do
 	o.idx:Push({v=i})
   end 

@@ -13,10 +13,10 @@ local function connect_to_redis(ip,port)
 			local err
 			err,toredis = Redis.Connect(ip,port)
 			if toredis then
-				print("connect to config server success")
+				CLog.SysLog(CLog.LOG_INFO,"connect to config server success")
 				break
 			end
-			print("try to connect to config server after 1 sec")			
+			--print("try to connect to config server after 1 sec")			
 			Sche.Sleep(1000)
 		end
 	end)	
@@ -36,7 +36,8 @@ local function Init(key,ip,port)
 			toredis:Close()
 			return false,err
 		else
-			print(result)
+			--print(result)
+			--CLog.SysLog(CLog.LOG_INFO,result)
 			deployment = Cjson.decode(result[1])
 			toredis:Close()
 			return true,nil

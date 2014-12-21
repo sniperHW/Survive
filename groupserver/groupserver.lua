@@ -1,15 +1,27 @@
+log_groupserver = CLog.New("groupserver")
+
+createcha  = 1
+loading    = 2
+playing    = 3
+releasing  = 4
+entermap   = 5
+leavingmap = 6
+queueing = 7
+
 local TcpServer = require "lua.tcpserver"
 local App = require "lua.application"
 local RPC = require "lua.rpc"
-local Player = require "Survive.groupserver.groupplayer"
-local NetCmd = require "Survive.netcmd.netcmd"
-local MsgHandler = require "Survive.netcmd.msghandler"
-local Db = require "Survive.common.db"
+local Player = require "SurviveServer.groupserver.groupplayer"
+local NetCmd = require "SurviveServer.netcmd.netcmd"
+local MsgHandler = require "SurviveServer.netcmd.msghandler"
+local Db = require "SurviveServer.common.db"
 local Sche = require "lua.sche"
-local Gate = require "Survive.groupserver.gate"
-local Game = require "Survive.groupserver.game"
-local Config = require "Survive.common.config"
+local Gate = require "SurviveServer.groupserver.gate"
+local Game = require "SurviveServer.groupserver.game"
+local Config = require "SurviveServer.common.config"
 
+
+App.SetMaxRecverPerSocket(65535)
 local ret,err = Config.Init("测试1服","127.0.0.1",6379)
 if ret then
 	local redis_ip = Config.Get("db")[1]
@@ -31,7 +43,6 @@ if ret then
 	--注册Player模块提供的RPC服务
 	Player.RegRpcService(groupApp)
 
-	local success
 	local function on_disconnected(sock,errno)
 		if sock.type == "gate" then
 			Gate.OnGateDisconnected(sock,errno)
@@ -40,21 +51,21 @@ if ret then
 		end
 	end
 
-	groupApp:Run(function ()
-		success = not TcpServer.Listen(ip,port,function (sock)
+	--groupApp:Run(function ()
+	local success = not TcpServer.Listen(ip,port,function (sock)
 			sock:Establish(CSocket.rpkdecoder(65535))
 			groupApp:Add(sock,MsgHandler.OnMsg,on_disconnected)		
 		end)
-	end)
+	--end)
 
 	if not success then
-		print(string.format("start server on %s:%d error",ip,port))
+		log_groupserver:Log(CLog.LOG_ERROR,string.format("start server on %s:%d error",ip,port))
 		Exit()		
 	else
-		print(string.format("start server on %s:%d",ip,port))
+		log_groupserver:Log(CLog.LOG_ERROR,string.format("start server on %s:%d",ip,port))
 	end
 
 else
-	print("get config error:" .. err)
+	log_groupserver.Log(CLog.LOG_ERROR,"get config error:" .. err)
 	Exit()	
 end

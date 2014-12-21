@@ -1,13 +1,15 @@
+log_gateserver = CLog.New("gateserver")
 local TcpServer = require "lua.tcpserver"
 local App = require "lua.application"
 local RPC = require "lua.rpc"
-local Player = require "Survive.gateserver.gateplayer"
-local NetCmd = require "Survive.netcmd.netcmd"
-local MsgHandler = require "Survive.netcmd.msghandler"
+local Player = require "SurviveServer.gateserver.gateplayer"
+local NetCmd = require "SurviveServer.netcmd.netcmd"
+local MsgHandler = require "SurviveServer.netcmd.msghandler"
 local Sche = require "lua.sche"
 local Socket = require "lua.socket"
-local Db = require "Survive.common.db"
-local Config = require "Survive.common.config"
+local Db = require "SurviveServer.common.db"
+local Config = require "SurviveServer.common.config"
+
 
 local ret,err = Config.Init("测试1服","127.0.0.1",6379)
 if ret then
@@ -56,7 +58,6 @@ if ret then
 	--处理来自客户端的网络消息
 	local function OnClientMsg(sock,rpk)
 		local cmd = rpk:Peek_uint16()
-		print("OnClientMsg",cmd)
 		if cmd >= NetCmd.CMD_CG_BEGIN and cmd <= NetCmd.CMD_CG_END then
 			ForwardGroup(sock,rpk)
 		elseif cmd >= NetCmd.CMD_CS_BEGIN and cmd <= NetCmd.CMD_CS_END then
@@ -82,7 +83,10 @@ if ret then
 				if ply then
 					if cmd == NetCmd.CMD_SC_ENTERMAP then
 						ply.gamesession = {sock=sock,id=rpk:Read_uint32()}
-						print("CMD_SC_ENTERMAP",ply.gamesession.id)
+						--print("CMD_SC_ENTERMAP",ply.gamesession.id)
+					elseif cmd == NetCmd.CMD_GC_BACK2MAIN then
+						print("CMD_CG_LEAVEMAP")
+						ply.gamesession = nil
 					end
 					ply:Send2Client(CPacket.NewWPacket(wpk))
 				end
@@ -101,36 +105,38 @@ if ret then
 					return
 				end		
 				local sock = Socket.New(CSocket.AF_INET,CSocket.SOCK_STREAM,CSocket.IPPROTO_TCP)
-				print("connect_to_game",name,ip,port)
+				--print("connect_to_game",name,ip,port)
 				if not sock:Connect(ip,port) then
 					sock:Establish(CSocket.rpkdecoder(65535))				
 					toinner:Add(sock,OnInnerMsg,
 								function (s,errno)
 									Player.OnGameDisconnected(s)
 									name2game[name].sock = nil
-									print(name .. " disconnected")
+									log_gateserver:Log(CLog.LOG_INFO,string.format("gameserver %s disconnected",name))
 									connect_to_game(name,ip,port)
 								end)
 					local rpccaller = RPC.MakeRPC(sock,"Login")
 					local err,ret = rpccaller:Call("gate1")
 					if err or ret == "Login failed" then
 						if err then
-							print(err)
+							log_gateserver:Log(CLog.LOG_INFO,string.format("login to gameserver %s failed:%s",name,err))
 						else
-							print(ret)
+							log_gateserver:Log(CLog.LOG_INFO,string.format("login to gameserver %s failed:%s",name,ret))
 						end
 						sock:Close()
 						break							
 					end
-					print("connect to " .. name .. " success")				
+					log_gateserver:Log(CLog.LOG_INFO,string.format("connect to gameserver %s success",name))			
 					if name2game[name] then
 						name2game[name].sock = sock
 					else
 						name2game[name] = {sock = sock}
 					end
 					break	
+				else
+					sock:Close()
 				end
-				print("try to connect to " .. name .. "after 1 sec")
+				--print("try to connect to " .. name .. "after 1 sec")
 				Sche.Sleep(1000)
 			end
 		end)
@@ -147,15 +153,19 @@ if ret then
 	end)
 
 	MsgHandler.RegHandler(NetCmd.CMD_CA_LOGIN,function (sock,rpk)
-		print("CMD_CA_LOGIN")
 		local type = rpk:Read_uint8()
 		local actname = rpk:Read_string()
 		local player = Player.GetPlayerBySock(sock) or Player.NewGatePly(sock)
 		if not player then
 			--通知服务器繁忙
+			log_gateserver:Log(CLog.LOG_INFO,string.format("CMD_CA_LOGIN reach max gate player count %s",actname))
+			sock:Close()
 			return
 		end
+		player.actname = actname
 		if player.status then
+			log_gateserver:Log(CLog.LOG_INFO,string.format("CMD_CA_LOGIN %s invaild status ",actname,player.status))
+			sock:Close()
 			return
 		end
 		player.status = Player.verifying
@@ -165,29 +175,34 @@ if ret then
 			return
 		end
 		if err then
-			player.status = nil	
+			log_gateserver:Log(CLog.LOG_INFO,string.format("CMD_CA_LOGIN %s db error %s",actname,err))
+			player.status = nil
+			sock:Close()
+			return	
 		end
-		local chaid = 0
-		if result then
-			chaid = result
-		end
+		local chaid = result or 0
 		if not togroup then
 			--通知系统繁忙
 			player.status = nil
+			sock:Close()
+			return
 		else
 			--验证通过,登录到group
 			local rpccaller = RPC.MakeRPC(togroup,"PlayerLogin")
 			player.status = Player.login2group
-			local err,ret = rpccaller:Call(actname,chaid,player.sessionid)
-			if not Player.IsVaild(player) then
-				Player.ReleasePlayer(player) --玩家连接已经提前断开
-				return
-			end					
+			local err,ret = rpccaller:Call(actname,chaid,player.sessionid)			
 			if err then
+				log_gateserver:Log(CLog.LOG_INFO,string.format("CMD_CA_LOGIN %s PlayerLogin rpc error %s",actname,err))
 				player.status = nil
+				sock:Close()
+				return
 			else
 				if ret[1] then
 					player.groupsession = ret[2]
+					if not Player.IsVaild(player) then
+						Player.ReleasePlayer(player) --玩家连接已经提前断开
+						return
+					end						
 					if ret[3] then
 						--通知客户端创建角色						
 						local wpk = CPacket.NewWPacket(64)
@@ -196,10 +211,14 @@ if ret then
 						player.status = Player.createcha					
 					else
 						player.status = Player.playing
+						log_gateserver:Log(CLog.LOG_INFO,string.format("CMD_CA_LOGIN %s ok playing",actname))
 					end
+					return 
 				else
 					--断开连接
+					player.status = nil
 					sock:Close()
+					return
 				end	
 			end		
 		end	
@@ -210,7 +229,7 @@ if ret then
 	local function connect_to_group()
 		if togroup then
 			Player.OnGroupDisconnected()
-			print("togroup disconnected")
+			log_gateserver:Log(CLog.LOG_INFO,string.format("groupserver disconnected"))
 		end
 		togroup = nil
 		Sche.Spawn(function ()
@@ -224,21 +243,22 @@ if ret then
 					local err,ret = rpccaller:Call("gate1")
 					if err or ret == "Login failed" then
 						if err then
-							print(err)
+							log_gateserver:Log(CLog.LOG_INFO,string.format("login group failed:%s",err))
 						else
-							print(ret)
+							log_gateserver:Log(CLog.LOG_INFO,string.format("login group failed:%s",ret))
 						end
 						sock:Close()
-						break	
+						Exit()	
 					end
 					togroup = sock
-					print("connect to group success")
+					log_gateserver:Log(CLog.LOG_INFO,"connect to group success")
 					for k,v in pairs(ret) do
 						connect_to_game(v[1],v[2],v[3])
 					end					
 					break
+				else
+					sock:Close()
 				end
-				print("try to connect to group after 1 sec")
 				Sche.Sleep(1000)
 			end
 		end)	
@@ -247,9 +267,6 @@ if ret then
 
 	Db.Init(redis_ip,redis_port)
 	connect_to_group()
-	toinner:Run()
-	toclient:Run()
-
 	while not togroup or not Db.Finish() do
 		Sche.Yield()
 	end
@@ -258,16 +275,15 @@ if ret then
 
 	if TcpServer.Listen(ip,port,function (sock)
 			sock:Establish(CSocket.rpkdecoder(4096))
-			print("client connected")
-			toclient:Add(sock,OnClientMsg,Player.OnPlayerDisconnected)		
+			toclient:Add(sock,OnClientMsg,Player.OnPlayerDisconnected,60000)		
 		end) then
-		print(string.format("start server on %s:%d error",ip,port))
+		log_gateserver:Log(CLog.LOG_ERROR,string.format("start server on %s:%d error",ip,port))
 
 	else
-		print(string.format("start server on %s:%d",ip,port))
+		log_gateserver:Log(CLog.LOG_ERROR,string.format("start server on %s:%d success",ip,port))
 	end
 
 else
-	print("get config error:" .. err)
+	log_gateserver.Log(CLog.LOG_ERROR,"get config error:" .. err)
 	Exit()		
 end

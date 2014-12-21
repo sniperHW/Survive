@@ -7,7 +7,15 @@ Survive是一个在distri.lua之上构建的手机网游服务器,除了几个�
 获取 Survive
 -----------
 
-[下载](https://github.com/sniperHW/Survive/blob/master/Survive-2014-10-14.zip)
+Clone [dirsti.lua](https://github.com/sniperHW/distri.lua).
+
+cd distri.lua/deps
+
+Clone [KendyNet](https://github.com/sniperHW/KendyNet).
+
+cd ..
+
+Clone [Survive](https://github.com/sniperHW/survive.lua).
 
 
 构建
@@ -15,7 +23,9 @@ Survive是一个在distri.lua之上构建的手机网游服务器,除了几个�
 ```
 make distrilua
 
-make survive
+cd Survive
+
+make all
 
 ```
 
@@ -41,8 +51,6 @@ make survive
 首先调整中的ip和端口号 client/src/UI/UILogin.lua
 
 然后执行client/runtime/win32/battle.exe
-
-(注意客户端创建角色界面没完成，所以请先使用机器人登录游戏)
 
 6)启动机器人
 

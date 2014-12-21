@@ -9,7 +9,7 @@ local function RegRpcService(app)
 			sock.type = "gate"
 			sock2gate[sock] = gate
 			name2gate[name] = gate
-			print(name .. " Login Success")
+			log_gameserver:Log(CLog.LOG_INFO,name .. " login success")
 			return "Login Success"
 		else
 			return "Login failed"
@@ -20,7 +20,7 @@ end
 local function OnGateDisconnected(sock,errno)
 	local gate = sock2gate[sock]
 	if gate then
-		print(gate.name .. " disconnected")
+		log_gameserver:Log(CLog.LOG_INFO,gate.name .. " disconnected")
 		for k,v in pairs(gate.players) do
 			--玩家的网络连接断开
 			v.gatesession = nil
@@ -32,14 +32,17 @@ local function OnGateDisconnected(sock,errno)
 end
 
 local function Bind(gate,player,sessionid)
-	 gate.players[player] = player
+	 gate.players[player.id] = player
 	 player.gatesession = {sock=gate.sock,sessionid=sessionid,gate=gate}
 end
 
 local function UnBind(player)
+	if not player.gatesession then
+		return
+	end
 	local gate = player.gatesession.gate
 	if gate then
-		gate.players[player] = nil
+		gate.players[player.id] = nil
 		player.gatesession = nil
 	end
 end

@@ -1,16 +1,33 @@
-require "Survive.common.TableBuff"
-require "Survive.common.TableBuff_Nexus"
-local Time = require "lua.time"
-local NetCmd = require "Survive.netcmd.netcmd"
+require "SurviveServer.common.TableBuff"
+require "SurviveServer.common.TableBuff_Nexus"
+local NetCmd = require "SurviveServer.netcmd.netcmd"
 
 local buffExclusion = TableBuff_Nexus
 local buff = {}
 
 function buff:new()
 	local o = {}   
-	setmetatable(o, self)
 	self.__index = self
+	setmetatable(o, self)
 	return o
+end
+
+local function GetTabFunction(tb,name)
+	local f = tb[name]
+	local t = type(f) 
+	if t ~= "string" or t ~= "function" then
+		return nil
+	elseif type(f) == "string" then
+		local err
+		f,err = load(f)
+		if not f then
+			log_gameserver:Log(CLog.LOG_INFO,string.format("GetTabFunction function:%s error:%s",f,err))
+		else
+			f = f()
+			tb[name] = f
+		end
+	end
+	return f
 end
 
 function buff:Init(id,owner,releaser,tb)
@@ -18,32 +35,40 @@ function buff:Init(id,owner,releaser,tb)
 	self.id = id
 	self.owner = owner
 	self.tb = tb
-	self.interval = tb["Interval"]
-	self.onInterval = tb["OnInterval"]
+	self.interval = tb["Interval"] or 0
+	self.onInterval = tb["OnInterval"] or 0
 	if self.interval and self.interval > 0 and self.onInterval then
-		self.nextInterval =  Time.SysTick() +  self.interval
+		self.nextInterval = C.GetSysTick() +  self.interval
 	end
-	self.period1 = tb["Period1"]
-	self.period2 = tb["Period2"]
+	self.period1 = tb["Period1"] or 0
+	self.period2 = tb["Period2"] or 0
 	self.range = tb["Range"]
 	self.period = self.period1 + self.period2 -- the total period
-	self.endTick = Time.SysTick() + self.period
-	self.onBegin = tb["OnBegin"]
-	self.onEnd = tb["OnEnd"]
+	self.endTick = C.GetSysTick() + self.period
+	self.onBegin = GetTabFunction(tb,"OnBegin")
+	self.onEnd = GetTabFunction(tb,"OnEnd")
+	self.onInterval = GetTabFunction(tb,"OnInterval")
 	return self
 end
 
 function buff:Reset(releaser)
 	self.releaser = releaser
-	self.endTick = Time.SysTick() + self.period
+	self.endTick = C.GetSysTick() + self.period
 end
 
-function buff:NotifyBegin()
+function buff:NotifyBegin(o)
+	if o and o.gatesession == nil then
+		return
+	end
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_SC_BUFFBEGIN)
 	wpk:Write_uint32(self.owner.id)
 	wpk:Write_uint16(self.id)
-	self.owner:Send2view(wpk)
+	if o then
+		self.owner:Send2Client(wpk)
+	else
+		self.owner:Send2view(wpk)
+	end
 end
 
 function buff:NotifyEnd()
@@ -52,21 +77,34 @@ function buff:NotifyEnd()
 	wpk:Write_uint32(self.owner.id)
 	wpk:Write_uint16(self.id)
 	self.owner:Send2view(wpk)
+	if self.onEnd then
+		self.onEnd(self)
+	end	
 end
 
 --if return false means the buff have end
 function buff:Tick(currenttick)
-	--print("buff:Tick")
 	if self.nextInterval and currenttick >= self.nextInterval then
-		local onInterval = self.tb["OnInterval"]
-		onInterval(self)
+		if self.onInterval then
+			self.onInterval(self)
+		end
 	end	
 	if currenttick >= self.endTick then
-		print("buff timeout")
 		return false
-	else
-		return true
 	end
+	
+	if self.buffSkill then
+		local robot = self.releaser.robot
+		if robot and robot.run then
+			if currenttick >=  self.buffSkill[2] then
+				robot:UseBuffSkill(self.buffSkill[1])
+				self.buffSkill[2] = currenttick + self.buffSkill[3]
+			end
+		else
+			self.buffSkill = nil
+		end
+	end
+	return true
 end
 
 local buffmgr = {}
@@ -85,12 +123,10 @@ local exclude    = 2
 local interrupt  = 3
 
 function buffmgr:NewBuff(releaser,id)
-	print("NewBuff1")
 	local tb = TableBuff[id]
 	if not tb then
 		return false
 	end
-	print("NewBuff2")
 	for k,v in pairs(self.buffs) do
 		local exclusion	= buffExclusion[id]
 		if exclusion then exclusion = exclusion[k] end
@@ -109,24 +145,24 @@ function buffmgr:NewBuff(releaser,id)
 			self:RemoveBuff(k)	
 		end	
 	end
-	print("NewBuff3")
 	local buf = buff:new():Init(id,self.avatar,releaser,tb)
 	self.buffs[id] = buf
-	local onBegin = tb["OnBegin"]
-	if onBegin then
-		onBegin(buf)	
+	if buf.onBegin then
+		buf.onBegin(buf)
+	end
+	local AtkSkill = tb["AtkSkill"]
+	if AtkSkill and AtkSkill > 0 and releaser.robot then
+		buf.buffSkill = {AtkSkill,C.GetSysTick()+100,500}
 	end
 	buf:NotifyBegin()
-	print("NewBuff4")
 	return true
 end
 
-local function onBuffEnd(buf)
-	local onEnd = buf.tb["OnEnd"]
-	if onEnd then
-		onEnd(buf)	
+function buffmgr:OnAvatarDead()
+	for k,v in pairs(self.buffs) do
+		v:NotifyEnd()
 	end
-	buf:NotifyEnd()
+	self.buffs = {}	
 end
 
 function buffmgr:RemoveBuff(id)
@@ -135,20 +171,42 @@ function buffmgr:RemoveBuff(id)
 		return false
 	end
 	self.buffs[id] = nil
-	onBuffEnd(buf)
+	buf:NotifyEnd()
 	return true
 end
 
 function buffmgr:Tick(currenttick)
-	--print("buffmgr:Tick")
 	for k,v in pairs(self.buffs) do
 		if not v:Tick(currenttick) then
-			onBuffEnd(self.buffs[k])
+			v:NotifyEnd()
 			self.buffs[k] = nil --remove the buff
 		end
 	end
 end
 
+function buffmgr:OnEnterSee(o)
+	for k,v in pairs(self.buffs) do
+		v:NotifyBegin(o)
+	end
+end
+
+function buffmgr:HasBuff(buffid)
+	if buffid and self.buffs[buffid] then
+		return true
+	else
+		return false
+	end
+end
+
+local function StopMove(buf)
+	local avatar = buf.owner
+	if avatar then
+		avatar:StopMov()
+	end
+end
+
 return {
-	New = function (avatar) return buffmgr:new(avatar) end
+	New = function (avatar)  
+		return buffmgr:new(avatar) 
+	end
 }

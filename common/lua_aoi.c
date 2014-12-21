@@ -2,6 +2,7 @@
 #include <string.h>
 #include "lua_util.h"
 #include "aoi.h"
+#include "log.h"
 
 static uint8_t in_myscope(aoi_object *_self,aoi_object *_other){
 	/*luaObject_t self = (luaObject_t)_self->ud;
@@ -50,8 +51,11 @@ static int lua_create_aoi_obj(lua_State *L){
 
 static int lua_destroy_aoi_obj(lua_State *L){
 	aoi_object* o = lua_touserdata(L,1);
-	if(o->map) aoi_leave(o);
-	del_bitset(o->view_objs);
+	int onmapdestroy = lua_tointeger(L,2);
+	if(!onmapdestroy){
+		if(o->map) aoi_leave(o);
+		del_bitset(o->view_objs);
+	}
 	release_luaRef((luaRef_t*)o->ud);
 	free(o->ud);
 	free(o);

@@ -1,8 +1,8 @@
 local Cjson = require "cjson"
-require "Survive.common.TableSkill"
-local NetCmd = require "Survive.netcmd.netcmd"
-local Time = require "lua.time"
-
+require "SurviveServer.common.TableSkill"
+local NetCmd = require "SurviveServer.netcmd.netcmd"
+local Util = require "SurviveServer.gameserver.util"
+local Aoi = require "aoi"
 local skillmgr = {
 	skills,
 }
@@ -24,11 +24,15 @@ function skillmgr:new()
 end
 
 function skillmgr:Init(skills)
-	--self.skills = Cjson.decode(skills)
 	self.skills = {}
-	self.next_aval_tick = Time.SysTick()
-	self.skills[1030] = {id=1030,lev=1,nexttime = Time.SysTick(),tb = TableSkill[1030]}
-	--self.skills[id] = {id=id,lev=1,nexttime = Time.SysTick(),tb = TableSkill[id]}
+	if skills then
+		for k,v in pairs(skills) do
+			local id = v[1]
+			local lev = v[2]
+			self.skills[id] = {id=id,lev=lev,nexttime = C.GetSysTick(),tb = TableSkill[id]}
+		end
+	end
+	self.next_aval_tick = C.GetSysTick()
 	return self
 end
 
@@ -39,8 +43,8 @@ local function notify_atk_success(avatar,skillid,atk_type,dir,point)
 	wpk:Write_uint16(skillid)
 	wpk:Write_uint8(atk_type)
 	if atk_type == 1 then
-		wpk:Write_uint16(point.x)
-		wpk:Write_uint16(point.y)
+		wpk:Write_uint16(point[1])
+		wpk:Write_uint16(point[2])
 	elseif atk_type == 2 then
 		wpk:Write_uint16(dir)
 	end
@@ -59,175 +63,341 @@ end
 local function notify_atksuffer(atker,sufferer,skillid,damage,timetick)
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_SC_NOTIATKSUFFER)
+	wpk:Write_uint32(timetick or 0)
 	wpk:Write_uint32(atker.id)
 	wpk:Write_uint16(skillid)
 	wpk:Write_uint32(sufferer.id)
 	wpk:Write_uint32(damage)
-	wpk:Write_uint32(timetick or 0)
 	sufferer:Send2view(wpk)
 end
 
-local function notify_suffer(sufferer,damage)
+local function notify_suffer(atker,skillid,sufferer,damage,pos,timetick)
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_SC_NOTISUFFER)
+	wpk:Write_uint32(timetick or 0)	
+	wpk:Write_uint32(atker.id)
+	wpk:Write_uint16(skillid or 0)
 	wpk:Write_uint32(sufferer.id)
 	wpk:Write_uint32(damage)
+	if pos then
+		wpk:Write_uint8(1)
+		wpk:Write_uint16(pos[1])
+		wpk:Write_uint16(pos[2])
+	else
+		wpk:Write_uint8(0)
+	end
 	sufferer:Send2view(wpk)
 end
 
 --计算伤害
 local function CalDamage(atker,sufferer,skill)
 	--首先判断sufferer是否合法目标
+	local category = skill.tb["Category"] 
+	if not category or category == 0 then 
+		return 0 
+	end
 	local atkrate = atker.attr:Get("attack") - sufferer.attr:Get("defencse")
 	if atkrate < 0 then
 		atkrate = 0
 	end
-	local damage = skill.tb["Attack_Coefficient"] *atkrate + skill.lev * skill.tb["Grade_Coefficient"]
-	if damage < 0 then
-		damage = 0
-	end 
+	local damage = math.floor((skill.tb["Attack_Coefficient"] *atkrate)/1000 + skill.lev * skill.tb["Grade_Coefficient"])
+	if damage <= 0 then
+		if category == 2 then
+			if atker.buff:HasBuff(3002) then
+				damage = 50
+			else
+				damage = 10
+			end
+		end
+	end
+	local suffer_plusrate =  atker.attr:Get("suffer_plusrate")
+	if suffer_plusrate == 0 then
+		suffer_plusrate = 1
+	end
+	return math.floor(damage*suffer_plusrate)
+end
+
+local function process_hp_change(atker,suffer,skill)
+	local damage = CalDamage(atker,suffer,skill)
+	local hp = suffer.attr:Get("life")
+	if damage > hp  then
+		damage = hp
+	end
+	if damage > 0 then
+		hp = hp - damage
+		suffer.attr:Set("life",hp)
+		if hp == 0 then
+			suffer:OnDead(atker,skill.id)
+		end
+		suffer.attr:NotifyUpdate()
+		suffer.buff:RemoveBuff(3002)
+	end
 	return damage
 end
 
+function skill1060(skill,atker,sufferers,dir,point,timetick)
+	local wpk = CPacket.NewWPacket(64)
+	wpk:Write_uint16(NetCmd.CMD_SC_NOTIATKSUFFER2)
+	wpk:Write_uint32(timetick or 0)		
+	wpk:Write_uint32(atker.id)
+	wpk:Write_uint16(skill.id)
+	wpk:Write_uint16(0)
+	wpk:Write_uint16(0)	
+	local last_suffer = nil
+	if #sufferers == 0 or #sufferers ~= 3 then
+		wpk:Write_uint8(0)
+		atker:Send2Client(wpk)
+		return
+	else
+		wpk:Write_uint8(3)
+		for i=1,#sufferers do
+			local suffer = sufferers[i]
+			wpk:Write_uint32(suffer.id)
+			local damage = process_hp_change(atker,suffer,skill)			
+			wpk:Write_uint32(0-damage)			
+			wpk:Write_uint16(suffer.pos[1])
+			wpk:Write_uint16(suffer.pos[2])
+		end
+		last_suffer = sufferers[3]
+	end
+	atker:Send2view(wpk)
+	if last_suffer then
+		atker.pos = {last_suffer.pos[1],last_suffer.pos[2]}
+		Aoi.moveto(atker.aoi_obj,atker.pos[1],atker.pos[2])  
+	end	
+end
+
+function skill1120(skill,atker,sufferers,dir,point,timetick)
+	local wpk = CPacket.NewWPacket(64)
+	wpk:Write_uint16(NetCmd.CMD_SC_NOTIATKSUFFER2)
+	wpk:Write_uint32(timetick or 0)		
+	wpk:Write_uint32(atker.id)
+	wpk:Write_uint16(skill.id)
+	local atk_pos_change
+	local suffer = sufferers[1]
+	if suffer then
+		local distance = Util.Distance(atker.pos,suffer.pos)
+		if distance > Util.Pixel2Grid(500) then
+			local atker_pos = Util.ForwardTo(atker.map,atker.pos,suffer.pos,200 )
+			if atker_pos then 
+				atker.pos = {atker_pos[1],atker_pos[2]} 
+				atk_pos_change = true
+			end
+			wpk:Write_uint16(atker.pos[1])
+			wpk:Write_uint16(atker.pos[2])
+			wpk:Write_uint8(0)		
+		else
+			local suffer_pos = Util.ForwardTo(atker.map,atker.pos,suffer.pos,Util.Grid2Pixel(distance) +100)
+			if suffer_pos then 
+				atk_pos_change = true
+				atker.pos = {suffer.pos[1],suffer.pos[2]} 
+				suffer.pos = {suffer_pos[1],suffer_pos[2]}
+				Aoi.moveto(suffer.aoi_obj,suffer.pos[1],suffer.pos[2])  	
+			end	
+			wpk:Write_uint16(atker.pos[1])
+			wpk:Write_uint16(atker.pos[2])			
+			wpk:Write_uint8(1)
+			wpk:Write_uint32(suffer.id)
+			local damage = process_hp_change(atker,suffer,skill)			
+			wpk:Write_uint32(0-damage)			
+			wpk:Write_uint16(suffer.pos[1])
+			wpk:Write_uint16(suffer.pos[2])
+			suffer:StopMov()
+		end
+	else
+		local atker_pos = Util.DirTo(atker.map,atker.pos,200,dir)
+		if atker_pos then 
+			atk_pos_change = true
+			atker.pos = {atker_pos[1],atker_pos[2]} 
+		end
+		wpk:Write_uint16(atker.pos[1])
+		wpk:Write_uint16(atker.pos[2])
+		wpk:Write_uint8(0)		
+	end
+	atker:StopMov()
+	atker:Send2view(wpk)
+	Aoi.moveto(atker.aoi_obj,atker.pos[1],atker.pos[2]) 	
+end
+
 local function UseSkill(avatar,skill,byAi,param)
-	print("UseSkill")
-	if skill.nexttime > Time.SysTick() then
-		print("UseSkill1")
+	if skill.nexttime > C.GetSysTick() then
 		return false
 	end
 	local targets = {}
-	local timetick
-	local atk_type = skill.tb["Attack_Types"] 
+	local timetick = 0
+	local atk_type = skill.tb["Attack_Types"]
+	local break_move = skill.tb["Break_Move"] 
 	local dir
 	local point
 	local buf = skill.tb["Touch_Buff"]
+	local check_buf = skill.tb["Check_Buff"]
+	if check_buf and check_buf > 0 and not avatar.buff:HasBuff(check_buf) then
+		return false
+	end
 	local single_target = atk_type == 0 or atk_type == 3
 	if not byAi then -- from client
 		local rpk = param[1]
+		timetick = rpk:Read_uint32()
 		if single_target then --single
 			local target = rpk:Read_uint32()
 			target = avatar.map:GetAvatar(target)
-			if not target then
-				--notify_atk_failed(avatar,skill.id)
+			if not target or target:isDead() then
 				return false
 			end
 			if atk_type == 3 and target ~= avatar then
-				--notify_atk_failed(avatar,skill.id)
 				return false
 			end
-			timetick = rpk:Read_uint32()
 			table.insert(targets,target)
 		else -- aoe and dir
 			if atk_type == 1 then
 				point = {}
-				point.x = rpk:Read_uint16()
-				point.y = rpk:Read_uint16()
+				point[1] = rpk:Read_uint16()
+				point[2] = rpk:Read_uint16()
 			elseif atk_type == 2 then
-				dir = rpk:Read_uint16()	
+				dir = rpk:Read_uint16()
 			else
 				notify_atk_failed(avatar,skill.id)
 				return false
 			end
 			--fetch all targets
 			local size = rpk:Read_uint8()
+			--print(size)		
 			for i = 1,size do
 				local target = rpk:Read_uint32()
 				target = avatar.map:GetAvatar(target)
-				if target then
+				if target and target.teamid ~= avatar.teamid and not target:isDead() then
 					table.insert(targets,target)
+				--[[else
+					if not target then
+						print("no target")
+					elseif target.teamid == avatar.teamid then
+						print("teamid")
+					else
+						print("dead")
+					end]]--
 				end
 			end
 		end		
 	else  --from ai
 		if single_target then --single
 			local target = param[1]
-			if not target then
-				--notify_atk_failed(avatar,skill.id)
+			if not target and target:isDead() then
 				return false
 			end
 			if atk_type == 3 and target ~= avatar then
-				--notify_atk_failed(avatar,skill.id)
 				return false
 			end
 			timetick = 0
 			table.insert(targets,target)
+		elseif atk_type == 2 then			
+			dir = param[1]
+			targets = param[2]
+		elseif atk_type == 1 then
+			point = param[1]
+			targets = param[2]
+		else
+			return false
 		end
 	end
 
-	for k,v in pairs(targets) do
-		local damage = CalDamage(avatar,v,skill)
-		local hp = v.attr:Get("life")
-		if damage > hp  then
-			damage = hp
-		end
-		if damage > 0 then
-			hp = hp - damage
-			v.attr:Set("life",hp)
-			v.attr:NotifyUpdate()	
-		end
-		if single_target then
-			notify_atksuffer(avatar,v,skill.id,0-damage,timetick)
-		else
-			notify_suffer(v,0-damage)
-		end
-		if buf and buf > 0 then
-			avatar.buff:NewBuff(v,buf)
-		end
+	local suffer_function = skill.tb["Suffer_Script"]
+	if suffer_function then
+		suffer_function = _G[suffer_function]
 	end
-	if not single_target then
-		notify_atk_success(avatar,skill.id,atk_type,dir,point)
+	--print(#targets)
+	if not suffer_function then
+		for k,v in pairs(targets) do
+			local damage = process_hp_change(avatar,v,skill)			
+			if single_target then
+				notify_atksuffer(avatar,v,skill.id,0-damage,timetick)
+			else
+				local Repel_Range = skill.tb["Repel_Range"]
+				local pos
+				if Repel_Range and Repel_Range > 0 then
+					v:StopMov()
+					pos = Util.ForwardTo(avatar.map,avatar.pos,v.pos,Repel_Range)
+					if pos then
+						v.pos = pos
+						Aoi.moveto(v.aoi_obj,v.pos[1],v.pos[2]) 
+					end
+				end
+				notify_suffer(avatar,skill.id,v,0-damage,pos,timetick)
+			end
+			if buf and buf > 0 then
+				v.buff:NewBuff(v,buf)
+			end
+		end
+		if not single_target then
+			notify_atk_success(avatar,skill.id,atk_type,dir,point)
+		end
+	else
+		suffer_function(skill,avatar,targets,dir,point,timetick)
 	end
-	skill.nexttime = Time.SysTick() + skill.tb["Skill_CD"]
+	skill.nexttime = C.GetSysTick() + skill.tb["Skill_CD"]
+	if break_move and break_move > 0 then
+		avatar:StopMov()
+	end
+	if skill.tb["Category"] == 2 then
+		avatar.buff:RemoveBuff(3002)
+	end
 	return true
 end
 
 --skill request by client
 function skillmgr:UseSkill(avatar,rpk)
-	if self.next_aval_tick > Time.SysTick() then
-		return false
-	end
-	print("skillmgr:UseSkill")
 	local id = rpk:Read_uint16()
-	print("skillid",id)
 	local skill = self.skills[id]	
 	if not skill then
-		skill = {id=id,lev=1,nexttime = Time.SysTick(),tb = TableSkill[id]}
+		skill = {id=id,lev=1,nexttime = C.GetSysTick(),tb = TableSkill[id]}
 		self.skills[id] = skill
-	end	
+	end
+	local Check_Buff = skill.tb["Check_Buff"]
+	if Check_Buff and Check_Buff == 0 and self.next_aval_tick > C.GetSysTick() then
+		return false
+	end
 	if not UseSkill(avatar,skill,false,{rpk}) then
 		notify_atk_failed(avatar,id)	
 		return false
 	else
 		--update next_aval_tick
-		self.next_aval_tick = Time.SysTick() + skill.tb["Public_CD"]
+		self.next_aval_tick = C.GetSysTick() + skill.tb["Public_CD"]
 	end	
 	return true
 end
 
 --skill request by ai
-function skillmgr:UseSkillAi(avatar,skill,param)
-	print("skillmgr:UseSkillAi")
-	if self.next_aval_tick > Time.SysTick() then
-		return false
-	end	
+function skillmgr:UseSkillAi(avatar,skill,param)	
 	if not skill then
 		return false
 	end
-	return UseSkill(avatar,skill,true,param)
+	local Check_Buff = skill.tb["Check_Buff"]
+	if Check_Buff and Check_Buff == 0 and self.next_aval_tick > C.GetSysTick() then
+		return false
+	end	
+	if not UseSkill(avatar,skill,true,param) then
+		return false
+	else
+		self.next_aval_tick = C.GetSysTick() + skill.tb["Public_CD"]
+		return true
+	end
 end
 
 function skillmgr:GetAvailableSkill()
-	local tick = Time.SysTick()
-	print(self.next_aval_tick,tick)
+	local tick = C.GetSysTick()
 	if self.next_aval_tick > tick then
 		return nil
 	end
 	for k,v in pairs(self.skills) do
-		if  tick >= v.nexttime then
+		local check_buf =  v.tb["Check_Buff"] 
+		if not check_buf or check_buf == 0 and tick >= v.nexttime then
 			return v
 		end
 	end
 	return nil
+end
+
+function skillmgr:GetSkill(id)
+	return self.skills[id]
 end
 
 return {

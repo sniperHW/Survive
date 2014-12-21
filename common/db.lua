@@ -7,7 +7,7 @@ local toredis
 --建立到redis的连接
 local function connect_to_redis(ip,port)
     if toredis then
-		print("to redis disconnected")
+    	CLog.SysLog(CLog.LOG_INFO,string.format("redis %s:%d disconnected",ip,port))
     end
     toredis = nil
 	Sche.Spawn(function ()
@@ -20,10 +20,10 @@ local function connect_to_redis(ip,port)
 												end
 										end)
 			if toredis then
-				print("connect to redis success")
+				CLog.SysLog(CLog.LOG_INFO,string.format("connect to redis %s:%d success",ip,port))
 				break
 			end
-			print("try to connect to redis after 1 sec")			
+			--print("try to connect to redis after 1 sec")			
 			Sche.Sleep(1000)
 		end
 	end)	

@@ -1,4 +1,4 @@
-local NetCmd = require "Survive.netcmd.netcmd"
+local NetCmd = require "SurviveServer.netcmd.netcmd"
 
 local sock2game = {}
 local name2game = {}
@@ -15,7 +15,7 @@ local function RegRpcService(app)
 			sock.type = "game"
 			sock2game[sock] = game
 			name2game[name] = game
-			print(name .. " Login Success")
+			log_groupserver:Log(CLog.LOG_INOF,string.format("%s Login Success",name))
 			--通知gate有gameserver连上group	
 			local wpk = CPacket.NewWPacket(128)
 			wpk:Write_uint16(NetCmd.CMD_GA_NOTIFY_GAME)
@@ -41,9 +41,10 @@ end
 local function OnGameDisconnected(sock,errno)
 	local game = sock2game[sock]
 	if game then
-		print(game.name .. " disconnected")
+		log_groupserver:Log(CLog.LOG_INOF,string.format("%s disconnected",game.name))
 		for k,v in pairs(game.players) do
 			v.gamesession = nil
+			v.mapinstance = nil
 		end
 		sock2game[sock] = nil
 		game.sock = nil
@@ -52,16 +53,15 @@ local function OnGameDisconnected(sock,errno)
 end
 
 local function Bind(game,player,sessionid)
-	 game.players[player] = player
+	 game.players[sessionid] = player
 	 game.plycount = game.plycount + 1
 	 player.gamesession = {game=game,sessionid=sessionid}
 end
 
 local function UnBind(player)
-	print("Game UnBind")
 	local game = player.gamesession.game
 	if game then
-		game.players[player] = nil
+		game.players[player.gamesession.sessionid] = nil
 		game.plycount = game.plycount - 1
 		player.gamesession = nil
 	end

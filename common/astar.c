@@ -32,8 +32,7 @@ static inline AStarNode *get_node(AStar_t astar,int x,int y)
 }
 
 
-AStar_t create_AStar(int xsize,int ysize,int *values){
-	printf("create_AStar\n");
+AStar_t create_AStar(int xsize,int ysize,int *flags){
 	AStar_t astar = calloc(1,sizeof(*astar)+sizeof(AStarNode)*xsize*ysize);
 	astar->open_list = minheap_create(xsize*ysize,_less);
 	kn_dlist_init(&astar->close_list);
@@ -49,7 +48,7 @@ AStar_t create_AStar(int xsize,int ysize,int *values){
 			AStarNode *tmp = &astar->map[i*xsize+j];
 			tmp->x = j;
 			tmp->y = i;
-			tmp->value = values[i*xsize+j];
+			tmp->block = flags[i*xsize+j];
 		}
 	}	
 	return astar;
@@ -74,7 +73,7 @@ static inline kn_dlist* get_neighbors(AStar_t astar,AStarNode *node)
 		if(tmp){
 			if(tmp->list_node.pre || tmp->list_node.next)
 				continue;//在close表中,不处理
-			if(tmp->value != 0xFFFFFFFF)
+			if(!tmp->block)
 				kn_dlist_push(&astar->neighbors,(kn_dlist_node*)tmp);
 		}
 	}
@@ -85,7 +84,7 @@ static inline kn_dlist* get_neighbors(AStar_t astar,AStarNode *node)
 }
 
 //计算到达相临节点需要的代价
-static inline double cost_2_neighbor(AStarNode *from,AStarNode *to)
+static inline float cost_2_neighbor(AStarNode *from,AStarNode *to)
 {
 	int delta_x = from->x - to->x;
 	int delta_y = from->y - to->y;
@@ -106,7 +105,7 @@ static inline double cost_2_neighbor(AStarNode *from,AStarNode *to)
 	}	
 }
 
-static inline double cost_2_goal(AStarNode *from,AStarNode *to)
+static inline float cost_2_goal(AStarNode *from,AStarNode *to)
 {
 	int delta_x = abs(from->x - to->x);
 	int delta_y = abs(from->y - to->y);
@@ -123,10 +122,16 @@ static inline void reset(AStar_t astar){
 	minheap_clear(astar->open_list,_clear);
 }
 
+int     isblock(AStar_t astar,int x,int y){
+	AStarNode *n = get_node(astar,x,y);
+	if(!n) return 1;
+	else return n->block  ? 1 : 0;
+}
+
 int find_path(AStar_t astar,int x,int y,int x1,int y1,kn_dlist *path){
 	AStarNode *from = get_node(astar,x,y);
 	AStarNode *to = get_node(astar,x1,y1);
-	if(!from || !to || from == to || to->value == 0xFFFFFFFF)		
+	if(!from || !to || from == to || to->block)		
 		return 0;
 	minheap_insert(astar->open_list,&from->heap);	
 	AStarNode *current_node = NULL;	
@@ -162,7 +167,7 @@ int find_path(AStar_t astar,int x,int y,int x1,int y1,kn_dlist *path){
 			while((n = (AStarNode*)kn_dlist_pop(neighbors))){
 				if(n->heap.index)//在openlist中
 				{
-					double new_G = current_node->G + cost_2_neighbor(current_node,n);
+					float new_G = current_node->G + cost_2_neighbor(current_node,n);
 					if(new_G < n->G)
 					{
 						//经过当前neighbor路径更佳,更新路径

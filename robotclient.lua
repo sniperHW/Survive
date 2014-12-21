@@ -1,9 +1,9 @@
-local NetCmd = require "Survive.netcmd.netcmd"
+local NetCmd = require "SurviveServer.netcmd.netcmd"
 local App = require "lua.application"
 local socket = require "lua.socket"
 local sche = require "lua.sche"
-local MsgHandler = require "Survive.netcmd.msghandler"
-local Name2idx = require "Survive.common.name2idx"
+local MsgHandler = require "SurviveServer.netcmd.msghandler"
+local Name2idx = require "SurviveServer.common.name2idx"
 
 
 local function ReadAttr(rpk)
@@ -13,7 +13,6 @@ local function ReadAttr(rpk)
 		local attrname = Name2idx.Name(rpk:Read_uint8())
 		attr[attrname] = rpk:Read_uint32()
 	end	
-	--print("attr size:",size)
 	return attr
 end
 
@@ -21,13 +20,15 @@ end
 local Robot = App.New()
 
 MsgHandler.RegHandler(NetCmd.CMD_GC_CREATE,function (sock,rpk)
-	print("CMD_GC_CREATE")
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_CG_CREATE)	
-	wpk:Write_uint8(2)
+	wpk:Write_uint8(math.random(1,2))
 	wpk:Write_string(sock.actname)
-	wpk:Write_uint8(1)
+	wpk:Write_uint16(5001)
 	sock:Send(wpk)
+end)
+
+MsgHandler.RegHandler(NetCmd.CMD_GC_BACK2MAIN,function (sock,rpk)
 end)
 
 
@@ -37,22 +38,33 @@ MsgHandler.RegHandler(NetCmd.CMD_SC_ENTERMAP,function (sock,rpk)
 		ply.map = rpk:Read_uint16()
 		--角色基本属性
 		ply.attr = ReadAttr(rpk)		
-		for k,v in pairs(ply.attr) do
-			print(k .. ":" .. v)
-		end		
+
+		ply.battleitems = {}
+		local size = rpk:Read_uint8()
+		for i=1,size do
+			local pos = rpk:Read_uint8()
+			local item = {}
+			item.id = rpk:Read_uint16()
+			item.count = rpk:Read_uint16()
+			ply.battleitems[pos] = item
+		end
 		ply.id  = rpk:Read_uint32()
-		print("self id:" .. ply.id) 
 	end
 end)
 
 local function Mov(sock)
-	local x = math.random(100,150)--math.random(10,400)
-	local y = math.random(100,150)--math.random(10,200)
+	local x = math.random(10,400)--math.random(10,400)
+	local y = math.random(10,200)--math.random(10,200)
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_CS_MOV)
 	wpk:Write_uint16(x)
 	wpk:Write_uint16(y)
-	--print("MoveTo",x,y,sock.ply.id)
+	sock:Send(wpk)	
+end
+
+local function LeaveMap(sock)
+	local wpk = CPacket.NewWPacket(64)
+	wpk:Write_uint16(NetCmd.CMD_CG_LEAVEMAP)
 	sock:Send(wpk)	
 end
 
@@ -73,21 +85,17 @@ MsgHandler.RegHandler(NetCmd.CMD_SC_ENTERSEE,function (sock,rpk)
 			for k,v in pairs(attr) do
 				print(k,v)
 			end
-			print("self enter see",nickname,ply.teamid)
-			--Mov(sock)				
-		else
-			print("enter see",id)
+			Mov(sock)
+			--LeaveMap(sock)				
 		end
 	end
 end)
 
 MsgHandler.RegHandler(NetCmd.CMD_SC_MOV_FAILED,function (sock,rpk)
-	--print("CMD_SC_MOV_FAILED")
 	Mov(sock)
 end)
 
 MsgHandler.RegHandler(NetCmd.CMD_SC_MOV_ARRI,function (sock,rpk)
-	--print("CMD_SC_MOV_ARRI")
 	Mov(sock)
 end)
 
@@ -97,7 +105,6 @@ end)
 
 MsgHandler.RegHandler(NetCmd.CMD_SC_LEAVESEE,function (sock,rpk)
 	local id = rpk:Read_uint32(rpk)
-	print("leave see",id)
 end)
 
 
@@ -106,28 +113,15 @@ MsgHandler.RegHandler(NetCmd.CMD_GC_BEGINPLY,function (sock,rpk)
 	local ply = {}
 	
 	ply.avatarid = rpk:Read_uint16()
-	--print("avatarid:" .. ply.avatarid)
 	ply.nickname = rpk:Read_string()
-	--print("nickname:" .. ply.nickname)
 	--角色基本属性
 	ply.attr = ReadAttr(rpk)
 	
-	--for k,v in pairs(ply.attr) do
-	--	print(k .. ":" .. v)
-	--end
 	--背包
 	ply.bag = {}
 	ply.bag.bagsize = rpk:Read_uint8()
-	print("bagsize:" .. ply.bag.bagsize)
-	--6个战场带入物品的背包索引
-	for i=1,6 do
-		local name = "battle" .. i
-		ply.bag[name] = rpk:Read_uint8()
-	end
-	--print("here1")
 	--背包位置
-	local size = rpk:Read_uint8()
-	print("bag size:",size)		
+	local size = rpk:Read_uint8()	
 	for i=1,size do
 		local idx = rpk:Read_uint8()
 		local item = {}
@@ -142,12 +136,10 @@ MsgHandler.RegHandler(NetCmd.CMD_GC_BEGINPLY,function (sock,rpk)
 			end
 		end
 		ply.bag[idx] = item		
-	end	
-	--print("here2")		
+	end		
 	--技能
 	ply.skill = {}	
 	size = rpk:Read_uint16()
-	print("skill size:" .. size)
 	for i=1,size do
 		local skill = {}
 		skill.id = rpk:Read_uint16()
@@ -155,34 +147,56 @@ MsgHandler.RegHandler(NetCmd.CMD_GC_BEGINPLY,function (sock,rpk)
 		ply.skill[skill.id] = skill
 	end		
 	
+	--packet.everydaysign = {}
+    	--packet.everydaysign.daycount = rpk:Read_uint8()
+    	--packet.everydaysign.count = rpk:Read_uint8()
+    	--packet.everydaysign.signAble = rpk:Read_uint8()
+
+	--packet.server_timestamp = rpk:Read_uint32()	
+	rpk:Read_uint8()
+	rpk:Read_uint8()
+	rpk:Read_uint8()
+	rpk:Read_uint32()
+
 	print(ply.nickname .. " begin play")
+	--sock:Close()
 	sock.ply = ply
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_CG_ENTERMAP)	
-	wpk:Write_uint8(1)
+	wpk:Write_uint8(201)
 	sock:Send(wpk)	
-	
 end)
 
-Robot:Run(function ()
-	for i=401,401 do
-		sche.Spawn(function () 
-			local client = socket.New(CSocket.AF_INET,CSocket.SOCK_STREAM,CSocket.IPPROTO_TCP)
-			if client:Connect("192.168.0.87",8010) then
-				print("connect to 127.0.0.1:8810 error")
-				return
-			end
-			client:Establish(CSocket.rpkdecoder())
-			Robot:Add(client,MsgHandler.OnMsg,function () print("robot" .. i .. " disconnected") end)
-			local wpk = CPacket.NewWPacket(64)
-			wpk:Write_uint16(NetCmd.CMD_CA_LOGIN)
-			wpk:Write_uint8(2)
-			wpk:Write_string("robot" .. i)
-			client.actname = "robot" .. i
-			client:Send(wpk)
-		end)	
+
+function ConnectAndLogin(name)
+	local client = socket.New(CSocket.AF_INET,CSocket.SOCK_STREAM,CSocket.IPPROTO_TCP)
+	--if client:Connect("121.41.37.227",8010) then
+	if client:Connect("192.168.0.87",8010) then
+		print("connect to 127.0.0.1:8810 error")
+		return
 	end
-end)
+	client:Establish(CSocket.rpkdecoder())
+	Robot:Add(client,MsgHandler.OnMsg,
+		      function () 
+		      	sche.Spawn(ConnectAndLogin,name)
+		      	collectgarbage("collect")
+		      end
+	)
+	local wpk = CPacket.NewWPacket(64)
+	wpk:Write_uint16(NetCmd.CMD_CA_LOGIN)
+	wpk:Write_uint8(1)
+	wpk:Write_string(name)
+	client.actname = name
+	client:Send(wpk)	
+
+end
+
+
+for i=1,50 do
+	local name = "test" .. i
+	sche.Spawn(ConnectAndLogin,name)
+end
+
 
 
 

@@ -1,11 +1,41 @@
 package.cpath = "SurviveServer/?.so"
-local Avatar = require "Survive.gameserver.avatar"
-local NetCmd = require "Survive.netcmd.netcmd"
-local Time = require "lua.time"
+local Avatar = require "SurviveServer.gameserver.avatar"
+local NetCmd = require "SurviveServer.netcmd.netcmd"
 local Aoi = require "aoi"
-local Buff = require "Survive.gameserver.buff"
-local Attr = require "Survive.gameserver.attr"
-local Skill = require "Survive.gameserver.skill"
+local Buff = require "SurviveServer.gameserver.buff"
+local Attr = require "SurviveServer.gameserver.attr"
+local Skill = require "SurviveServer.gameserver.skill"
+
+local battleitems = {}
+
+
+function battleitems:new(items)
+	local o = {}   
+	setmetatable(o, self)
+	self.__index = self
+	o.items = {}
+	items = items or {}
+	for k,v in pairs(items) do
+		o.items[v[1]] = {id=v[2],count=v[3]}
+	end
+	return o	
+end
+
+function battleitems:on_entermap(wpk)
+	local wpos = wpk:Get_write_pos()
+	wpk:Write_uint8(0)
+	local c = 0
+	for i=5,10 do
+		local item = self.items[i]
+		if  item then
+			wpk:Write_uint8(i)
+			wpk:Write_uint16(item.id)
+			wpk:Write_uint16(item.count)
+			c = c + 1
+		end
+	end	
+	wpk:Rewrite_uint8(wpos,c)
+end
 
 local player = Avatar.New()
 
@@ -16,13 +46,15 @@ function player:new()
 	return o	
 end
 
-function player:Init(id,avatid,map,nickname,actname,groupsession,attr,skillmgr,pos,dir,teamid)
+function player:Init(id,avatid,map,nickname,actname,groupsession,attr,skillmgr,pos,dir,teamid,items)
 	self.id = id
 	self.map = map
 	self.nickname = nickname
 	self.actname = actname 
 	self.groupsession = groupsession
 	self.attr = Attr.New(self,attr)
+	self.attr.attr[23] = 10000
+	self.attr.attr[24] = 10000
 	self.skillmgr = skillmgr
 	self.pos = pos
 	self.dir = dir
@@ -36,7 +68,8 @@ function player:Init(id,avatid,map,nickname,actname,groupsession,attr,skillmgr,p
 	self.path = nil
 	self.speed = 20
 	self.aoi_obj = Aoi.create_obj(self)
-	self.buff = Buff.New(self)	
+	self.buff = Buff.New(self)
+	self.battleitems = battleitems:new(items)
 	return self
 end
 
@@ -58,6 +91,7 @@ function player:on_entermap()
 	wpk:Write_uint16(NetCmd.CMD_SC_ENTERMAP)
 	wpk:Write_uint16(self.map.maptype)
 	self.attr:on_entermap(wpk)
+	self.battleitems:on_entermap(wpk)
 	wpk:Write_uint32(self.id)
 	local gatesession = self.gatesession
 	if gatesession then
@@ -85,7 +119,7 @@ function player:ReConnect(maptype)
 end
 
 return {
-	New = function (id,avatid,map,nickname,actname,groupsession,attr,skillmgr,pos,dir) 
-			return player:new():Init(id,avatid,map,nickname,actname,groupsession,attr,skillmgr,pos,dir) 
+	New = function (id,avatid,map,nickname,actname,groupsession,attr,skillmgr,pos,dir,teamid,items) 
+			return player:new():Init(id,avatid,map,nickname,actname,groupsession,attr,skillmgr,pos,dir,teamid,items) 
 	             end,
 } 

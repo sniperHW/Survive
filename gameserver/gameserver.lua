@@ -1,16 +1,18 @@
+log_gameserver = CLog.New("gameserver")
 local TcpServer = require "lua.tcpserver"
 local App = require "lua.application"
 local RPC = require "lua.rpc"
-local NetCmd = require "Survive.netcmd.netcmd"
-local MsgHandler = require "Survive.netcmd.msghandler"
+local NetCmd = require "SurviveServer.netcmd.netcmd"
+local MsgHandler = require "SurviveServer.netcmd.msghandler"
 local Sche = require "lua.sche"
 local Socket = require "lua.socket"
-local Gate = require "Survive.gameserver.gate"
+local Gate = require "SurviveServer.gameserver.gate"
 local Timer = require "lua.timer"
-local Map = require "Survive.gameserver.map"
+local Map = require "SurviveServer.gameserver.map"
 
-local Config = require "Survive.common.config"
+local Config = require "SurviveServer.common.config"
 
+App.SetMaxRecverPerSocket(65535)
 local ret,err = Config.Init("测试1服","127.0.0.1",6379)
 if ret then
 
@@ -30,7 +32,7 @@ if ret then
 
 	local function connect_to_group()
 		if togroup then
-			print("togroup disconnected")
+			log_gameserver:Log(CLog.LOG_INFO,string.format("groupserver disconnected"))
 		end
 		togroup = nil
 		Sche.Spawn(function ()
@@ -44,42 +46,50 @@ if ret then
 					local err,ret = rpccaller:Call("game1",ip,port)
 					if err or ret == "Login failed" then
 						if err then
-							print(err)
+							log_gameserver:Log(CLog.LOG_INFO,string.format("GameLogin RPC error:%s",err))
 						else
-							print(ret)
+							log_gameserver:Log(CLog.LOG_INFO,string.format("GameLogin RPC error:%s","Login failed"))
 						end
 						sock:Close()
 						Exit()	
 					end
 					togroup = sock
-					print("connect to group success")				
+					log_gameserver:Log(CLog.LOG_INFO,string.format("connect to groupserver success"))				
 					break
+				else
+					sock:Close()
 				end
-				print("try to connect to group after 1 sec")
 				Sche.Sleep(1000)
 			end
 		end)	
 	end
 
 	connect_to_group()
-	gameApp:Run()
+	--gameApp:Run()
 
 
 	while not togroup do
 		Sche.Yield()
 	end
 
+	--[[Sche.Spawn( function ()
+		while true do
+			collectgarbage("collect")
+			Sche.Sleep(5000)
+		end
+	end)]]--
+
 	if TcpServer.Listen(ip,port,function (sock)
 			sock:Establish(CSocket.rpkdecoder(65535))
 			gameApp:Add(sock,MsgHandler.OnMsg,Gate.OnGateDisconnected)		
 		end) then
-		print(string.format("start server on %s:%d error",ip,port))
+		log_gameserver:Log(CLog.LOG_ERROR,string.format("start server %s:%d error",ip,port))
 		Exit()	
 	else
-		print(string.format("start server on %s:%d",ip,port))
+		log_gameserver:Log(CLog.LOG_INFO,string.format("start server on %s:%d",ip,port))
 	end
 
 else
-	print("get config error:" .. err)
+	log_gameserver:Log(CLog.LOG_ERROR,"get config error:" .. err)
 	Exit()		
 end

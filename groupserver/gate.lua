@@ -1,4 +1,4 @@
-local Game = require "Survive.groupserver.game"
+local Game = require "SurviveServer.groupserver.game"
 
 local sock2gate = {}
 local name2gate = {}
@@ -15,7 +15,7 @@ local function RegRpcService(app)
 			sock.type = "gate"
 			sock2gate[sock] = gate
 			name2gate[name] = gate
-			print(name .. " Login Success")
+			log_groupserver:Log(CLog.LOG_INOF,string.format("%s Login Success",name))
 			return Game.GetGames() --将gameserver列表返回给gateserver
 		else
 			return "Login failed"
@@ -26,7 +26,7 @@ end
 local function OnGateDisconnected(sock,errno)
 	local gate = sock2gate[sock]
 	if gate then
-		print(gate.name .. " disconnected")
+		log_groupserver:Log(CLog.LOG_INOF,string.format("%s disconnected",gate.name))
 		for k,v in pairs(gate.players) do
 			v.gatesession = nil
 		end
@@ -37,14 +37,14 @@ local function OnGateDisconnected(sock,errno)
 end
 
 local function Bind(gate,player,sessionid)
-	 gate.players[player] = player
+	 gate.players[sessionid] = player
 	 player.gatesession = {gate=gate,sessionid=sessionid}
 end
 
 local function UnBind(player)
 	local gate = player.gatesession.gate
 	if gate then
-		gate.players[player] = nil
+		gate.players[player.gatesession.sessionid] = nil
 		player.gatesession = nil
 	end
 end

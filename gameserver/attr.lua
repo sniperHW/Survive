@@ -1,45 +1,44 @@
 local Cjson = require "cjson"
-local Name2idx = require "Survive.common.name2idx"
-local NetCmd = require "Survive.netcmd.netcmd"
+local Name2idx = require "SurviveServer.common.name2idx"
+local NetCmd = require "SurviveServer.netcmd.netcmd"
 local attr = {}
 
 --需要同步到视野的属性
 local attr2view ={
-	level = 1,--角色等级
-	life = 23,    --当前生命
-	maxlife = 24, --最大生命
+	level = true,--角色等级
+	life = true,    --当前生命
+	maxlife = true, --最大生命
 }
 
 
 function attr:new()
-  local o = {}   
+  local o = {} 
+  self.__index = self 	   
   setmetatable(o, self)
-  self.__index = self
   return o
 end
 
 function attr:Init(avatar,baseinfo)
-	print("attr:Init1")
 	self.attr = {}
 	for k,v in pairs(baseinfo) do
 		if type(v) ~= "userdata" then
 			self.attr[k] = v
 		end
 	end
-	print("attr:Init2")
+	self.attr[Name2idx.Idx("life")] = self.attr[Name2idx.Idx("maxlife")]
 	self.avatar = avatar		
 	return self
 end
 
 function attr:Get(name)
 	local idx = Name2idx.Idx(name) or 0
-	return self.attr[idx]
+	return self.attr[idx] or 0
 end
 
 function attr:Set(name,val)
 	local idx = Name2idx.Idx(name) or 0
 	if self.attr[idx] then
-		self.attr[idx] = val
+		self.attr[idx] = val or 0
 		self.flag = self.flag or {}
 		self.flag[idx] = true
 	end
@@ -51,7 +50,7 @@ function attr:on_entermap(wpk)
 	local c = 0
 	for k,v in pairs(self.attr) do
 		wpk:Write_uint8(k)
-		wpk:Write_uint32(self.attr[k])
+		wpk:Write_uint32(self.attr[k] or 0)
 		c = c + 1
 	end			
 	wpk:Rewrite_uint8(wpos,c)	
@@ -62,9 +61,9 @@ function attr:on_entersee(wpk)
 	wpk:Write_uint8(0)
 	local c = 0
 	for k,v in pairs(self.attr) do
-		if attr2view[Name2idx.Name(k)] then
+		if attr2view[Name2idx.Name(k)] then		
 			wpk:Write_uint8(k)
-			wpk:Write_uint32(self.attr[k])
+			wpk:Write_uint32(self.attr[k] or 0)
 			c = c + 1
 		end
 	end				
@@ -93,11 +92,11 @@ function attr:NotifyUpdate()
 		if self.flag[k] then
 			if attr2view[Name2idx.Name(k)] then
 				wpk2view:Write_uint8(k)
-				wpk2view:Write_uint32(self.attr[k])
+				wpk2view:Write_uint32(self.attr[k] or 0)
 				c1 = c1 + 1
 			end
 			wpk2self:Write_uint8(k)
-			wpk2self:Write_uint32(self.attr[k])			
+			wpk2self:Write_uint32(self.attr[k] or 0)			
 			c2 = c2 + 1						
 		end
 	end

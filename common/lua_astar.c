@@ -108,13 +108,13 @@ static int lua_findpath(lua_State *L){
 	return 1;
 }
 
-#define PushPoint(L,X,Y,I)\
+#define PushPoint(L,X,Y,I) do{\
 	lua_newtable(L);\
               lua_pushinteger(L,X);\
               lua_rawseti(L,-2,1);\
               lua_pushinteger(L,Y);\
               lua_rawseti(L,-2,2);\
-              lua_rawseti(L,-2,(I)) 
+              lua_rawseti(L,-2,(I));}while(0) 
 
 static int lua_lineto(lua_State *L){
 	AStar_t astar = lua_touserdata(L,1);

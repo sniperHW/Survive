@@ -40,6 +40,44 @@ function attr:Set(name,val)
 	end
 end
 
+function attr:Add(name,val)
+	if val < 0 then
+		return nil
+	end
+	local idx = Name2idx.Idx(name) or 0
+	if idx > 0 then
+		local old = self.attr[idx]
+		local new = old + val
+		if new < old or new > 0xFFFFFFFF then
+			new = 0xFFFFFFFF
+		end
+		self.attr[idx] = new or 0
+		self.flag = self.flag or {}
+		self.flag[idx] = true
+		return new		
+	end
+	return nil
+end
+
+function attr:Sub(name,val)
+	if val < 0 then
+		return nil
+	end
+	local idx = Name2idx.Idx(name) or 0
+	if idx > 0 then
+		local old = self.attr[idx]
+		local new = old - val
+		if new < 0 or new > old then
+			new = 0
+		end
+		self.attr[idx] = new or 0
+		self.flag = self.flag or {}
+		self.flag[idx] = true
+		return new		
+	end
+	return nil
+end
+
 function attr:Pack(wpk,modfy)	
 	if modfy and (not self.flag) then
 		wpk:Write_uint8(0)

@@ -136,29 +136,11 @@ function everydaytask:GetAward(type)
 		local id = v[1]
 		local count = v[2]
 		if id == 4001 then
-			local shell = ply.attr:Get("shell")
-			if shell + count >= 0xFFFFFFFF then
-				shell = 0xFFFFFFFF
-			else
-				shell = shell + count
-			end
-			ply.attr:Set("shell",shell)
+			ply.attr:Add("shell",count)
 		elseif id == 4002 then
-			local pearl = ply.attr:Get("pearl")
-			if pearl + count >= 0xFFFFFFFF then
-				pearl = 0xFFFFFFFF
-			else
-				pearl = pearl + count
-			end
-			ply.attr:Set("pearl",pearl)
+			ply.attr:Add("pearl",count)
 		elseif id == 4003 then
-			local soul = ply.attr:Get("soul")
-			if soul + count >= 0xFFFFFFFF then
-				soul = 0xFFFFFFFF
-			else
-				soul = soul + count
-			end
-			ply.attr:Set("soul",soul)
+			ply.attr:Add("soul",count)
 		elseif id == 4004 then
 			ply:AddExp(count)
 		elseif id == 4005 then

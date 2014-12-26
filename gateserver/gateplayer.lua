@@ -1,6 +1,6 @@
 local LinkQue = require "lua.linkque"
-local NetCmd = require "SurviveServer.netcmd.netcmd"
-local IdMgr = require "SurviveServer.common.idmgr"
+local NetCmd = require "Survive.netcmd.netcmd"
+local IdMgr = require "Survive.common.idmgr"
 --local freeidx = LinkQue.New()
 
 local id2player = {}

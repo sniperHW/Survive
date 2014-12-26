@@ -1,9 +1,9 @@
 local Cjson = require "cjson"
-local Db = require "SurviveServer.common.db"
-local NetCmd = require "SurviveServer.netcmd.netcmd"
-local MsgHandler = require "SurviveServer.netcmd.msghandler"
-local Task = require "SurviveServer.groupserver.everydaytask"
-require "SurviveServer.common.TableSkill"
+local Db = require "Survive.common.db"
+local NetCmd = require "Survive.netcmd.netcmd"
+local MsgHandler = require "Survive.netcmd.msghandler"
+local Task = require "Survive.groupserver.everydaytask"
+require "Survive.common.TableSkill"
 local skills = {}
 
 function skills:new()

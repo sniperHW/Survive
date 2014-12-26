@@ -1,7 +1,7 @@
-local Name2idx = require "SurviveServer.common.name2idx"
-local Bag = require "SurviveServer.groupserver.bag"
-require "SurviveServer.common.TableItem"
-require "SurviveServer.common.TableEquipment"
+local Name2idx = require "Survive.common.name2idx"
+local Bag = require "Survive.groupserver.bag"
+require "Survive.common.TableItem"
+require "Survive.common.TableEquipment"
 
 local gm_command={
 	setattr = function (ply,param)

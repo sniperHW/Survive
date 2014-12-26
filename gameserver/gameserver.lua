@@ -2,15 +2,15 @@ log_gameserver = CLog.New("gameserver")
 local TcpServer = require "lua.tcpserver"
 local App = require "lua.application"
 local RPC = require "lua.rpc"
-local NetCmd = require "SurviveServer.netcmd.netcmd"
-local MsgHandler = require "SurviveServer.netcmd.msghandler"
+local NetCmd = require "Survive.netcmd.netcmd"
+local MsgHandler = require "Survive.netcmd.msghandler"
 local Sche = require "lua.sche"
 local Socket = require "lua.socket"
-local Gate = require "SurviveServer.gameserver.gate"
+local Gate = require "Survive.gameserver.gate"
 local Timer = require "lua.timer"
-local Map = require "SurviveServer.gameserver.map"
+local Map = require "Survive.gameserver.map"
 
-local Config = require "SurviveServer.common.config"
+local Config = require "Survive.common.config"
 
 App.SetMaxRecverPerSocket(65535)
 local ret,err = Config.Init("测试1服","127.0.0.1",6379)

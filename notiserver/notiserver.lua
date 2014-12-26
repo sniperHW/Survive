@@ -3,12 +3,12 @@ log_notiserver = CLog.New("notiserver")
 local TcpServer = require "lua.tcpserver"
 local App = require "lua.application"
 local RPC = require "lua.rpc"
-local NetCmd = require "SurviveServer.netcmd.netcmd"
-local MsgHandler = require "SurviveServer.netcmd.msghandler"
-local Db = require "SurviveServer.common.db"
+local NetCmd = require "Survive.netcmd.netcmd"
+local MsgHandler = require "Survive.netcmd.msghandler"
+local Db = require "Survive.common.db"
 local Sche = require "lua.sche"
-local Gate = require "SurviveServer.notiserver.gate"
-local Config = require "SurviveServer.common.config"
+local Gate = require "Survive.notiserver.gate"
+local Config = require "Survive.common.config"
 
 --[[
 local ret,err = Config.Init("测试1服","127.0.0.1",6379)

@@ -1,6 +1,6 @@
 local Cjson = require "cjson"
-local NetCmd = require "SurviveServer.netcmd.netcmd"
-local Db = require "SurviveServer.common.db"
+local NetCmd = require "Survive.netcmd.netcmd"
+local Db = require "Survive.common.db"
 
 
 --achievement's achieve type

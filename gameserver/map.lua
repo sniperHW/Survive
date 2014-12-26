@@ -1,21 +1,21 @@
-package.cpath = "SurviveServer/?.so"
-local Avatar = require "SurviveServer.gameserver.avatar"
-local Player = require "SurviveServer.gameserver.gameplayer"
+package.cpath = "Survive/?.so"
+local Avatar = require "Survive.gameserver.avatar"
+local Player = require "Survive.gameserver.gameplayer"
 local LinkQue = require "lua.linkque"
 local Cjson = require "cjson"
-local Gate = require "SurviveServer.gameserver.gate"
-local Attr = require "SurviveServer.gameserver.attr"
-local Skill = require "SurviveServer.gameserver.skill"
+local Gate = require "Survive.gameserver.gate"
+local Attr = require "Survive.gameserver.attr"
+local Skill = require "Survive.gameserver.skill"
 local Aoi = require "aoi"
 local Astar = require "astar"
 local Timer = require "lua.timer"
-local NetCmd = require "SurviveServer.netcmd.netcmd"
-local MsgHandler = require "SurviveServer.netcmd.msghandler"
-local IdMgr = require "SurviveServer.common.idmgr"
+local NetCmd = require "Survive.netcmd.netcmd"
+local MsgHandler = require "Survive.netcmd.msghandler"
+local IdMgr = require "Survive.common.idmgr"
 local Sche = require "lua.sche"
-local MapLogic = require "SurviveServer.gameserver.maplogic"
-local Util = require "SurviveServer.gameserver.util"
-require "SurviveServer.common.TableMap"
+local MapLogic = require "Survive.gameserver.maplogic"
+local Util = require "Survive.gameserver.util"
+require "Survive.common.TableMap"
 
 --local mapdef = {
 --	[1] = {
@@ -30,7 +30,7 @@ require "SurviveServer.common.TableMap"
 
 for k,v in pairs(TableMap) do
 	if k ~= 205 then
-		v.astar,v.xcount,v.ycount = Astar.create("./SurviveServer/gameserver/" .. v.Colision)
+		v.astar,v.xcount,v.ycount = Astar.create("./Survive/gameserver/" .. v.Colision)
 		if not v.astar then
 			log_gameserver:Log(CLog.LOG_ERROR,"astar init error:" .. v.Colision)
 		else

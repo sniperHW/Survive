@@ -1,7 +1,7 @@
 local Cjson = require "cjson"
-local Name2idx = require "SurviveServer.common.name2idx"
-local NetCmd = require "SurviveServer.netcmd.netcmd"
-local Db = require "SurviveServer.common.db"
+local Name2idx = require "Survive.common.name2idx"
+local NetCmd = require "Survive.netcmd.netcmd"
+local Db = require "Survive.common.db"
 local attr = {}
 
 function attr:new()

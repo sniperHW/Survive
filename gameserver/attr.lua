@@ -1,6 +1,6 @@
 local Cjson = require "cjson"
-local Name2idx = require "SurviveServer.common.name2idx"
-local NetCmd = require "SurviveServer.netcmd.netcmd"
+local Name2idx = require "Survive.common.name2idx"
+local NetCmd = require "Survive.netcmd.netcmd"
 local attr = {}
 
 --需要同步到视野的属性

@@ -1,6 +1,6 @@
-package.cpath = "SurviveServer/?.so"
-local Avatar = require "SurviveServer.gameserver.avatar"
-local NetCmd = require "SurviveServer.netcmd.netcmd"
+package.cpath = "Survive/?.so"
+local Avatar = require "Survive.gameserver.avatar"
+local NetCmd = require "Survive.netcmd.netcmd"
 local Aoi = require "aoi"
 
 local areaTrigger = Avatar.New()

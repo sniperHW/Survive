@@ -1,4 +1,4 @@
-local NetCmd = require "SurviveServer.netcmd.netcmd"
+local NetCmd = require "Survive.netcmd.netcmd"
 
 local sock2game = {}
 local name2game = {}

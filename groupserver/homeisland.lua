@@ -1,10 +1,10 @@
-local NetCmd = require "SurviveServer.netcmd.netcmd"
-local Util = require "SurviveServer.groupserver.util"
-local MsgHandler = require "SurviveServer.netcmd.msghandler"
-local Name2idx = require "SurviveServer.common.name2idx"
-require "SurviveServer.common.TableFish"
-require "SurviveServer.common.TableGather"
-require "SurviveServer.common.TablePractice"
+local NetCmd = require "Survive.netcmd.netcmd"
+local Util = require "Survive.groupserver.util"
+local MsgHandler = require "Survive.netcmd.msghandler"
+local Name2idx = require "Survive.common.name2idx"
+require "Survive.common.TableFish"
+require "Survive.common.TableGather"
+require "Survive.common.TablePractice"
 
 --[25] = { ["Jism"] = 3719, ["Drugs"] = "5501:60:34"}, gather
 --[15] = { ["Shell"] = 1000, ["Pearl"] = "4002:5:1"},fish

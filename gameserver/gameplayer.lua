@@ -1,10 +1,10 @@
-package.cpath = "SurviveServer/?.so"
-local Avatar = require "SurviveServer.gameserver.avatar"
-local NetCmd = require "SurviveServer.netcmd.netcmd"
+package.cpath = "Survive/?.so"
+local Avatar = require "Survive.gameserver.avatar"
+local NetCmd = require "Survive.netcmd.netcmd"
 local Aoi = require "aoi"
-local Buff = require "SurviveServer.gameserver.buff"
-local Attr = require "SurviveServer.gameserver.attr"
-local Skill = require "SurviveServer.gameserver.skill"
+local Buff = require "Survive.gameserver.buff"
+local Attr = require "Survive.gameserver.attr"
+local Skill = require "Survive.gameserver.skill"
 
 local battleitems = {}
 

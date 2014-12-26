@@ -1,4 +1,4 @@
-package.cpath = "SurviveServer/?.so"
+package.cpath = "Survive/?.so"
 local Astar = require "astar"
 
 

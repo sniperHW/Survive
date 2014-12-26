@@ -1,10 +1,10 @@
-local Game = require "SurviveServer.groupserver.game"
+local Game = require "Survive.groupserver.game"
 local RPC = require "lua.rpc"
 local LinkQue = require "lua.linkque"
 local Sche = require "lua.sche"
-local NetCmd = require "SurviveServer.netcmd.netcmd"
-local Bag = require "SurviveServer.groupserver.bag"
-require "SurviveServer.common.TableMap"
+local NetCmd = require "Survive.netcmd.netcmd"
+local Bag = require "Survive.groupserver.bag"
+require "Survive.common.TableMap"
 
 
 --地图实例

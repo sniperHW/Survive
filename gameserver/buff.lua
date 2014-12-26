@@ -1,6 +1,6 @@
-require "SurviveServer.common.TableBuff"
-require "SurviveServer.common.TableBuff_Nexus"
-local NetCmd = require "SurviveServer.netcmd.netcmd"
+require "Survive.common.TableBuff"
+require "Survive.common.TableBuff_Nexus"
+local NetCmd = require "Survive.netcmd.netcmd"
 
 local buffExclusion = TableBuff_Nexus
 local buff = {}

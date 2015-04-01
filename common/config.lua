@@ -31,7 +31,7 @@ local function Init(key,ip,port)
 		while not toredis do
 			Sche.Sleep(100)
 		end
-		local err,result = toredis:Command("hmget deploy " .. key)
+		local err,result = toredis:CommandSync("hmget deploy " .. key)
 		if err or not result then
 			toredis:Close()
 			return false,err

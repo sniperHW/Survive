@@ -12,7 +12,7 @@ local Map = require "Survive.gameserver.map"
 
 local Config = require "Survive.common.config"
 
-App.SetMaxRecverPerSocket(65535)
+--App.SetMaxRecverPerSocket(65535)
 local ret,err = Config.Init("测试1服","127.0.0.1",6379)
 if ret then
 

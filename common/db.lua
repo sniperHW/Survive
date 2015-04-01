@@ -33,7 +33,7 @@ local function Command(str)
 	if not toredis then
 		return "redis invaild"
 	end	
-	return toredis:Command(str)
+	return toredis:CommandSync(str)
 end
 
 local isInit

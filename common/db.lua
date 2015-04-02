@@ -29,11 +29,18 @@ local function connect_to_redis(ip,port)
 	end)	
 end
 
-local function Command(str)
+local function CommandSync(str)
 	if not toredis then
 		return "redis invaild"
 	end	
 	return toredis:CommandSync(str)
+end
+
+local function CommandAsync(str,callback)
+	if not toredis then
+		return "redis invaild"
+	end	
+	return toredis:CommandAsync(str,callback)
 end
 
 local isInit
@@ -49,7 +56,8 @@ local function Finish()
 end
 
 return {
-	Command = Command,
+	CommandSync = CommandSync,
+	CommandAsync = CommandAsync,
 	Init = Init,
 	Finish = Finish,
 }

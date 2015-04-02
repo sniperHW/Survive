@@ -9,7 +9,6 @@ local Socket = require "lua.socket"
 local Gate = require "Survive.gameserver.gate"
 local Timer = require "lua.timer"
 local Map = require "Survive.gameserver.map"
-
 local Config = require "Survive.common.config"
 
 --App.SetMaxRecverPerSocket(65535)
@@ -22,7 +21,6 @@ if ret then
 	local ip = Config.Get("game1")[1]
 	local port = Config.Get("game1")[2]
 
-	local togroup
 	local gameApp = App.New()
 
 	--注册gate模块的RPC服务
@@ -66,6 +64,12 @@ if ret then
 
 	connect_to_group()
 	--gameApp:Run()
+
+	function Send2Group(wpk)
+		if togroup then
+			togroup:Send(wpk)
+		end
+	end
 
 
 	while not togroup do

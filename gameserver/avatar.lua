@@ -12,8 +12,7 @@ local avatar ={}
 
 function avatar:new()
 	local o = {}
-	self.__index = self
-	--self.__gc = function () print("avatar gc") end     
+	self.__index = self 
 	setmetatable(o, self)
 	return o
 end
@@ -100,6 +99,7 @@ function avatar:Release(onMapDestroy)
 	self.path = nil
 	if self.aoi_obj then
 		Aoi.destroy_obj(self.aoi_obj,onMapDestroy or 0)
+		self.aoi_obj = nil
 	end
 	if self.robot then
 		self.robot:Stop()
@@ -114,9 +114,12 @@ function avatar:Release(onMapDestroy)
 	self.Release = nil
 	self:ClearTraceMe()
 	self.isRelease = true
+	if self.onRelease then
+		self:onRelease(onMapDestroy)
+	end
 end
 
-local function packWeapon(wpk,weapon)
+function packWeapon(wpk,weapon)
 	if weapon and  weapon.id then
 		wpk:Write_uint16(weapon.id)
 		wpk:Write_uint16(weapon.count)
@@ -136,13 +139,28 @@ local function packWeapon(wpk,weapon)
 	end
 end
 
+function avatar:PackEnterSee(wpk)
+	wpk:Write_uint32(self.id)
+	wpk:Write_uint8(self.avattype)
+	wpk:Write_uint16(self.avatid)
+	wpk:Write_string(self.nickname)
+	wpk:Write_uint16(self.teamid)
+	wpk:Write_uint16(self.pos[1])
+	wpk:Write_uint16(self.pos[2])
+	wpk:Write_uint16(self.dir)
+	self.attr:on_entersee(wpk)
+	wpk:Write_uint16(self.fashion or 0)
+	packWeapon(wpk,self.weapon)
+end
+
 function avatar:SendEnterSee(other)
 	if not self.gatesession then
 		return
 	end
 	local wpk = CPacket.NewWPacket(1024)
 	wpk:Write_uint16(NetCmd.CMD_SC_ENTERSEE)
-	wpk:Write_uint32(other.id)
+	other:PackEnterSee(wpk)
+	--[[wpk:Write_uint32(other.id)
 	wpk:Write_uint8(other.avattype)
 	wpk:Write_uint16(other.avatid)
 	wpk:Write_string(other.nickname)
@@ -150,9 +168,12 @@ function avatar:SendEnterSee(other)
 	wpk:Write_uint16(other.pos[1])
 	wpk:Write_uint16(other.pos[2])
 	wpk:Write_uint16(other.dir)
+	--if not self.robot and other.robot then
+	--	print("enter see",other.avatid,other.pos[1],other.pos[2])
+	--end
 	other.attr:on_entersee(wpk)
 	wpk:Write_uint16(other.fashion or 0)
-	packWeapon(wpk,other.weapon)
+	packWeapon(wpk,other.weapon)]]--
 	self:Send2Client(wpk)
 	
 	if other.path then
@@ -161,7 +182,7 @@ function avatar:SendEnterSee(other)
 		local wpk = CPacket.NewWPacket(64)
 		wpk:Write_uint16(NetCmd.CMD_SC_MOV)
 		wpk:Write_uint32(other.id)
-		--wpk_write_uint16(wpk,other.speed)
+		wpk:Write_uint16(other.speed)
 		wpk:Write_uint16(target[1])
 		wpk:Write_uint16(target[2])
 		self:Send2Client(wpk)
@@ -183,6 +204,7 @@ function avatar:enter_see(other)
 end
 
 function avatar:leave_see(other)
+	--print("leave_see")
 	if not other.hide then
 		self.view_obj[other.id] = nil
 		other.watch_me[self.id] = nil
@@ -195,8 +217,22 @@ function avatar:leave_see(other)
 	end	
 end
 
+function avatar:TransferTo(point)
+	if self.gatesession and self.map and self.aoi_obj then
+		self:StopMov()
+		Aoi.moveto(self.aoi_obj,point[1],point[2])
+		self.pos = point
+		local wpk = CPacket.NewWPacket(64)
+		wpk:Write_uint16(NetCmd.CMD_SC_TRANSFERMOVE)
+		wpk:Write_uint32(self.id)
+		wpk:Write_uint16(point[1])
+		wpk:Write_uint16(point[2])	
+		self:Send2view(wpk)
+	end
+end
+
 function avatar:Mov(x,y)
-	if self.isRelease or self:isDead() then
+	if self.stick or self.isRelease or self:isDead() or not self.aoi_obj then
 		return false
 	end
 	local path = self.map:findpath(self.pos,{x,y})
@@ -211,10 +247,13 @@ function avatar:Mov(x,y)
 		local wpk = CPacket.NewWPacket(64)
 		wpk:Write_uint16(NetCmd.CMD_SC_MOV)
 		wpk:Write_uint32(self.id)
-		--wpk_write_uint16(wpk,self.speed)
+		wpk:Write_uint16(self.speed)
 		wpk:Write_uint16(target[1])
 		wpk:Write_uint16(target[2])
 		self:Send2view(wpk)
+		--if self.robot then
+		--	print("mov",self.avatid,target[1],target[2],x,y);
+		--end
 		return true			
 	else
 		local wpk = CPacket.NewWPacket(64)
@@ -253,7 +292,6 @@ function avatar:OnDead(atker,skillid)
 	end
 	self:StopMov()
 end
-
 
 local grid_edge = 8
 local grid_diagonal = 8 * 1.41
@@ -315,6 +353,7 @@ function avatar:process_mov()
 		local wpk = CPacket.NewWPacket(64)
 		wpk:Write_uint16(NetCmd.CMD_SC_MOV_ARRI)
 		self:Send2Client(wpk)
+		--print(self.pos[1],self.pos[2])
 		if self.robot then
 			self.robot:Wakeup() --if we have a robot,wake it up
 		end
@@ -324,8 +363,33 @@ function avatar:process_mov()
 	end
 end
 
+function avatar:SetSpeed(speed)
+	if self.speed ~= speed then
+		self.speed = speed
+		if self.path then
+			--if moving,notify speed change to view
+			local size = #self.path.path
+			local target = self.path.path[size]
+			local wpk = CPacket.NewWPacket(64)
+			wpk:Write_uint16(NetCmd.CMD_SC_MOV)
+			wpk:Write_uint32(self.id)
+			wpk:Write_uint16(self.speed)
+			wpk:Write_uint16(target[1])
+			wpk:Write_uint16(target[2])
+			self:Send2view(wpk)			
+		end
+	end
+end
+
 function avatar:StopMov()
 	if self.path then
+		--[[local wpk = CPacket.NewWPacket(64)
+		wpk:Write_uint16(NetCmd.CMD_SC_MOV)
+		wpk:Write_uint32(self.id)
+		wpk:Write_uint16(self.speed)
+		wpk:Write_uint16(self.pos[1])
+		wpk:Write_uint16(self.pos[2])
+		self:Send2view(wpk)]]--	
 		self.path = nil
 		if self.robot then
 			self.robot:Wakeup()
@@ -333,22 +397,9 @@ function avatar:StopMov()
 	end
 end
 
-
-local eighttracepos ={
-	[1] = {-10,-10},
-	[2] = {0,-12},
-	[3] = {10,-10},
-	[4] = {12,0},
-	[5] = {10,10},
-	[6] = {0,12},
-	[7] = {-10,10},
-	[8] = {-12,0}
-}
-
 function avatar:AddTraceMe(ava)
 	self.traceme = self.traceme or {}
 	self.traceme_size = self.traceme_size or 0
-	self.eighttracepos = self.eighttracepos or {}
 	if not self.traceme[ava.id] then
 		self.traceme[ava.id] = ava.robot
 		 self.traceme_size = self.traceme_size + 1
@@ -361,9 +412,6 @@ function avatar:RemTraceMe(ava)
 	if self.traceme[ava.id] then
 		self.traceme[ava.id] = nil
 		self.traceme_size = self.traceme_size - 1
-		if ava.traceidx then
-			self.eighttracepos[ava.traceidx] = nil
-		end
 	end
 end
 
@@ -385,7 +433,6 @@ function avatar:ClearTraceMe()
 	if self.traceme then
 		self.traceme = {}
 		self.traceme_size = 0
-		self.eighttracepos = {}
 	end
 end
 
@@ -393,27 +440,23 @@ local function distance(pos1,pos2)
 	return math.sqrt(math.pow(pos1[1] - pos2[1] , 2) + math.pow(pos1[2] - pos2[2] , 2))
 end
 
-function avatar:GetTracePos(ava)
-	local idx = ava.traceidx
-	local min = 0xEFFFFFFF
-	if not idx then
-		for i=1,8 do
-			if not self.eighttracepos[i] then
-				local pos = {self.pos[1] + eighttracepos[i][1],self.pos[2] + eighttracepos[i][2]}
-				local dis = distance(ava.pos,pos)
-				if dis < min then
-					idx = i
-					min = dis
-				end
-			end
+function avatar:AssignAtkPoint(avatar,atkdistance)
+	if self.traceme_size == 1 then
+		local atkdis = Util.Pixel2Grid(atkdistance)
+		local dis = distance(self.pos,avatar.pos)
+		if dis <= atkdis then
+			return avatar.pos
+		else
+			return Util.ForwardTo(avatar.map,avatar.pos,self.pos,Util.Grid2Pixel(dis-atkdis + 1))
 		end
-	end
-	if idx then
-		ava.traceidx = idx
-		self.eighttracepos[idx] = true
-		return {self.pos[1] + eighttracepos[idx][1],self.pos[2] + eighttracepos[idx][2]}		
 	else
-		return nil
+		self.AtkDir = self.AtkDir or {}
+		if #self.AtkDir == 0 then
+			self.AtkDir = {0,90,180,270,45,135,225,315}
+		end
+		local dir = self.AtkDir[1]
+		table.remove(self.AtkDir,1)
+		return Util.DirTo(self.map,self.pos,atkdistance,dir)
 	end 
 end
 

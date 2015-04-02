@@ -1,5 +1,7 @@
 local Cjson = require "cjson"
 require "Survive.common.TableSkill"
+require "Survive.common.TableSkill_Addition"
+
 local NetCmd = require "Survive.netcmd.netcmd"
 local Util = require "Survive.gameserver.util"
 local Aoi = require "aoi"
@@ -39,8 +41,8 @@ end
 local function notify_atk_success(avatar,skillid,atk_type,dir,point)
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_SC_NOTIATK)
-	wpk:Write_uint32(avatar.id)
-	wpk:Write_uint16(skillid)
+	wpk:Write_uint32(avatar.id)	
+	wpk:Write_uint16(skillid)	
 	wpk:Write_uint8(atk_type)
 	if atk_type == 1 then
 		wpk:Write_uint16(point[1])
@@ -54,13 +56,13 @@ end
 local function notify_atk_failed(avatar,skillid)
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_SC_NOTIATK)
-	wpk:Write_uint32(avatar.id)
+	wpk:Write_uint32(avatar.id)	
 	wpk:Write_uint16(skillid)
 	wpk:Write_uint8(0)
 	avatar:Send2Client(wpk)		
 end
 
-local function notify_atksuffer(atker,sufferer,skillid,damage,timetick)
+local function notify_atksuffer(atker,sufferer,skillid,miss,crit,damage,timetick)
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_SC_NOTIATKSUFFER)
 	wpk:Write_uint32(timetick or 0)
@@ -68,10 +70,17 @@ local function notify_atksuffer(atker,sufferer,skillid,damage,timetick)
 	wpk:Write_uint16(skillid)
 	wpk:Write_uint32(sufferer.id)
 	wpk:Write_uint32(damage)
+	if miss then
+		wpk:Write_uint8(1)
+	elseif crit then
+		wpk:Write_uint8(2)
+	else
+		wpk:Write_uint8(0)
+	end	
 	sufferer:Send2view(wpk)
 end
 
-local function notify_suffer(atker,skillid,sufferer,damage,pos,timetick)
+local function notify_suffer(atker,skillid,sufferer,miss,crit,damage,pos,timetick)
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_SC_NOTISUFFER)
 	wpk:Write_uint32(timetick or 0)	
@@ -79,6 +88,13 @@ local function notify_suffer(atker,skillid,sufferer,damage,pos,timetick)
 	wpk:Write_uint16(skillid or 0)
 	wpk:Write_uint32(sufferer.id)
 	wpk:Write_uint32(damage)
+	if miss then
+		wpk:Write_uint8(1)
+	elseif crit then
+		wpk:Write_uint8(2)
+	else
+		wpk:Write_uint8(0)
+	end	
 	if pos then
 		wpk:Write_uint8(1)
 		wpk:Write_uint16(pos[1])
@@ -90,35 +106,47 @@ local function notify_suffer(atker,skillid,sufferer,damage,pos,timetick)
 end
 
 --计算伤害
+--return miss,crit,damage
 local function CalDamage(atker,sufferer,skill)
-	--首先判断sufferer是否合法目标
 	local category = skill.tb["Category"] 
 	if not category or category == 0 then 
-		return 0 
+		return nil,nil,0 
 	end
+	local crit,miss
 	local atkrate = atker.attr:Get("attack") - sufferer.attr:Get("defencse")
 	if atkrate < 0 then
 		atkrate = 0
 	end
 	local damage = math.floor((skill.tb["Attack_Coefficient"] *atkrate)/1000 + skill.lev * skill.tb["Grade_Coefficient"])
-	if damage <= 0 then
-		if category == 2 then
-			if atker.buff:HasBuff(3002) then
-				damage = 50
-			else
-				damage = 10
-			end
-		end
+	if atker ~= sufferer and damage <= 0 then
+		damage = 10
+	end
+
+	if atker ~= sufferer and atker.attr:Get("agile") > math.random(1,1000) then
+		miss = true
+		return miss,crit,0
 	end
 	local suffer_plusrate =  atker.attr:Get("suffer_plusrate")
 	if suffer_plusrate == 0 then
 		suffer_plusrate = 1
 	end
-	return math.floor(damage*suffer_plusrate)
-end
+	if atker ~= sufferer and atker.attr:Get("crit") > math.random(1,1000) then
+		suffer_plusrate = suffer_plusrate + 1.5
+		crit = true
+	end
 
+	local tb = TableSkill_Addition[skill.lev]
+	if tb then
+		local v = tb[skill.id]
+		if v then
+			suffer_plusrate = suffer_plusrate + v 
+		end
+	end
+	return miss,crit,math.floor(damage*suffer_plusrate)
+end
+--return miss,crit,damage
 local function process_hp_change(atker,suffer,skill)
-	local damage = CalDamage(atker,suffer,skill)
+	local miss,crit,damage = CalDamage(atker,suffer,skill)
 	local hp = suffer.attr:Get("life")
 	if damage > hp  then
 		damage = hp
@@ -132,10 +160,11 @@ local function process_hp_change(atker,suffer,skill)
 		suffer.attr:NotifyUpdate()
 		suffer.buff:RemoveBuff(3002)
 	end
-	return damage
+	return miss,crit,damage
 end
 
 function skill1060(skill,atker,sufferers,dir,point,timetick)
+	--print("skill1060")
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_SC_NOTIATKSUFFER2)
 	wpk:Write_uint32(timetick or 0)		
@@ -153,8 +182,15 @@ function skill1060(skill,atker,sufferers,dir,point,timetick)
 		for i=1,#sufferers do
 			local suffer = sufferers[i]
 			wpk:Write_uint32(suffer.id)
-			local damage = process_hp_change(atker,suffer,skill)			
+			local miss,crit,damage = process_hp_change(atker,suffer,skill)			
 			wpk:Write_uint32(0-damage)			
+			if miss then
+				wpk:Write_uint8(1)
+			elseif crit then
+				wpk:Write_uint8(2)
+			else
+				wpk:Write_uint8(0)
+			end
 			wpk:Write_uint16(suffer.pos[1])
 			wpk:Write_uint16(suffer.pos[2])
 		end
@@ -198,8 +234,15 @@ function skill1120(skill,atker,sufferers,dir,point,timetick)
 			wpk:Write_uint16(atker.pos[2])			
 			wpk:Write_uint8(1)
 			wpk:Write_uint32(suffer.id)
-			local damage = process_hp_change(atker,suffer,skill)			
-			wpk:Write_uint32(0-damage)			
+			local miss,crit,damage = process_hp_change(atker,suffer,skill)			
+			wpk:Write_uint32(0-damage)
+			if miss then
+				wpk:Write_uint8(1)
+			elseif crit then
+				wpk:Write_uint8(2)
+			else
+				wpk:Write_uint8(0)
+			end						
 			wpk:Write_uint16(suffer.pos[1])
 			wpk:Write_uint16(suffer.pos[2])
 			suffer:StopMov()
@@ -220,7 +263,7 @@ function skill1120(skill,atker,sufferers,dir,point,timetick)
 end
 
 local function UseSkill(avatar,skill,byAi,param)
-	if skill.nexttime > C.GetSysTick() then
+	if not avatar.canUseSkill then
 		return false
 	end
 	local targets = {}
@@ -234,6 +277,7 @@ local function UseSkill(avatar,skill,byAi,param)
 	if check_buf and check_buf > 0 and not avatar.buff:HasBuff(check_buf) then
 		return false
 	end
+	--print("UseSkill1",skill.id)
 	local single_target = atk_type == 0 or atk_type == 3
 	if not byAi then -- from client
 		local rpk = param[1]
@@ -256,7 +300,7 @@ local function UseSkill(avatar,skill,byAi,param)
 			elseif atk_type == 2 then
 				dir = rpk:Read_uint16()
 			else
-				notify_atk_failed(avatar,skill.id)
+				--notify_atk_failed(avatar,skill.id)
 				return false
 			end
 			--fetch all targets
@@ -267,14 +311,6 @@ local function UseSkill(avatar,skill,byAi,param)
 				target = avatar.map:GetAvatar(target)
 				if target and target.teamid ~= avatar.teamid and not target:isDead() then
 					table.insert(targets,target)
-				--[[else
-					if not target then
-						print("no target")
-					elseif target.teamid == avatar.teamid then
-						print("teamid")
-					else
-						print("dead")
-					end]]--
 				end
 			end
 		end		
@@ -299,29 +335,29 @@ local function UseSkill(avatar,skill,byAi,param)
 			return false
 		end
 	end
-
 	local suffer_function = skill.tb["Suffer_Script"]
 	if suffer_function then
 		suffer_function = _G[suffer_function]
 	end
-	--print(#targets)
 	if not suffer_function then
 		for k,v in pairs(targets) do
-			local damage = process_hp_change(avatar,v,skill)			
+			local miss,crit,damage = process_hp_change(avatar,v,skill)			
 			if single_target then
-				notify_atksuffer(avatar,v,skill.id,0-damage,timetick)
+				notify_atksuffer(avatar,v,skill.id,miss,crit,0-damage,timetick)
 			else
 				local Repel_Range = skill.tb["Repel_Range"]
 				local pos
 				if Repel_Range and Repel_Range > 0 then
 					v:StopMov()
+					--print("Repel_Range",skill.id,Repel_Range)
 					pos = Util.ForwardTo(avatar.map,avatar.pos,v.pos,Repel_Range)
 					if pos then
 						v.pos = pos
+						--print(pos[1],pos[2])
 						Aoi.moveto(v.aoi_obj,v.pos[1],v.pos[2]) 
 					end
 				end
-				notify_suffer(avatar,skill.id,v,0-damage,pos,timetick)
+				notify_suffer(avatar,skill.id,v,miss,cirt,0-damage,pos,timetick)
 			end
 			if buf and buf > 0 then
 				v.buff:NewBuff(v,buf)
@@ -336,7 +372,7 @@ local function UseSkill(avatar,skill,byAi,param)
 	skill.nexttime = C.GetSysTick() + skill.tb["Skill_CD"]
 	if break_move and break_move > 0 then
 		avatar:StopMov()
-	end
+	end	
 	if skill.tb["Category"] == 2 then
 		avatar.buff:RemoveBuff(3002)
 	end

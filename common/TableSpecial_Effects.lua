@@ -22,9 +22,9 @@ TableSpecial_Effects = TableSpecial_Effects or {
 [72] = { ["Name"] = [[tiaopi2_000%02d]], ["Resource_Path"] = [[tiaopi2]], ["Start_Frame"] = 0, ["End_Frame"] = 38, ["Total_Frame"] = 39, ["Frame_Interval"] = 0.03000000},
 [73] = { ["Name"] = [[tiaopi3_000%02d]], ["Resource_Path"] = [[tiaopi3]], ["Start_Frame"] = 0, ["End_Frame"] = 38, ["Total_Frame"] = 39, ["Frame_Interval"] = 0.03000000},
 [90] = { ["Name"] = [[shunsha_000%02d]], ["Resource_Path"] = [[shunsha]], ["Start_Frame"] = 0, ["End_Frame"] = 28, ["Total_Frame"] = 29, ["Frame_Interval"] = 0.03000000},
-[100] = { ["Name"] = [[chuiji0_000%02d]], ["Resource_Path"] = [[chuiji0]], ["Start_Frame"] = 0, ["End_Frame"] = 60, ["Total_Frame"] = 61, ["Frame_Interval"] = 0.03000000},
-[101] = { ["Name"] = [[chuiji1_000%02d]], ["Resource_Path"] = [[chuiji1]], ["Start_Frame"] = 0, ["End_Frame"] = 60, ["Total_Frame"] = 61, ["Frame_Interval"] = 0.03000000},
-[102] = { ["Name"] = [[chuiji2_000%02d]], ["Resource_Path"] = [[chuiji2]], ["Start_Frame"] = 0, ["End_Frame"] = 60, ["Total_Frame"] = 61, ["Frame_Interval"] = 0.03000000},
+[100] = { ["Name"] = [[chuiji0_000%02d]], ["Resource_Path"] = [[chuiji0]], ["Start_Frame"] = 0, ["End_Frame"] = 60, ["Total_Frame"] = 61, ["Frame_Interval"] = 0.03500000},
+[101] = { ["Name"] = [[chuiji1_000%02d]], ["Resource_Path"] = [[chuiji1]], ["Start_Frame"] = 0, ["End_Frame"] = 60, ["Total_Frame"] = 61, ["Frame_Interval"] = 0.03500000},
+[102] = { ["Name"] = [[chuiji2_000%02d]], ["Resource_Path"] = [[chuiji2]], ["Start_Frame"] = 0, ["End_Frame"] = 60, ["Total_Frame"] = 61, ["Frame_Interval"] = 0.03500000},
 [110] = { ["Name"] = [[chongzhuang0_000%02d]], ["Resource_Path"] = [[chongzhuang0]], ["Start_Frame"] = 7, ["End_Frame"] = 12, ["Total_Frame"] = 6, ["Frame_Interval"] = 0.06000000},
 [111] = { ["Name"] = [[chongzhuang1_000%02d]], ["Resource_Path"] = [[chongzhuang1]], ["Start_Frame"] = 27, ["End_Frame"] = 33, ["Total_Frame"] = 7, ["Frame_Interval"] = 0.06000000},
 [112] = { ["Name"] = [[chongzhuang2_000%02d]], ["Resource_Path"] = [[chongzhuang2]], ["Start_Frame"] = 0, ["End_Frame"] = 5, ["Total_Frame"] = 6, ["Frame_Interval"] = 0.06000000},
@@ -36,5 +36,9 @@ TableSpecial_Effects = TableSpecial_Effects or {
 [141] = { ["Name"] = [[wuwei1_000%02d]], ["Resource_Path"] = [[wuwei1]], ["Start_Frame"] = 0, ["End_Frame"] = 53, ["Total_Frame"] = 54, ["Frame_Interval"] = 0.04000000},
 [142] = { ["Name"] = [[wuwei2_000%02d]], ["Resource_Path"] = [[wuwei2]], ["Start_Frame"] = 0, ["End_Frame"] = 53, ["Total_Frame"] = 54, ["Frame_Interval"] = 0.04000000},
 [150] = { ["Name"] = [[chuangsongPVE_000%02d]], ["Resource_Path"] = [[chuangsongPVE]], ["Start_Frame"] = 1, ["End_Frame"] = 14, ["Total_Frame"] = 14, ["Frame_Interval"] = 0.06000000},
-[151] = { ["Name"] = [[gardenPVE_000%02d]], ["Resource_Path"] = [[gardenPVE]], ["Start_Frame"] = 1, ["End_Frame"] = 8, ["Total_Frame"] = 8, ["Frame_Interval"] = 0.06000000}
+[151] = { ["Name"] = [[gardenPVE_000%02d]], ["Resource_Path"] = [[gardenPVE]], ["Start_Frame"] = 1, ["End_Frame"] = 8, ["Total_Frame"] = 8, ["Frame_Interval"] = 0.06000000},
+[152] = { ["Name"] = [[circleEff_000%02d]], ["Resource_Path"] = [[circleEff]], ["Start_Frame"] = 1, ["End_Frame"] = 5, ["Total_Frame"] = 5, ["Frame_Interval"] = 0.06000000},
+[153] = { ["Name"] = [[synthesis_000%02d]], ["Resource_Path"] = [[synthesis]], ["Start_Frame"] = 1, ["End_Frame"] = 6, ["Total_Frame"] = 6, ["Frame_Interval"] = 0.06000000},
+[160] = { ["Name"] = [[hitEff_000%02d]], ["Resource_Path"] = [[hitEff]], ["Start_Frame"] = 3, ["End_Frame"] = 6, ["Total_Frame"] = 6, ["Frame_Interval"] = 0.06000000},
+[161] = { ["Name"] = [[selfHit_000%02d]], ["Resource_Path"] = [[selfHit]], ["Start_Frame"] = 1, ["End_Frame"] = 10, ["Total_Frame"] = 10, ["Frame_Interval"] = 0.06000000}
 }

@@ -92,7 +92,7 @@ end
 
 function everydaysignin:DbSave()
 	local cmd = "hmset chaid:" .. self.owner.chaid .. " everydaysign  " .. self:DbStr()
-	Db.Command(cmd)
+	Db.CommandAsync(cmd)
 end
 
 MsgHandler.RegHandler(NetCmd.CMD_CG_EVERYDAYSIGN,function (sock,rpk)

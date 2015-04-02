@@ -1,6 +1,7 @@
 require "Survive.common.TableBuff"
 require "Survive.common.TableBuff_Nexus"
 local NetCmd = require "Survive.netcmd.netcmd"
+local BuffFunc = require "Survive.gameserver.bufffunction"
 
 local buffExclusion = TableBuff_Nexus
 local buff = {}
@@ -13,21 +14,7 @@ function buff:new()
 end
 
 local function GetTabFunction(tb,name)
-	local f = tb[name]
-	local t = type(f) 
-	if t ~= "string" or t ~= "function" then
-		return nil
-	elseif type(f) == "string" then
-		local err
-		f,err = load(f)
-		if not f then
-			log_gameserver:Log(CLog.LOG_INFO,string.format("GetTabFunction function:%s error:%s",f,err))
-		else
-			f = f()
-			tb[name] = f
-		end
-	end
-	return f
+	return BuffFunc[tb[name]]
 end
 
 function buff:Init(id,owner,releaser,tb)
@@ -36,10 +23,6 @@ function buff:Init(id,owner,releaser,tb)
 	self.owner = owner
 	self.tb = tb
 	self.interval = tb["Interval"] or 0
-	self.onInterval = tb["OnInterval"] or 0
-	if self.interval and self.interval > 0 and self.onInterval then
-		self.nextInterval = C.GetSysTick() +  self.interval
-	end
 	self.period1 = tb["Period1"] or 0
 	self.period2 = tb["Period2"] or 0
 	self.range = tb["Range"]
@@ -48,7 +31,22 @@ function buff:Init(id,owner,releaser,tb)
 	self.onBegin = GetTabFunction(tb,"OnBegin")
 	self.onEnd = GetTabFunction(tb,"OnEnd")
 	self.onInterval = GetTabFunction(tb,"OnInterval")
+	--print("buff",id,self.onInterval,self.interval)
+	if self.interval > 0 and self.onInterval then
+		self.nextInterval = C.GetSysTick() +  self.interval
+		--print(self.interval)
+	end	
 	return self
+end
+
+function buff:Do(event)
+	local func = self[event]
+	if func then
+		local ret,err = pcall(func,self)
+		if not ret then
+			log_gameserver:Log(CLog.LOG_ERROR,string.format("do buff %d event error:%s",self.id,err))
+		end
+	end
 end
 
 function buff:Reset(releaser)
@@ -77,17 +75,14 @@ function buff:NotifyEnd()
 	wpk:Write_uint32(self.owner.id)
 	wpk:Write_uint16(self.id)
 	self.owner:Send2view(wpk)
-	if self.onEnd then
-		self.onEnd(self)
-	end	
+	self:Do("onEnd")
 end
 
 --if return false means the buff have end
 function buff:Tick(currenttick)
 	if self.nextInterval and currenttick >= self.nextInterval then
-		if self.onInterval then
-			self.onInterval(self)
-		end
+		self.nextInterval = C.GetSysTick() +  self.interval
+		self:Do("onInterval")
 	end	
 	if currenttick >= self.endTick then
 		return false
@@ -146,15 +141,14 @@ function buffmgr:NewBuff(releaser,id)
 		end	
 	end
 	local buf = buff:new():Init(id,self.avatar,releaser,tb)
+	--print("new buff",id)
 	self.buffs[id] = buf
-	if buf.onBegin then
-		buf.onBegin(buf)
-	end
 	local AtkSkill = tb["AtkSkill"]
 	if AtkSkill and AtkSkill > 0 and releaser.robot then
 		buf.buffSkill = {AtkSkill,C.GetSysTick()+100,500}
 	end
 	buf:NotifyBegin()
+	buf:Do("onBegin")	
 	return true
 end
 

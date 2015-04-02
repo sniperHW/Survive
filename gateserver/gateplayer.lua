@@ -105,7 +105,7 @@ local function OnGameDisconnected(sock)
 	for k,v in pairs(id2player) do
 		if v.gamesession and v.gamesession.sock == sock then
 			v.gamesession = nil
-			v.sock:Close()
+			--v.sock:Close()
 		end
 	end
 end

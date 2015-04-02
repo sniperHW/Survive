@@ -23,7 +23,7 @@ function state_partol:execute()
 	--check if there is a available target in view
 	local viewObjs = avatar:GetViewObj()
 	for k,v in pairs(viewObjs) do
-		if v ~= avatar and not v:isDead() and v.teamid ~= avatar.teamid and not Util.TooLong(avatar.pos,v.pos,300) then
+		if not v.invisible and v ~= avatar and not v:isDead() and v.teamid ~= avatar.teamid then-- and not Util.TooLong(avatar.pos,v.pos,500) then
 			self.ro.target = v
 			v:AddTraceMe(avatar)
 			--got target,transfer to trace
@@ -43,15 +43,57 @@ function state_partol:execute()
 	end
 	if avatar:Mov(randx,randy) then
 		Sche.Block()
-		Sche.Sleep(math.random(1000,3000))
+		Sche.Sleep(math.random(200,1000))
+	end
+	return stat_partol
+end
+
+local state_partol_goto = {}
+
+function state_partol_goto:new(ro,targetpoint,stateMgr)
+	local o = {}   
+	setmetatable(o, self)
+	self.__index = self
+	o.ro= ro
+	o.targetpoint = targetpoint
+	o.stateMgr = stateMgr
+	return o	
+end
+
+function state_partol_goto:execute()
+	if self.ro.target then
+		return stat_trace
+	end
+	local avatar = self.ro.avatar
+	--check if there is a available target in view
+	local viewObjs = avatar:GetViewObj()
+	for k,v in pairs(viewObjs) do
+		if v ~= avatar and not v:isDead() and v.teamid ~= avatar.teamid and not Util.TooLong(avatar.pos,v.pos,300) then
+			self.ro.target = v
+			v:AddTraceMe(avatar)
+			--got target,transfer to trace
+			return stat_trace
+		end
+	end
+
+	if not (self.targetpoint[1] == avatar.pos[1] and self.targetpoint[2] == avatar.pos[2]) then
+		if avatar:Mov(self.targetpoint[1],self.targetpoint[2]) then
+			Sche.Block()
+		else
+			Sche.Sleep(500)
+		end		
+	else
+		if self.stateMgr[stat_partol] == self then
+			self.stateMgr[stat_partol] = state_partol:new(self.ro)
+		end
 	end
 	return stat_partol
 end
 
 
-local state_partol_follow = {}
+local state_partol_npc = {}
 
-function state_partol_follow:new(ro)
+function state_partol_npc:new(ro)
 	local o = {}   
 	setmetatable(o, self)
 	self.__index = self
@@ -59,63 +101,78 @@ function state_partol_follow:new(ro)
 	return o	
 end
 
-function state_partol_follow:execute()
+function state_partol_npc:execute()
 	if self.ro.target then
 		return stat_trace
 	end
 
-	if self.follow_obj and self.follow_obj:isDead() then
-		self.follow_obj = nil
-		self.follow_obj:RemTraceMe(avatar)
-	end
-
 	local avatar = self.ro.avatar
-	--check if there is a available target in view
-	local viewObjs = avatar:GetViewObj()
-	local follow_objs = {}
-	for k,v in pairs(viewObjs) do
+	for k,v in pairs(avatar.map.avatars) do
 		if v ~= avatar and not v:isDead() then
-			if v.teamid ~= avatar.teamid and not Util.TooLong(avatar.pos,v.pos,300) then
-				if self.ro.follow_obj then
-					self.ro.follow_obj:RemTraceMe(avatar)					
-					self.ro.follow_obj = nil
-				end
+			if v.teamid ~= avatar.teamid then-- and not Util.TooLong(avatar.pos,v.pos,300) then
+				print("got target")
 				self.ro.target = v
 				v:AddTraceMe(avatar)
 				--got target,transfer to trace
 				return stat_trace
-			elseif v.isPlayer then
-				table.insert(follow_objs,v)
 			end
 		end
 	end
-
-	if not self.ro.follow_obj and #follow_objs > 0 then
-		self.ro.follow_obj = follow_objs[math.random(1,#follow_objs)]
-		self.ro.follow_obj:AddTraceMe(avatar)
+	local mapdef = avatar.map.mapdef
+	local randx = avatar.pos[1] + math.random(-10,10)
+	if randx >= mapdef.xcount or randx < 0 then
+		randx = 0
 	end
-
-	if self.ro.follow_obj then
-		local distance = Util.Grid2Pixel(Util.Distance(avatar.pos,self.ro.follow_obj.pos))
-		if distance > 180 or Util.CheckOverLap(avatar,avatar.pos) then
-			local tpos
-			tpos,self.ro.trace_dir = self.ro.follow_obj:GetFollowPos(self.ro.trace_dir)
-			if not tpos then
-				Sche.Sleep(500)
-			else
-				if avatar:Mov(tpos[1],tpos[2]) then
-					Sche.Block()
-				else
-					Sche.Sleep(500)
-				end
-			end
-		else
-			Sche.Sleep(math.random(500,1000))
-		end		
-	else
-		Sche.Sleep(math.random(500,1000))
+	local randy = avatar.pos[2] + math.random(-10,10)
+	if randy >= mapdef.ycount or randy < 0 then
+		randy = 0
 	end
+	if avatar:Mov(randx,randy) then
+		Sche.Block()
+	end
+	--end
 	return stat_partol
+end
+
+local state_trace_npc = {}
+
+function state_trace_npc:new(ro)
+	local o = {}   
+	setmetatable(o, self)
+	self.__index = self
+	o.ro = ro
+	return o	
+end
+
+function state_trace_npc:execute()
+	local ro = self.ro
+	local avatar = ro.avatar
+	local target = ro.target
+	if not target or target.invisible or target:isDead() then
+		if target then
+			ro.target:RemTraceMe(avatar)
+			ro.target = nil
+		end
+		--mis target,transfer to partol
+		return stat_partol
+	end
+
+	if not Util.TooLong(avatar.pos,target.pos,150) then
+		--close enough,transfer to attack
+		return stat_atk
+	end
+	--print("trace")
+	local trace_point = target:AssignAtkPoint(avatar,140)
+	if not trace_point then
+		Sche.Sleep(1000)
+	else
+		if avatar:Mov(trace_point[1],trace_point[2]) then
+			Sche.Block()
+		else
+			Sche.Sleep(500)
+		end
+	end	
+	return stat_trace
 end
 
 
@@ -134,7 +191,7 @@ function state_trace:execute()
 	local ro = self.ro
 	local avatar = ro.avatar
 	local target = ro.target
-	if not target or target:isDead() or Util.TooLong(avatar.pos,target.pos,300) then
+	if not target or target.invisible or target:isDead() or Util.TooLong(avatar.pos,target.pos,500) then
 		if target then
 			ro.target:RemTraceMe(avatar)
 			ro.target = nil
@@ -143,37 +200,36 @@ function state_trace:execute()
 		return stat_partol
 	end
 
-	if not Util.TooLong(avatar.pos,target.pos,120) then
+	if not Util.TooLong(avatar.pos,target.pos,150) then
 		--close enough,transfer to attack
 		return stat_atk
 	end
-
-	--select a trace point
-	if target:SizeTraceMe() <= 1 then
-		local distance = Util.Grid2Pixel(Util.Distance(avatar.pos,target.pos))
-		local tpos = Util.ForwardTo(avatar.map,avatar.pos,target.pos,distance-90) 
-		if not tpos then--or Util.CheckOverLap(avatar,tpos) then
-			Sche.Sleep(1000)
-		else
-			if avatar:Mov(tpos[1],tpos[2]) then
-				Sche.Block()
-			else
-				Sche.Sleep(500)
-			end
-		end
+	--print("trace")
+	local trace_point = target:AssignAtkPoint(avatar,140)
+	if not trace_point then
+		--print("trace no point")
+		Sche.Sleep(1000)
 	else
-		local tpos
-		tpos,self.ro.trace_dir = target:GetFollowPos(self.ro.trace_dir)
-		if not tpos then
-			Sche.Sleep(500)
+		if avatar:Mov(trace_point[1],trace_point[2]) then
+			Sche.Block()
 		else
-			if avatar:Mov(tpos[1],tpos[2]) then
-				Sche.Block()
-			else
-				Sche.Sleep(500)
-			end
+			--print("trace move failed",trace_point[1],trace_point[2])
+			Sche.Sleep(500)
+		end
+	end	
+
+--[[	local distance = Util.Grid2Pixel(Util.Distance(avatar.pos,target.pos))
+	local tpos = Util.ForwardTo(avatar.map,avatar.pos,target.pos,distance-120) 
+	if not tpos then
+		Sche.Sleep(1000)
+	else
+		if avatar:Mov(tpos[1],tpos[2]) then
+			Sche.Block()
+		else
+			Sche.Sleep(500)
 		end
 	end
+]]--
 	return stat_trace
 end
 
@@ -228,7 +284,7 @@ function state_atk:execute()
 	local ro = self.ro
 	local avatar = ro.avatar
 	local target = ro.target
-	if not target or target:isDead() then 
+	if not target or target.invisible or target:isDead() then 
 		if target then
 			ro.target:RemTraceMe(avatar)
 			ro.target = nil
@@ -236,13 +292,29 @@ function state_atk:execute()
 		--mis target,transfer to partol
 		return stat_partol
 	end
-	if Util.TooLong(avatar.pos,target.pos,120) then
+	if Util.TooLong(avatar.pos,target.pos,150) then
+		Sche.Sleep(math.random(100,500))
 		return stat_trace
 	end
-	--ok attack
-	--print("atkdir",avatar:DirTo(target))
-	--print("dir:",avatar.dir)
-	--print("angle:",avatar:Dir2Angle(avatar.dir))
+--[[
+	--select attack position
+	local checkpos = {avatar.pos}
+	local find = false
+	for i=1,10 do 
+		table.insert(checkpos,target:GetDirPoint(math.random(0,359),140))
+	end
+	for k,v in pairs(checkpos) do
+		if not Util.CheckOverLap(avatar,v) then
+			find = true
+			break
+		end
+	end
+	if not find then
+		Sche.Sleep(500)
+		return stat_atk
+	end
+]]--
+	Sche.Sleep(150)
 	avatar:DirTo(target)
 	if not AiUseSkill(ro,target) then
 		Sche.Sleep(500)
@@ -252,7 +324,7 @@ end
 
 local AiTable = {
 	[1] = {[stat_partol] = state_partol,[stat_trace] =state_trace,[stat_atk] = state_atk},
-	[2] = {[stat_partol] = state_partol_follow,[stat_trace] =state_trace,[stat_atk] = state_atk},
+	[2] = {[stat_partol] = state_partol_npc,[stat_trace] =state_trace_npc,[stat_atk] = state_atk},
 }
 
 
@@ -286,9 +358,9 @@ function stateMachine:NotifyEnterSee()
 end
 
 function stateMachine:NotifyTargetPosChange()
-	--if self.current_state == self.states[stat_trace]  then
-	self.ro:Wakeup()
-	--end
+	if self.current_state == self.states[stat_trace]  then
+		self.ro:Wakeup()
+	end
 end
 
 local robot = {}

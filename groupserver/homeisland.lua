@@ -5,6 +5,8 @@ local Name2idx = require "Survive.common.name2idx"
 require "Survive.common.TableFish"
 require "Survive.common.TableGather"
 require "Survive.common.TablePractice"
+local Achi = require "Survive.groupserver.achievement"
+local Task = require "Survive.groupserver.everydaytask"
 
 --[25] = { ["Jism"] = 3719, ["Drugs"] = "5501:60:34"}, gather
 --[15] = { ["Shell"] = 1000, ["Pearl"] = "4002:5:1"},fish
@@ -12,10 +14,16 @@ require "Survive.common.TablePractice"
 
 for k,v in pairs(TableGather) do
 	v.Drugs = Util.SplitString(v.Drugs,":")
+	for k1,v1 in pairs(v.Drugs) do
+		v.Drugs[k1] = tonumber(v1)
+	end
 end
 
 for k,v in pairs(TableFish) do
 	v.Pearl = Util.SplitString(v.Pearl,":")
+	for k1,v1 in pairs(v.Pearl) do
+		v.Pearl[k1] = tonumber(v1)
+	end	
 end
 
 MsgHandler.RegHandler(NetCmd.CMD_CG_HOMEBALANCE,function (sock,rpk)
@@ -48,13 +56,16 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_HOMEBALANCE,function (sock,rpk)
 			wpk:Write_uint8(action)			
 			local time = os.time() - start_time
 			time = math.floor(time/60)
+			local time_in_minute = time
 			local reward_item 
 			if action == 1 then
 				local tb = TableFish[ply.attr:Get("level")]
 				local shell = tb.Shell * time
+				local old = ply.attr:Get("shell")
+				shell = ply.attr:Add("shell",shell) - old
 				wpk:Write_uint32(shell)
-				shell = shell + ply.attr:Get("shell")
-				ply.attr:Set("shell",shell)
+				--shell = shell + ply.attr:Get("shell")
+				--ply.attr:Set("shell",shell)
 				time = math.floor(time/30)
 				if time > 0 then
 					reward_item = {tb.Pearl[1],0}
@@ -72,8 +83,6 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_HOMEBALANCE,function (sock,rpk)
 				local tb = TableGather[ply.attr:Get("level")]
 				local Jism = tb.Jism * time
 				wpk:Write_uint32(Jism)
-				--shell = shell + ply.attr.Get("shell")
-				--ply.attr.Set("shell",shell)
 				time = math.floor(time/30)
 				if time > 0 then
 					reward_item = {tb.Drugs[1],0}
@@ -89,10 +98,15 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_HOMEBALANCE,function (sock,rpk)
 			else
 				local tb = TablePractice[ply.attr:Get("level")]
 				local exp = tb.Experience * time
-				exp = exp + ply.attr:Get("exp")
-				ply.attr:Set("exp",exp)				
+				--exp = exp + ply.attr:Get("exp")
+				ply:AddExp(exp)
+				--ply.attr:Set("exp",exp)				
 				wpk:Write_uint32(exp)				
 				reward_item = {0,0}
+			end
+
+			if time_in_minute > 60 then
+				ply.task:OnEvent(Task.TaskType.GUAJI)
 			end
 			wpk:Write_uint16(reward_item[1])
 			wpk:Write_uint32(reward_item[2])
@@ -135,5 +149,6 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_HOMEACTION,function (sock,rpk)
 		ply:Send2Client(wpk)
 		ply.attr:Update2Client()
 		ply.attr:DbSave()
+		ply.achieve:OnEvent(Achi.AchiType.ACHI_GUAJI)
 	end		
 end)

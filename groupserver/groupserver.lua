@@ -1,12 +1,14 @@
 log_groupserver = CLog.New("groupserver")
 
 createcha  = 1
-loading    = 2
-playing    = 3
-releasing  = 4
-entermap   = 5
-leavingmap = 6
-queueing = 7
+creating = 2
+loading    = 3
+playing    = 4
+releasing  = 5
+entermap   = 6
+leavingmap = 7
+queueing = 8
+
 
 local TcpServer = require "lua.tcpserver"
 local App = require "lua.application"
@@ -35,7 +37,7 @@ if ret then
 		Sche.Yield()
 	end
 
-	local groupApp = App.New()
+	local groupApp = App.New(65536)
 	--注册Gate模块提供的RPC服务
 	Gate.RegRpcService(groupApp)
 	--注册Game模块提供的RPC服务	

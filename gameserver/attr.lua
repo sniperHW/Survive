@@ -26,6 +26,9 @@ function attr:Init(avatar,baseinfo)
 		end
 	end
 	self.attr[Name2idx.Idx("life")] = self.attr[Name2idx.Idx("maxlife")]
+	--for k,v in pairs(self.attr) do
+	--	print(k,v)
+	--end		
 	self.avatar = avatar		
 	return self
 end
@@ -44,6 +47,47 @@ function attr:Set(name,val)
 	end
 end
 
+function attr:Add(name,val,max)
+	if val < 0 then
+		return nil
+	end
+	local idx = Name2idx.Idx(name) or 0
+	if idx > 0 then
+		local old = self.attr[idx]
+		local new = old + val
+		if new < old or new > 0xFFFFFFFF then
+			new = 0xFFFFFFFF
+		end
+		if max and new > max then
+			new = max
+		end		
+		self.attr[idx] = new or 0
+		self.flag = self.flag or {}
+		self.flag[idx] = true
+		return new		
+	end
+	return nil
+end
+
+function attr:Sub(name,val)
+	if val < 0 then
+		return nil
+	end
+	local idx = Name2idx.Idx(name) or 0
+	if idx > 0 then
+		local old = self.attr[idx]
+		local new = old - val
+		if new < 0 or new > old then
+			new = 0
+		end
+		self.attr[idx] = new or 0
+		self.flag = self.flag or {}
+		self.flag[idx] = true
+		return new		
+	end
+	return nil
+end
+
 function attr:on_entermap(wpk)
 	local wpos = wpk:Get_write_pos()
 	wpk:Write_uint8(0)
@@ -51,6 +95,7 @@ function attr:on_entermap(wpk)
 	for k,v in pairs(self.attr) do
 		wpk:Write_uint8(k)
 		wpk:Write_uint32(self.attr[k] or 0)
+		--print(k,self.attr[k])
 		c = c + 1
 	end			
 	wpk:Rewrite_uint8(wpos,c)	

@@ -12,11 +12,11 @@ end
 local deployment = {
 	["db"] = {"127.0.0.1",6379},
 	["group"] = {"127.0.0.1",9001},
-	["gate1"] = {"192.168.75.138",8010},
+	["gate1"] = {"192.168.75.139",8010},
 	["game1"] = {"127.0.0.1",9002}
 }
 
-Db.Command(string.format("hmset deploy 测试1服 %s",Cjson.encode(deployment)))
+Db.CommandSync(string.format("hmset deploy 测试1服 %s",Cjson.encode(deployment)))
 
 --Db.Command(string.format("set 测试1-toredis %s",Cjson.encode({"127.0.0.1",6379})))
 --Db.Command(string.format("set 测试1-togroup %s",Cjson.encode({"127.0.0.1",9001})))

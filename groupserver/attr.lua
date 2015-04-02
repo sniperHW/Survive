@@ -13,12 +13,20 @@ end
 
 function attr:Init(owner,baseinfo)
 	self.owner = owner
-	self.attr = baseinfo
+	self.attr = {}
+	for i=1,Name2idx.MaxIdx do
+		if baseinfo[i] and type(v) ~= "userdata" then
+			self.attr[i] = baseinfo[i]
+		else
+			self.attr[i] = 0
+		end
+	end
+	--[[self.attr = baseinfo
 	for k,v in pairs(self.attr) do
 		if type(v) == "userdata" then
 			self.attr[k] = 0
 		end
-	end	
+	end]]--	
 	return self
 end
 
@@ -37,10 +45,11 @@ function attr:Set(name,val)
 		self.attr[idx] = val or 0
 		self.flag = self.flag or {}
 		self.flag[idx] = true
+		self.dbchange = true		
 	end
 end
 
-function attr:Add(name,val)
+function attr:Add(name,val,max)
 	if val < 0 then
 		return nil
 	end
@@ -51,9 +60,13 @@ function attr:Add(name,val)
 		if new < old or new > 0xFFFFFFFF then
 			new = 0xFFFFFFFF
 		end
+		if max and new > max then
+			new = max
+		end
 		self.attr[idx] = new or 0
 		self.flag = self.flag or {}
 		self.flag[idx] = true
+		self.dbchange = true		
 		return new		
 	end
 	return nil
@@ -73,9 +86,19 @@ function attr:Sub(name,val)
 		self.attr[idx] = new or 0
 		self.flag = self.flag or {}
 		self.flag[idx] = true
+		self.dbchange = true		
 		return new		
 	end
 	return nil
+end
+
+--return attr[name] >= val
+function attr:MoreOrEq(name,val)
+	local idx = Name2idx.Idx(name) or 0
+	if idx > 0 then
+		return self.attr[idx] >= val		
+	end
+	return false	
 end
 
 function attr:Pack(wpk,modfy)	
@@ -117,8 +140,11 @@ function attr:DbStr()
 end
 
 function attr:DbSave()
-	local cmd = "hmset chaid:" .. self.owner.chaid .. " chainfo  " .. self:DbStr()
-	Db.Command(cmd)
+	if self.dbchange then
+		local cmd = "hmset chaid:" .. self.owner.chaid .. " chainfo  " .. self:DbStr()
+		Db.CommandAsync(cmd)
+		self.dbchange = false
+	end
 end
 
 --将game需要用到的属性对提取出来

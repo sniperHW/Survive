@@ -19,6 +19,9 @@ local Util = require "Survive.groupserver.util"
 local Item = require "Survive.groupserver.item"
 local Sign = require "Survive.groupserver.everydaysignin"
 local Task = require "Survive.groupserver.everydaytask"
+local Achi = require "Survive.groupserver.achievement"
+local Lock = require "lua.lock"
+local Mail = require "Survive.groupserver.mail"
 require "Survive.groupserver.homeisland"
 require "Survive.groupserver.equip"
 require "Survive.common.TableRole"
@@ -28,9 +31,45 @@ require "Survive.common.TableItem"
 require "Survive.common.TableIntensify"
 require "Survive.common.TableRising_Star"
 require "Survive.common.TableStone"
+require "Survive.common.TableNewbie_Reward"
+require "Survive.common.TableArena_Reward"
+require "Survive.common.TableTower_Reward"
 
-local LogOutTimer  = Timer.New("runImmediate")
---Sche.Spawn(function () LogOutTimer:Run() end)
+
+
+LogOutTimer  = Timer.New("runImmediate")
+
+for k,v in pairs(TableArena_Reward) do
+	for k1,v1 in pairs(v) do
+		local award = {}
+		local _award = Util.SplitString(v1,",")
+		for k2,v2 in pairs(_award) do
+			local tmp2 = Util.SplitString(v2,":")
+			tmp2[1] = tonumber(tmp2[1])
+			tmp2[2] = tonumber(tmp2[2])
+			table.insert(award,tmp2)
+		end
+		v[k1] = award
+	end
+end
+
+for k,v in pairs(TableTower_Reward) do
+	for k1,v1 in pairs(v) do
+		local award = {}
+		local _award = Util.SplitString(v1,",")
+		for k2,v2 in pairs(_award) do
+			local tmp2 = Util.SplitString(v2,":")
+			tmp2[1] = tonumber(tmp2[1])
+			tmp2[2] = tonumber(tmp2[2])
+			table.insert(award,tmp2)
+		end
+		v[k1] = award
+	end
+end
+
+--for k,v in pairs(TableArena_Reward) do
+--	print(v["2V2_Win_Reward"][1][1],v["2V2_Win_Reward"][1][2])
+--end
 
 local freeidx = IdMgr.New(4096)
 
@@ -44,7 +83,9 @@ end
 
 local player = {}
 local actname2player ={}
+local chaid2player = {}
 local id2player = {}
+local nickname2player = {}
 
 function player:new(actname)
 	local id = GetIdx()
@@ -68,13 +109,19 @@ local function NewPlayer(actname)
 	return ply	
 end
 
-local function ReleasePlayer(ply)
+function ReleasePlayer(ply)
 	if ply.groupsession then
 		if ply.actname then
 			print(string.format("Release %s",ply.actname))
 		end
 		id2player[ply.groupsession] = nil
 		actname2player[ply.actname] = nil
+		if ply.chaid then
+			chaid2player[ply.chaid] = nil
+		end
+		if ply.nickname then
+			nickname2player[ply.nickname] = nil
+		end
 		ReleaseIdx(ply.groupsession)
 		ply.groupsession = nil
 	end
@@ -88,6 +135,14 @@ function GetPlayerByActname(actname)
 	return actname2player[actname]
 end
 
+function GetPlyByNickname(nickname)
+	return nickname2player[nickname]
+end
+
+function GetPlyByChaid(chaid)
+	return chaid2player[chaid]
+end
+
 function player:Send2Game(wpk)
 	local gamesession = self.gamesession
 	if gamesession then
@@ -99,9 +154,13 @@ end
 function player:Send2Client(wpk)
 	local gatesession = self.gatesession
 	if gatesession then
+		--print(debug.traceback())
 		local wpk1 = CPacket.NewWPacket(256)
 		local rpk = CPacket.NewRPacket(wpk)
-		wpk1:Write_uint16(rpk:Read_uint16())
+		print(rpk)
+		local cmd = rpk:Read_uint16()
+		--print(cmd)
+		wpk1:Write_uint16(cmd)
 		wpk1:Write_wpk(wpk)
 		wpk1:Write_uint16(1)
 		wpk1:Write_uint32(gatesession.sessionid)
@@ -114,6 +173,7 @@ function player:NotifyBeginPlay()
 	self.status = playing
 	local wpk = CPacket.NewWPacket(256)
 	wpk:Write_uint16(NetCmd.CMD_GC_BEGINPLY)
+	wpk:Write_uint32(self.chaid)
 	wpk:Write_uint16(self.avatarid)
 	wpk:Write_string(self.nickname)
 	self.attr:OnBegPly(wpk)
@@ -121,7 +181,8 @@ function player:NotifyBeginPlay()
 	self.skills:OnBegPly(wpk)
 	self.sign:OnBegPly(wpk)
 	wpk:Write_uint32(os.time())
-	self:Send2Client(wpk)		
+	self:Send2Client(wpk)
+	self.achieve:OnBeginPlay()		
 end
 
 function player:NotifyCreate()
@@ -130,13 +191,14 @@ function player:NotifyCreate()
 end
 
 function player:NotifyCreateError(msg)
-	--[[local wpk = CPacket.NewWPacket(64)
-	wpk:Write_uint16(NetCmd.CMD_SC_CREATE_ERROR) 
+	local wpk = CPacket.NewWPacket(64)
+	wpk:Write_uint16(NetCmd.CMD_GC_CREATE_ERROR) 
 	wpk:Write_string(msg)
-	self:Send2Client(wpk)]]--
+	self:Send2Client(wpk)
 end
 
 function player:AddExp(exp)
+	if not exp then return end
 	local oldexp = self.attr:Get("exp")
 	exp = oldexp + exp
 	local level = self.attr:Get("level")
@@ -168,6 +230,7 @@ function player:OnLevelUp(level,notifyclient)
 	local cur_potential_point = self.attr:Get("potential_point") or 0
 	local power,endurance,constitution,agile,lucky,accurate = 0,0,0,0,0,0
 	local power_base,endurance_base,constitution_base,agile_base,lucky_base,accurate_base = 0,0,0,0,0,0
+	--local cirt = 0
 	if cur_level ~= 0 then
 		power = TableRole[cur_level]["Power"] or 0
 		endurance = TableRole[cur_level]["endurance"] or 0
@@ -183,6 +246,7 @@ function player:OnLevelUp(level,notifyclient)
 		lucky_base = self.attr:Get("lucky") - lucky
 		accurate_base = self.attr:Get("accurate") - accurate
 	end
+
 	local potential_point = TableRole[level]["Potential_Point"] or 0
 	potential_point = potential_point + cur_potential_point
 
@@ -201,6 +265,8 @@ function player:OnLevelUp(level,notifyclient)
 	self.attr:Set("lucky",lucky + lucky_base)
 	self.attr:Set("accurate",accurate + accurate_base)
 	self.attr:Set("potential_point",potential_point)
+	self.achieve:OnEvent(Achi.AchiType.ACHI_LEVEL_UP,level)
+	--self.attr:Set("crit",crit)
 	self:CalAttr(notifyclient)
 end
 
@@ -226,7 +292,7 @@ local function fetchStones(stones,equip)
 	end
 end
 
-function player:CalAttr(notifyclient)
+function player:CalAttr(notifyclient,withoutweapon)
 	local attack_plus,attack_base = 0,0  --攻击
 	local defencse_plus,defencse_base = 0,0 --防御
 	local maxlife_plus,maxlife_base = 0,0 --最大生命
@@ -238,23 +304,24 @@ function player:CalAttr(notifyclient)
 	crit_base = math.floor(self.attr:Get("lucky") * 0.01)
 	hit_base = math.floor(self.attr:Get("accurate") * 0.1)
 	local stones = {}
-	local weapon = self.bag:GetBagItem(Bag.weapon)	
-	if weapon then
-		local tb = TableEquipment[weapon.id]
-		if tb then
-			attack_plus = tb["Attack"] or 0
-			--local attr3 = weapon:GetAttr({3})
-			local strengthen_lev = weapon:GetAttrHigh(3)       --bit32.rshift(attr3,16)
-			tb = TableIntensify[strengthen_lev]
+	if not withoutweapon then
+		local weapon = self.bag:GetBagItem(Bag.weapon)	
+		if weapon then
+			local tb = TableEquipment[weapon.id]
 			if tb then
-				attack_plus = attack_plus + tb["Attack"]
+				attack_plus = tb["Attack"] or 0
+				local strengthen_lev = weapon:GetAttrHigh(3)
+				tb = TableIntensify[strengthen_lev]
+				if tb then
+					attack_plus = attack_plus + tb["Attack"]
+				end
+				local star = weapon:GetAttrLow(3)
+				tb = TableRising_Star[star]
+				if tb then
+					attack_plus = attack_plus + tb["Attack"]
+				end
+				fetchStones(stones,weapon)
 			end
-			local star = weapon:GetAttrLow(3)--bit32.band(attr3,0x0000FFFF)
-			tb = TableRising_Star[star]
-			if tb then
-				attack_plus = attack_plus + tb["Attack"]
-			end
-			fetchStones(stones,weapon)
 		end
 	end
 
@@ -263,13 +330,12 @@ function player:CalAttr(notifyclient)
 		local tb = TableEquipment[belt.id]
 		if tb then
 			maxlife_plus = tb["Life"] or 0
-			--local attr3 = belt:GetAttr({3})
-			local strengthen_lev = belt:GetAttrHigh(3) --bit32.rshift(attr3,16)
+			local strengthen_lev = belt:GetAttrHigh(3) 
 			tb = TableIntensify[strengthen_lev]
 			if tb then
 				maxlife_plus = maxlife_plus + tb["Life"]
 			end
-			local star = belt:GetAttrLow(3)--bit32.band(attr3,0x0000FFFF)
+			local star = belt:GetAttrLow(3)
 			tb = TableRising_Star[star]
 			if tb then
 				maxlife_plus = maxlife_plus + tb["Life"]
@@ -283,13 +349,12 @@ function player:CalAttr(notifyclient)
 		local tb = TableEquipment[cloth.id]
 		if tb then
 			defencse_plus = tb["Defense"] or 0
-			--local attr3 = cloth:GetAttr({3})
-			local strengthen_lev = cloth:GetAttrHigh(3)--bit32.rshift(attr3,16)
+			local strengthen_lev = cloth:GetAttrHigh(3)
 			tb = TableIntensify[strengthen_lev]
 			if tb then
 				defencse_plus = defencse_plus + tb["Defense"]
 			end
-			local star = cloth:GetAttrLow(3)--bit32.band(attr3,0x0000FFFF)
+			local star = cloth:GetAttrLow(3)
 			tb = TableRising_Star[star]
 			if tb then
 				defencse_plus = defencse_plus + tb["Defense"]
@@ -297,24 +362,24 @@ function player:CalAttr(notifyclient)
 			fetchStones(stones,cloth)
 		end							
 	end
-
-	local bak_atk_plus = attack_plus
-	local bak_defencse_plus = defencse_plus
-	local bak_maxlife_plus = maxlife_plus
+	--print("atk_plus",attack_plus)
+	--local bak_atk_plus = attack_plus
+	--local bak_defencse_plus = defencse_plus
+	--local bak_maxlife_plus = maxlife_plus
 	for k,v in pairs(stones) do
 		tb = TableStone[v]
 		if tb then
 			local atk_plus_rate = tb["Attack"]
 			if atk_plus_rate > 0 then
-				attack_plus = attack_plus + math.floor((bak_atk_plus*100+atk_plus_rate) / 100)
+				attack_plus = math.floor((attack_plus*100+atk_plus_rate) / 100)
 			end
 			local defencse_plus_rate = tb["Defense"]
 			if defencse_plus_rate > 0 then
-				defencse_plus = defencse_plus + math.floor((bak_defencse_plus*100+defencse_plus_rate) / 100)			
+				defencse_plus = math.floor((defencse_plus*100+defencse_plus_rate) / 100)			
 			end
 			local maxlife_plus_rate = tb["Life"]
 			if maxlife_plus_rate > 0 then
-				maxlife_plus = maxlife_plus + math.floor((bak_maxlife_plus*100+maxlife_plus_rate) / 100)			
+				maxlife_plus = math.floor((maxlife_plus*100+maxlife_plus_rate) / 100)			
 			end
 			local dodge_plus_rate = tb["Dodge"]
 			if dodge_plus_rate > 0 then
@@ -329,23 +394,45 @@ function player:CalAttr(notifyclient)
 				hit_plus = hit_plus + math.floor((hit_base*100+hit_plus_rate) / 100)
 			end										
 		end
-	end			
-
+	end
 	attack_base = math.floor(self.attr:Get("power") * 2.5)
 	defencse_base = math.floor(self.attr:Get("endurance") * 2)
 	maxlife_base = math.floor(self.attr:Get("constitution") * 22.5)
-
+	local level = self.attr:Get("level") or 1
+	crit_base = TableRole[level]["Crit"] + crit_base 
 	self.attr:Set("attack",attack_base + attack_plus)
 	self.attr:Set("defencse",defencse_base + defencse_plus)
 	self.attr:Set("maxlife",maxlife_base + maxlife_plus)
 	self.attr:Set("dodge",dodge_base + dodge_plus)
 	self.attr:Set("crit",crit_base + crit_plus)
 	self.attr:Set("hit",hit_base + hit_plus)
-
+	print(self.attr:Get("attack"))
+	print(self.attr:Get("maxlife"))
 	if notifyclient then
 		self.attr:Update2Client(self)
 	end
 end
+
+local function _checkDuplicateName()
+	local lock =  Lock.New()
+	return function (nickname)
+		lock:Lock()
+		local err,result = Db.CommandSync("hmget nickname " .. nickname)
+		if err or result[1] then
+			lock:Unlock()
+			return false
+		end
+		err = Db.CommandSync(string.format("hmset nickname %s 1",nickname))
+		if err then
+			lock:Unlock()
+			return false			
+		end
+		lock:Unlock()
+		return true
+	end
+end
+
+local checkDuplicateName = _checkDuplicateName()
 
 --创建角色
 MsgHandler.RegHandler(NetCmd.CMD_CG_CREATE,function (sock,rpk)
@@ -354,7 +441,6 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_CREATE,function (sock,rpk)
 	local weapon = rpk:Read_uint16()
 	local groupsession = rpk:Read_uint16()	
 	local ply = GetPlayerBySessionId(groupsession)
-	print("groupsession",groupsession)
 	if not ply or not ply.gatesession then
 		log_groupserver:Log(CLog.LOG_ERROR,string.format("CMD_CG_CREATE not ply or not gatesession %s",nickname))	
 		return 
@@ -370,22 +456,36 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_CREATE,function (sock,rpk)
 		else
 			ply:NotifyCreateError("invaild weapon")
 		end
+		return
+	end
+	ply.status = creating
+	if not ply.nickname or ply.nickname ~= nickname then
+		if not checkDuplicateName(nickname) then
+			print("DuplicateName,",nickname)
+			ply.status = createcha
+			ply:NotifyCreateError("invaild nickname")
+			return
+		end
 	end
 	log_groupserver:Log(CLog.LOG_ERROR,string.format("CMD_CG_CREATE %s %s",ply.actname,nickname))		
 	ply.chaid = ply.chaid or 0
-	ply.nickname = nickname
+	ply.nickname =  nickname
 	ply.avatarid = avatarid
 	if ply.chaid == 0 then
-		local err,result = Db.Command("incr chaid")
+		local err,result = Db.CommandSync("incr chaid")
 		if err or not result then
 			log_groupserver:Log(CLog.LOG_ERROR,string.format("CMD_CG_CREATE %s db incr error",ply.actname))	
 			ply:NotifyCreateError("retry")
+			ply.status = createcha
+			return
 		else
-			ply.chaid = result
-			err,result = Db.Command("set " .. ply.actname .. " " .. ply.chaid)
+			ply.chaid = tonumber(result)
+			err,result = Db.CommandSync("set " .. ply.actname .. " " .. ply.chaid)
 			if err then
 				log_groupserver:Log(CLog.LOG_ERROR,string.format("CMD_CG_CREATE %s db set actname error",ply.actname))	
 				ply:NotifyCreateError("retry")
+				ply.status = createcha
+				return
 			end			
 		end
 	end
@@ -395,24 +495,39 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_CREATE,function (sock,rpk)
 		attr[v] = 0
 	end
 	ply.attr = Attr.New():Init(ply,attr)
+	ply.attr:Set("online_award",os.time())
+	ply.attr:Set("stamina",100)
 	ply.sign = Sign.New(ply)
 	ply.task = Task.New(ply)
+	ply.achieve = Achi.New(ply)
+	ply.mail = Mail.New(ply)
+	local extra_skill
+
+	if weapon == 5101 then
+		extra_skill = {1110,1}
+	elseif weapon == 5201 then
+		extra_skill = {1210,1}
+	else
+		extra_skill = {1010,1}
+	end
 	local bag = {size=60,
 		       [Bag.weapon] = {id=weapon,count=1,attr = {0,0,0,0,0,0,0,0,0,0}}, 
-		       [Bag.cloth] = {id=5301,count=1,attr = {0,0,0,0,0,0,0,0,0,0}}, 
-		       [Bag.belt] = {id=5401,count=1,attr = {0,0,0,0,0,0,0,0,0,0}}, 
+		       [Bag.belt] = {id=5401,count=1,attr = {0,0,0,0,0,0,0,0,0,0}},
 		       [11] = {id=5502,count=10}, 
 		       [12]= {id=5503,count=10}}
 	ply.bag = Bag.New():Init(ply,bag)
-	ply.skills = Skill.New(ply,{{11,1},{12,1},{13,1},{21,1}})
-	ply:OnLevelUp(10)
+	ply.skills = Skill.New(ply,{{11,1},{12,1},{13,1},{21,1},extra_skill})
+	ply:OnLevelUp(1)
 	ply.attr:ClearFlag()
-	local err =  Db.Command(string.format("hmset chaid:%u nickname %s avatarid %u chainfo %s bag %s skills %s everydaysign %s everydaytask %s",
-				    ply.chaid,ply.nickname,ply.avatarid,ply.attr:DbStr(),ply.bag:DbStr(),ply.skills:DbStr(),ply.sign:DbStr(),ply.task:DbStr())) 	
+	local err =  Db.CommandSync(string.format("hmset chaid:%u nickname %s avatarid %u chainfo %s bag %s skills %s everydaysign %s everydaytask %s achievement %s",
+				    ply.chaid,ply.nickname,ply.avatarid,ply.attr:DbStr(),ply.bag:DbStr(),ply.skills:DbStr(),ply.sign:DbStr(),ply.task:DbStr(),ply.achieve:DbStr())) 	
 	if err then
 		log_groupserver:Log(CLog.LOG_ERROR,string.format("CMD_CG_CREATE %s db set character error:%s" ,nickname,err))	
 		ply:NotifyCreateError("retry")
+		ply.status = createcha
 	else	
+		chaid2player[ply.chaid] = ply
+		nickname2player[ply.nickname] = ply
 		ply:NotifyBeginPlay()
 	end		
 end)
@@ -442,7 +557,7 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_ENTERMAP,function (sock,rpk)
 	end
 end)
 
-local release_timeout = 1*60*1000
+release_timeout = 1*60*1000
 
 MsgHandler.RegHandler(NetCmd.CMD_CG_LEAVEMAP,function (sock,rpk)
 	local groupsession = rpk:Reverse_read_uint16()
@@ -455,18 +570,21 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_LEAVEMAP,function (sock,rpk)
 		elseif not ply.mapinstance then
 			log_groupserver:Log(CLog.LOG_ERROR,string.format("CMD_CG_LEAVEMAP %s no map",ply.actname))	
 		else
-			log_groupserver:Log(CLog.LOG_ERROR,string.format("CMD_CG_LEAVEMAP %s invaild status",ply.actname,ply.status))	
+			log_groupserver:Log(CLog.LOG_ERROR,string.format("CMD_CG_LEAVEMAP %s invaild status %d",ply.actname,ply.status))	
 		end
 		return 
 	end
 	
 	ply.status = leavingmap
-	if Map.LeaveMap(ply) and not ply.gatesession then
+	if Map.LeaveMap(ply) then
+		if not ply.gatesession then
 		--start a timer
-		_,ply.lgTimer = LogOutTimer:Register(function ()
-			ReleasePlayer(ply)
-			return "stop timer"
-		    end,release_timeout)
+			_,ply.lgTimer = LogOutTimer:Register(function ()
+								ReleasePlayer(ply)
+								return "stop timer"
+		    					           end,release_timeout)
+		end
+		ply.bag:SynBattleItem()
 	end
 	ply.status = playing
 end)
@@ -493,14 +611,23 @@ MsgHandler.RegHandler(NetCmd.CMD_AG_CLIENT_DISCONN,function (sock,rpk)
 	end	
 end)
 
-MsgHandler.RegHandler(NetCmd.CMD_CG_PMAP_BALANCE,function (sock,rpk)
+
+
+MsgHandler.RegHandler(NetCmd.CMD_CG_PVE_GETAWARD,function (sock,rpk)
 	local groupsession = rpk:Reverse_read_uint16()
 	local ply = GetPlayerBySessionId(groupsession)
 	if ply then
-		print("CMD_CG_PMAP_BALANCE")
-		local wpk = CPacket.NewWPacket(64)
-		wpk:Write_uint16(NetCmd.CMD_GC_BACK2MAIN)
-		ply:Send2Client(wpk)
+		print("CMD_CG_PVE_GETAWARD")
+		local round = ply.attr:Get("spve_today_max")
+		local tb = TableNewbie_Reward[round]
+		if not tb then
+			return
+		end
+		Util.NewRes(ply,4004,tb.Experience)
+		Util.NewRes(ply,4001,tb.Shell)
+		ply.attr:Set("spve_today_max",0)
+		ply.attr:DbSave()
+		ply.attr:Update2Client()
 	end		
 end)
 
@@ -523,6 +650,8 @@ local function RegRpcService(app)
 				if ply.status == createcha then
 					Gate.Bind(Gate.GetGateBySock(sock),ply,sessionid)
 					return ply:NotifyCreate()
+				elseif ply.status == creating then
+					Gate.Bind(Gate.GetGateBySock(sock),ply,sessionid)
 				elseif ply.status == playing or ply.status == queueing or ply.status == entermap then
 					Gate.Bind(Gate.GetGateBySock(sock),ply,sessionid)
 					Sche.Spawn(function ()
@@ -530,10 +659,12 @@ local function RegRpcService(app)
 							ply:NotifyBeginPlay()					
 							if ply.gamesession then
 								--通知gameserver断线重连
-								local rpccaller = RPC.MakeRPC(ply.gamesession.game.sock,"CliReConn")	
+								local rpccaller = RPC.MakeRPC(ply.gamesession.game.sock,"CliReConn")
+								print("reconnect",ply.gatesession.gate.name)	
 								local err,ret = rpccaller:Call(ply.gamesession.sessionid,
 											      {name=ply.gatesession.gate.name,id=ply.gatesession.sessionid})
 								if err or not ret then
+									Game.UnBind(ply)
 									log_groupserver:Log(CLog.LOG_ERROR,string.format("game reconnect error %s",actname))
 								end							   						
 							end
@@ -557,7 +688,7 @@ local function RegRpcService(app)
 					return ply:NotifyCreate()
 			    else
 					ply.status = loading
-					local err,result = Db.Command("hmget chaid:" .. ply.chaid .. " nickname avatarid chainfo bag skills everydaysign everydaytask")
+					local err,result = Db.CommandSync("hmget chaid:" .. ply.chaid .. " nickname avatarid chainfo bag skills everydaysign everydaytask achievement mail")
 					if err then
 						ReleasePlayer(ply)
 						log_groupserver:Log(CLog.LOG_ERROR,string.format("PlayerLogin %s db error %s",actname,err))
@@ -572,20 +703,34 @@ local function RegRpcService(app)
 						ply.attr =  Attr.New():Init(ply,Cjson.decode(result[3]))
 						ply.bag = Bag.New():Init(ply,Cjson.decode(result[4]))
 						ply.skills = Skill.New():Init(ply,Cjson.decode(result[5]))
+
 						local signdata = nil
 						if result[6] then
 							signdata = Cjson.decode(result[6])
 						end
+						ply.sign = Sign.New(ply,signdata)						
 						local taskdata = nil
 						if result[7] then
 							taskdata = Cjson.decode(result[7])
 						end						
-						ply.sign = Sign.New(ply,signdata)
 						ply.task = Task.New(ply,taskdata)
+						local achieve = nil
+						if result[8] then
+							achieve = Cjson.decode(result[8])
+						end
+						ply.achieve = Achi.New(ply,achieve)
+
+						local mails
+						if result[9] then
+							mails = Cjson.decode(CBase64.decode(result[9]))
+						end
+						ply.mail = Mail.New(ply,mails)
 						ply:CalAttr()
 						ply.attr:ClearFlag()						
 						Sche.Spawn(function () 
 								if ply.gatesession then
+									chaid2player[ply.chaid] = ply
+									nickname2player[ply.nickname] = ply
 									ply:NotifyBeginPlay() 
 								end
 							        end)
@@ -617,9 +762,32 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_CHAT,function (sock,rpk)
 	local groupsession = rpk:Reverse_read_uint16()
 	local ply = GetPlayerBySessionId(groupsession)
 	if ply and ply.gatesession then
+		local target = rpk:Read_string()
 		local str = rpk:Read_string()
-		if string.byte(str,1) == 42 then
-			GM.Command(ply,string.sub(str,2))
+		if target == "all" then
+			if string.byte(str,1) == 42 then --* prefix
+				GM.Command(ply,string.sub(str,2))
+			else
+				--broadcast
+				local wpk = CPacket.NewWPacket(512)
+				wpk:Write_uint16(NetCmd.CMD_GC_CHAT)
+				wpk:Write_uint8(1)
+				wpk:Write_string(ply.nickname)
+				wpk:Write_string(str)				
+				for k,v in pairs(nickname2player) do
+					v:Send2Client(wpk)
+				end				
+			end
+		else
+			target = GetPlyByNickname(target)
+			if target then
+				local wpk = CPacket.NewWPacket(512)
+				wpk:Write_uint16(NetCmd.CMD_GC_CHAT)
+				wpk:Write_uint8(0)
+				wpk:Write_string(ply.nickname)
+				wpk:Write_string(str)
+				target:Send2Client(wpk)
+			end
 		end
 	end	
 end)
@@ -659,10 +827,175 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_ADDPOINT,function (sock,rpk)
 		potential_point = potential_point - accurate
 
 		ply.attr:Set("potential_point",potential_point)
+		ply.achieve:OnEvent(Achi.AchiType.ACHI_ADDPOINT)
 
 		ply:CalAttr(true)
 		ply.attr:DbSave()
 	end	
+end)
+
+
+require "Survive.common.TableNewbie_Reward"
+
+for k,v in pairs(TableNewbie_Reward) do
+	if v.Guide_Reward then
+		--print(v.Guide_Reward)
+		local reward = {}
+		local tmp = Util.SplitString(v.Guide_Reward,",")
+		for k1,v1 in pairs(tmp) do
+			local tmp2 = Util.SplitString(v1,":")
+			tmp2[1] = tonumber(tmp2[1])
+			tmp2[2] = tonumber(tmp2[2])
+			--print(tmp2[1],tmp2[2])
+			table.insert(reward,tmp2)
+		end
+		v.Guide_Reward = reward
+	end
+end
+
+MsgHandler.RegHandler(NetCmd.CMD_CG_COMMIT_INTRODUCE_STEP,function (sock,rpk)
+	print("CMD_CG_COMMIT_INTRODUCE_STEP")
+	local groupsession = rpk:Reverse_read_uint16()
+	local ply = GetPlayerBySessionId(groupsession)
+	if ply and ply.gatesession then
+		local old = ply.attr:Get("introduce_step")
+		local new = rpk:Read_uint16()
+		if new > old then
+			local tb = TableNewbie_Reward[new]
+			if tb and tb.Guide_Reward then
+				for k,v in pairs(tb.Guide_Reward) do
+					print(v[1],v[2])
+					Util.NewRes(ply,v[1],v[2])
+				end
+			end
+			ply.attr:Set("introduce_step",new)
+			ply.bag:NotifyUpdate()
+			ply.bag:Save()
+			ply.attr:DbSave()
+			ply.attr:Update2Client()
+		end
+	end	
+end)
+
+MsgHandler.RegHandler(NetCmd.CMD_CG_COMMIT_SPVE,function (sock,rpk)
+	print("CMD_CG_COMMIT_SPVE")
+	local groupsession = rpk:Reverse_read_uint16()
+	local ply = GetPlayerBySessionId(groupsession)
+	if ply and ply.gatesession then
+		local old = ply.attr:Get("spve_today_max")
+		local new = rpk:Read_uint16()
+		
+		if new == 1003 then
+			ply.achieve:OnEvent(Achi.AchiType.ACHI_KILL_BOSS)
+		elseif new == 1001 then 
+			ply.achieve:OnEvent(Achi.AchiType.ACHI_SINGLE_PVE)
+		end
+		if new > 1000 then
+			return
+		end
+		if new > old then
+			ply.achieve:OnEvent(Achi.AchiType.ACHI_SINGLE_PVE)
+			ply.attr:Set("spve_today_max",new)
+			old = ply.attr:Get("spve_history_max")
+			if new > old then
+				ply.attr:Set("spve_history_max",new)
+			end
+			ply.attr:DbSave()
+			ply.attr:Update2Client()
+		end
+	end	
+end)
+
+MsgHandler.RegHandler(NetCmd.CMD_GAMEG_PVPAWARD,function (sock,rpk)
+	print("CMD_GAMEG_PVPAWARD")
+	local maptype = rpk:Read_uint16()
+	local size = rpk:Read_uint8()
+	for i = 1,size do
+		local groupsession = rpk:Read_uint16()
+		local win = rpk:Read_uint8() == 1
+		local ply = GetPlayerBySessionId(groupsession)
+		if ply then
+			local level = ply.attr:Get("level")
+			local award
+
+			if maptype == 204 then
+				if win then
+					award = TableArena_Reward[level]["5V5_Win_Reward"]
+				else
+					award = TableArena_Reward[level]["5V5_Fail_Reward"]
+				end
+			elseif maptype == 207 then
+				if win then
+					award = TableArena_Reward[level]["1V1_Win_Reward"]
+				else
+					award = TableArena_Reward[level]["1V1_Fail_Reward"]
+				end
+			elseif maptype == 208 then
+				if win then
+					award = TableArena_Reward[level]["2V2_Win_Reward"]
+				else
+					award = TableArena_Reward[level]["2V2_Fail_Reward"]
+				end			
+			end
+
+			if award then
+				--print(1,ply.attr.Update2Client)
+				--print(Util.NewRes)
+				for k,v in pairs(award) do
+					Util.NewRes(ply,v[1],v[2])
+				end
+				print(2,ply.attr.Update2Client)
+				ply.attr:DbSave()
+				print(3,ply.attr.Update2Client)
+				ply.attr:Update2Client()
+				ply.bag:Save()
+				ply.bag:NotifyUpdate()
+			end
+		end		
+
+	end
+end)
+
+MsgHandler.RegHandler(NetCmd.CMD_GAMEG_5PVEAWARD,function (sock,rpk)
+	print("CMD_GAMEG_5PVEAWARD")
+	local round = rpk:Read_uint16()
+	local size = rpk:Read_uint8()
+	for i = 1,size do
+		local groupsession = rpk:Read_uint16()
+		local ply = GetPlayerBySessionId(groupsession)
+		if ply then
+			local award = TableTower_Reward[round]["Tower_Reward"]
+			if award then
+				for k,v in pairs(award) do
+					Util.NewRes(ply,v[1],v[2]*round)
+				end
+				ply.attr:DbSave()
+				ply.attr:Update2Client()
+				ply.bag:Save()
+				ply.bag:NotifyUpdate()
+			end
+		end		
+
+	end
+end)
+
+
+
+MsgHandler.RegHandler(NetCmd.CMD_GAMEG_KICK,function (sock,rpk)
+	print("CMD_GAMEG_KICK")
+	local groupsession = rpk:Read_uint16()
+	local ply = GetPlayerBySessionId(groupsession)
+	if ply then
+		Game.UnBind(ply)
+		ply.mapinstance = nil
+		if not ply.gatesession then
+			--start a timer
+			_,ply.lgTimer = LogOutTimer:Register(function ()
+								ReleasePlayer(ply)
+								return "stop timer"
+		    					       end,release_timeout)
+		end		
+	end		
 end)
 
 return {

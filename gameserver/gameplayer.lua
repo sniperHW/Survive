@@ -5,7 +5,9 @@ local Aoi = require "aoi"
 local Buff = require "Survive.gameserver.buff"
 local Attr = require "Survive.gameserver.attr"
 local Skill = require "Survive.gameserver.skill"
+local Bag = require "Survive.gameserver.battlebag"
 
+--[[
 local battleitems = {}
 
 
@@ -16,7 +18,7 @@ function battleitems:new(items)
 	o.items = {}
 	items = items or {}
 	for k,v in pairs(items) do
-		o.items[v[1]] = {id=v[2],count=v[3]}
+		o.items[v[1] ] = {id=v[2],count=v[3]}
 	end
 	return o	
 end
@@ -36,6 +38,7 @@ function battleitems:on_entermap(wpk)
 	end	
 	wpk:Rewrite_uint8(wpos,c)
 end
+]]--
 
 local player = Avatar.New()
 
@@ -53,8 +56,6 @@ function player:Init(id,avatid,map,nickname,actname,groupsession,attr,skillmgr,p
 	self.actname = actname 
 	self.groupsession = groupsession
 	self.attr = Attr.New(self,attr)
-	self.attr.attr[23] = 10000
-	self.attr.attr[24] = 10000
 	self.skillmgr = skillmgr
 	self.pos = pos
 	self.dir = dir
@@ -66,10 +67,11 @@ function player:Init(id,avatid,map,nickname,actname,groupsession,attr,skillmgr,p
 	self.watch_me = {}
 	self.gate = nil
 	self.path = nil
-	self.speed = 20
+	self.speed = 27
 	self.aoi_obj = Aoi.create_obj(self)
 	self.buff = Buff.New(self)
-	self.battleitems = battleitems:new(items)
+	self.battleitems = Bag.New():Init(self,items)
+	--self.battleitems = battleitems:new(items)
 	return self
 end
 
@@ -92,6 +94,7 @@ function player:on_entermap()
 	wpk:Write_uint16(self.map.maptype)
 	self.attr:on_entermap(wpk)
 	self.battleitems:on_entermap(wpk)
+	self.map.logic:OnEnterMap(wpk)
 	wpk:Write_uint32(self.id)
 	local gatesession = self.gatesession
 	if gatesession then
@@ -103,7 +106,10 @@ function player:on_entermap()
 		wpk1:Write_uint32(gatesession.sessionid)
 		wpk1:Write_uint32(self.id)
 		gatesession.sock:Send(wpk1)
-	end			
+	end
+	--[[for k,v in pairs(self.attr.attr) do
+		print(k,v)
+	end]]--			
 end
 
 --客户端断线重连处理

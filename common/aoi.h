@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include "kn_dlist.h"
-#include "bitset.h"
 #include "point.h"
 #include "idmgr.h"
 
@@ -40,7 +39,7 @@ struct aoi_map;
 typedef struct aoi_object
 {
 	kn_dlist_node       node;                  
-	int32_t             id; 
+	uint32_t                 id; 
 	bit_set_t           view_objs;//在当前对象视野内的对象位图      
 	point2D             pos;     
 	void*               ud;

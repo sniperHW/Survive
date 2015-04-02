@@ -26,7 +26,7 @@ function bag:Init(ply,bag)
 		self.bag = {size=60}
 	end
 	self.owner = ply
-	self.flag = {}
+	--self.flag = {}
 	return self
 end
 
@@ -45,6 +45,8 @@ end
 function bag:SetBagItem(pos,item)
 	if pos > 0 and pos <= self.bag.size then
 		self.bag[pos] = item
+		self.dbchange = true
+		self.flag = self.flag or {}
 		self.flag[pos] = true
 	end
 end
@@ -72,7 +74,9 @@ end
 function bag:SetItemAttr(pos,idxs,vals)
 	if self.bag[pos] then
 		self.bag[pos]:SetAttr(idxs,vals)
+		self.flag = self.flag or {}
 		self.flag[pos] = true
+		self.dbchange = true	
 	end	
 end
 
@@ -129,7 +133,9 @@ function bag:AddItem(id,count,attr)
 		local pos = findbagpos(self)
 		if pos then
 			self.bag[pos] = Item.New(id,count,attr)
+			self.flag = self.flag or {}			
 			self.flag[pos] = true
+			self.dbchange = true			
 			return true
 		else
 			return false
@@ -145,8 +151,10 @@ function bag:AddItem(id,count,attr)
 				else
 					self.bag[pos].count = self.bag[pos].count + count
 				end
-			end	
+			end
+			self.flag = self.flag or {}				
 			self.flag[pos] = true
+			self.dbchange = true			
 			return true					
 		else
 			return false
@@ -208,6 +216,8 @@ function bag:AddItems(items)
 				end	
 			end
 		end
+		self.dbchange = true
+		self.flag = self.flag or {}				
 		self.flag[k] = true
 	end
 	return true
@@ -324,16 +334,20 @@ function bag:Swap(pos1,pos2)
 		else
 			item2.count = item1.count + item2.count
 		end
+		self.flag = self.flag or {}		
 		self.bag[pos1] = nil
 		self.flag[pos1] = true
 		self.flag[pos2] = true
+		self.dbchange = true		
 		return true
 	end
 	--ok swap
+	self.flag = self.flag or {}	
 	self.bag[pos2] = item1
 	self.bag[pos1] = item2
 	self.flag[pos1] = true
 	self.flag[pos2] = true
+	self.dbchange = true	
 	--print("bag:Swap",pos1,pos2,self.bag[pos1],self.bag[pos2])
 	if pos1 >= weapon and pos1 <= cloth or pos2 >= weapon and pos2 <= cloth then
 		--print("recalattr")
@@ -358,6 +372,8 @@ function bag:RemItem(pos,id,count)
 		if item.count == 0 then
 			self.bag[pos] = nil
 		end
+		self.flag = self.flag or {}		
+		self.dbchange = true		
 		self.flag[pos] = true
 		return true
 	else
@@ -372,7 +388,6 @@ function bag:FetchBattleItem()
 	for i=5,10 do
 		local item = self.bag[i]
 		if item then
-			--print(i,item.id,item.count)
 			table.insert(battleitem,{i,item.id,item.count})
 		end
 	end
@@ -414,29 +429,70 @@ function bag:DbStr()
 end
 
 function bag:Save()
-	local cmd = "hmset chaid:" .. self.owner.chaid .. " bag  " .. self:DbStr()
-	Db.Command(cmd)	
+	if self.dbchange then
+		local cmd = "hmset chaid:" .. self.owner.chaid .. " bag  " .. self:DbStr()
+		Db.CommandAsync(cmd)
+		self.dbchange = false
+	end	
+end
+
+function bag:SynBattleItem()
+	if self.owner.gatesession then
+		local wpk = CPacket.NewWPacket(512)
+		wpk:Write_uint16(NetCmd.CMD_GC_BAGUPDATE)
+		wpk:Write_uint8(6)	
+		for i = 5,10 do
+			wpk:Write_uint8(i)
+			local item = self.bag[i]
+			if item then
+				item:Pack(wpk)
+			else
+				Item.PackEmpty(wpk)		
+			end
+		end
+		self.owner:Send2Client(wpk)		
+	end
 end
 
 function bag:NotifyUpdate()
-	local wpk = CPacket.NewWPacket(512)
-	wpk:Write_uint16(NetCmd.CMD_GC_BAGUPDATE)
-	local wpos = wpk:Get_write_pos()
-	wpk:Write_uint8(0)	
-	local c = 0
-	for k,v in pairs(self.flag) do
-		self.flag[k] = nil
-		wpk:Write_uint8(k)
-		local item = self.bag[k]
+	if self.flag then
+		local wpk = CPacket.NewWPacket(512)
+		wpk:Write_uint16(NetCmd.CMD_GC_BAGUPDATE)
+		local wpos = wpk:Get_write_pos()
+		wpk:Write_uint8(0)	
+		local c = 0
+		for k,v in pairs(self.flag) do
+			wpk:Write_uint8(k)
+			local item = self.bag[k]
+			if item then
+				item:Pack(wpk)
+			else
+				Item.PackEmpty(wpk)		
+			end
+			c = c + 1
+		end
+		wpk:Rewrite_uint8(wpos,c)
+		self.owner:Send2Client(wpk)
+		self.flag = nil
+	end	
+end
+
+function bag:PeekInfo(wpk,beg_index,end_index)
+	if end_index > beg_index or end_index > self.bag.size or beg_index < 0 then
+		return false
+	end
+	local size = end_index - beg_index
+	wpk:Write_uint8(size)
+	for i = beg_index,end_index do
+		wpk:Write_uint8(i)
+		local item = self.bag[i]
 		if item then
 			item:Pack(wpk)
 		else
 			Item.PackEmpty(wpk)		
-		end
-		c = c + 1
+		end		
 	end
-	wpk:Rewrite_uint8(wpos,c)
-	self.owner:Send2Client(wpk)	
+	return true
 end
 
 MsgHandler.RegHandler(NetCmd.CMD_CG_USEITEM,function (sock,rpk)
@@ -503,6 +559,21 @@ MsgHandler.RegHandler(NetCmd.CMD_CG_SWAP,function (sock,rpk)
 		end
 	end	
 end)
+
+MsgHandler.RegHandler(NetCmd.CMD_CG_SINGLE_USE_ITEM,function (sock,rpk)
+	print("CMD_CG_SINGLE_USE_ITEM")
+	local groupsession = rpk:Reverse_read_uint16()
+	local ply = GetPlayerBySessionId(groupsession)
+	if ply and ply.bag then
+		local pos = rpk:Read_uint8()
+		if ply.bag:RemItem(pos,nil,1) then
+			ply.bag:NotifyUpdate()
+			ply.bag:Save()
+		end
+	end	
+end)
+
+
 
 local function newRes(ply,param)
 	return ply.bag:AddItems(param)

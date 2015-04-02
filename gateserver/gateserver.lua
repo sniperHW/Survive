@@ -169,7 +169,7 @@ if ret then
 			return
 		end
 		player.status = Player.verifying
-		local err,result = Db.Command("get " .. actname)		
+		local err,result = Db.CommandSync("get " .. actname)		
 		if not Player.IsVaild(player) then
 			Player.ReleasePlayer(player) --玩家连接已经提前断开
 			return
@@ -181,6 +181,7 @@ if ret then
 			return	
 		end
 		local chaid = result or 0
+		chaid = tonumber(chaid)
 		if not togroup then
 			--通知系统繁忙
 			player.status = nil
@@ -274,7 +275,7 @@ if ret then
 	--在连接上groupserver和db初始化完成后才启动对客户端的监听
 
 	if TcpServer.Listen(ip,port,function (sock)
-			sock:Establish(CSocket.rpkdecoder(4096))
+			sock:Establish(CSocket.rpkdecoder(4096),1024)
 			toclient:Add(sock,OnClientMsg,Player.OnPlayerDisconnected,60000)		
 		end) then
 		log_gateserver:Log(CLog.LOG_ERROR,string.format("start server on %s:%d error",ip,port))

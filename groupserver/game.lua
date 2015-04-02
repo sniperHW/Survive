@@ -45,6 +45,15 @@ local function OnGameDisconnected(sock,errno)
 		for k,v in pairs(game.players) do
 			v.gamesession = nil
 			v.mapinstance = nil
+			local wpk = CPacket.NewWPacket(64)
+			wpk:Write_uint16(NetCmd.CMD_GC_BACK2MAIN)
+			v:Send2Client(wpk)
+			v.bag:SynBattleItem()							
+		end
+
+		if game.survive then
+			game.survive.OnGameDisconnected()
+			game.survive = nil
 		end
 		sock2game[sock] = nil
 		game.sock = nil
@@ -59,11 +68,13 @@ local function Bind(game,player,sessionid)
 end
 
 local function UnBind(player)
-	local game = player.gamesession.game
-	if game then
-		game.players[player.gamesession.sessionid] = nil
-		game.plycount = game.plycount - 1
-		player.gamesession = nil
+	if player.gamesession then
+		local game = player.gamesession.game
+		if game then
+			game.players[player.gamesession.sessionid] = nil
+			game.plycount = game.plycount - 1
+			player.gamesession = nil
+		end
 	end
 end
 

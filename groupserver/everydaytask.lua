@@ -30,10 +30,12 @@ task = {
 for k,v in pairs(TableDay_Task) do
 	local award = {}
 	local tmp = Util.SplitString(v.Award,",")
+	--print(k)
 	for k1,v1 in pairs(tmp) do
 		local tmp2 = Util.SplitString(v1,":")
 		tmp2[1] = tonumber(tmp2[1])
 		tmp2[2] = tonumber(tmp2[2])
+		--print(tmp2[1],tmp2[2])
 		table.insert(award,tmp2)
 	end
 	v.Award = award
@@ -52,7 +54,7 @@ function everydaytask:new(owner,data)
 			o.tasks[i] = {type=i,counter=0,awarded=false}
 		end
 	else
-		o.lastreset = lastreset
+		o.lastreset = data.lastreset
 		for k,v in pairs(data.tasks) do
 			o.tasks[k] = v
 		end
@@ -63,12 +65,19 @@ function everydaytask:new(owner,data)
 	return o
 end
 
-function everydaytask:CheckReset()
+function everydaytask:CheckReset(notifyAttr)
+	--print(self.lastreset,os.time(),CTimeUtil.DiffDay(self.lastreset,os.time()))
 	if 0 ~= CTimeUtil.DiffDay(self.lastreset,os.time()) then
+		print("everydaytask reset")
 		self.lastreset = CTimeUtil.GetTSWeeHour()
 		for i = taskType.PVE5,taskType.ADDSTAR do
 			self.tasks[i].counter = 0
 			self.tasks[i].awarded = false
+		end
+		self.owner.attr:Set("stamina",100)
+		self.owner.attr:DbSave()
+		if notifyAttr then
+			self.owner.attr:Update2Client()
 		end
 		return true		
 	end
@@ -93,7 +102,7 @@ end
 
 function everydaytask:DbSave()
 	local cmd = "hmset chaid:" .. self.owner.chaid .. " everydaytask  " .. self:DbStr()
-	Db.Command(cmd)
+	Db.CommandAsync(cmd)
 end
 
 function everydaytask:OnEvent(eventType)
@@ -127,28 +136,19 @@ function everydaytask:GetAward(type)
 	if task.awarded or task.counter <  condition then
 		return
 	end
-
 	local ply = self.owner
-
 	local award = tb["Award"]
-
 	for k,v in pairs(award) do
 		local id = v[1]
 		local count = v[2]
-		if id == 4001 then
-			ply.attr:Add("shell",count)
-		elseif id == 4002 then
-			ply.attr:Add("pearl",count)
-		elseif id == 4003 then
-			ply.attr:Add("soul",count)
-		elseif id == 4004 then
-			ply:AddExp(count)
-		elseif id == 4005 then
-
-		end
+		Util.NewRes(ply,id,count)
 	end
+	task.awarded = true
 	ply.attr:Update2Client()
 	ply.attr:DbSave()
+	ply.bag:NotifyUpdate()
+	ply.bag:Save()
+	self:DbSave()	
 
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_GC_EVERTDAYTASK_AWARD)

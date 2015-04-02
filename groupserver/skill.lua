@@ -4,6 +4,8 @@ local NetCmd = require "Survive.netcmd.netcmd"
 local MsgHandler = require "Survive.netcmd.msghandler"
 local Task = require "Survive.groupserver.everydaytask"
 require "Survive.common.TableSkill"
+require "Survive.common.Tableskill_Upgrade"
+
 local skills = {}
 
 function skills:new()
@@ -54,13 +56,25 @@ end
 
 function skills:Save()
 	local cmd = "hmset chaid:" .. self.ply.chaid .. " skill  " .. self:DbStr()
-	Db.Command(cmd)	
+	Db.CommandAsync(cmd)	
 end
 
 function skills:Upgrade(skillid)
 	local sklev = self.skills[skillid]
 	if sklev then
+
 		sklev = sklev + 1
+		local tb = Tableskill_Upgrade[sklev]
+		if tb then
+			local money = tonumber(tb["Money"])
+			if self.ply.attr:Get("shell") >= money then
+				self.ply.attr:Sub("shell",money)
+				self.ply.attr:Update2Client()
+				self.ply.attr:DbSave()
+			else
+				return false
+			end
+		end		
 		 self.skills[skillid] = sklev
 		local wpk = CPacket.NewWPacket(64)
 		wpk:Write_uint16(NetCmd.CMD_GC_SKILLUPDATE)
@@ -73,7 +87,18 @@ function skills:Upgrade(skillid)
 end
 
 function skills:Unlock(skillid)
-	if TableSkill[skillid] and not self.skills[skillid] then
+	local tb = TableSkill[skillid]
+	if tb and not self.skills[skillid] then
+		local soul = tb["Soul"]
+		if soul and soul > 0 then
+			if self.ply.attr:Get("soul") >= soul then
+				self.ply.attr:Sub("soul",soul)
+				self.ply.attr:Update2Client()
+				self.ply.attr:DbSave()
+			else
+				return false
+			end
+		end
 		self.skills[skillid] = 1
 		local wpk = CPacket.NewWPacket(64)
 		wpk:Write_uint16(NetCmd.CMD_GC_ADDSKILL)

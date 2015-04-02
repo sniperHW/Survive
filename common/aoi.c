@@ -230,8 +230,8 @@ int32_t aoi_enter(aoi_map *m,aoi_object *o,int32_t _x,int32_t _y)
 	o->pos.y = _y;
 	aoi_block *block = get_block_by_point(m,&o->pos);
 	if(!block) return -1;
-	o->id = get_id(m->_idmgr);
-	if(o->id == -1) return -1;
+	if(0 != get_id(m->_idmgr,&o->id))
+		return -1;
 	aoi_block **blocks = ENTER_BLOCKS(m,&o->pos,m->radius);
 	uint32_t i;
 	for(i = 0; blocks[i];++i) block_process_enter(m,blocks[i],o);

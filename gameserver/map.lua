@@ -16,6 +16,8 @@ local Sche = require "lua.sche"
 local MapLogic = require "Survive.gameserver.maplogic"
 local Util = require "Survive.gameserver.util"
 require "Survive.common.TableMap"
+require "Survive.common.TableItem"
+require "Survive.common.TableAvatar"
 
 --local mapdef = {
 --	[1] = {
@@ -23,7 +25,7 @@ require "Survive.common.TableMap"
 		--xcount,
 		--ycount,
 		--radius = 100,              --视距大小
-		--coli   = "./SurviveServer/gameserver/fightMap.meta",   --寻路碰撞文件
+		--coli   = "./Survive/gameserver/fightMap.meta",   --寻路碰撞文件
 		--astar  = nil,
 --	},
 --}
@@ -54,8 +56,7 @@ end
 local map = {}
 
 function map:new(mapid,maptype)
-	local o = {}
-	--self.__gc = function () log_gameserver:Log(CLog.LOG_INFO,"map gc") end	   
+	local o = {}	   
 	setmetatable(o, self)
 	self.__index = self
 	o.mapid = mapid
@@ -95,8 +96,9 @@ function map:beginMov(avatar)
 end
 
 function map:Release()
+	local onMapDestroy = 1
 	for k,v in pairs(self.avatars) do
-		v:Release(1)--release on map destroy
+		v:Release(onMapDestroy)--release on map destroy
 	end
 	Aoi.destroy_map(self.aoi)
 	self.movtimer:Stop()
@@ -129,8 +131,30 @@ local function GetPlayerById(id)
 	end	
 end
 
+g_survive = nil
+
 --注册RPC服务
 local function RegRpcService(app)
+
+	app:RPCService("EnterSurvive",function (sock,ply,starttime,grouptime)
+		if not g_survive then
+			mapid = mapidx:Get()
+			if not mapid then
+				log_gameserver:Log(CLog.LOG_INFO,"EnterMap reach max map count")
+				return {false,0}
+			end
+			g_survive = map:new(mapid,206)
+			local now = os.time()
+			g_survive.logic.start_tick = starttime + (now - grouptime)			
+		end
+		local gameid = g_survive.logic:entermap(ply)
+		if not gameid then
+			return {false,0}
+		else
+			return {true,gameid}
+		end
+	end)
+
 	app:RPCService("EnterMap",function (sock,mapid,type,plys)
 		local m = nil
 		local status,ret = pcall(function ()
@@ -178,11 +202,16 @@ local function RegRpcService(app)
 	--客户端连接重新建立 
 	app:RPCService("CliReConn",function (sock,id,gatesession)
 		local ply = GetPlayerById(id)
-		if ply and ply.gatesession then
+		if not ply or ply.gatesession then
 			return false
 		end
 		local gate = Gate.GetGateByName(gatesession.name)
 		if not gate then
+			print("no gate")
+			for k,v in pairs(gatesession) do
+				print(k,v)
+			end 
+			--print("no gate",gatesession.name,gatesession.id)
 			return false
 		end
 		Gate.Bind(gate,ply,gatesession.id)
@@ -220,6 +249,61 @@ MsgHandler.RegHandler(NetCmd.CMD_GGAME_CLIDISCONNECTED,function (sock,rpk)
 		end
 	end
 end)
+
+MsgHandler.RegHandler(NetCmd.CMD_CS_PICKUP,function (sock,rpk)
+	--print("CMD_CS_PICKUP")
+	local id = rpk:Reverse_read_uint32()
+	local ply = GetPlayerById(id)
+	if ply then
+		local objid = rpk:Read_uint32()
+		local obj = ply.map:GetAvatar(objid)
+		if obj and obj.Pickable then
+			local tb = TableAvatar[obj.avatid]
+			if not tb then
+				return
+			end
+			local itemid = tb.Item_ID
+			
+			local itemtb = TableItem[itemid]
+			if not itemtb then 
+				return 
+			end
+			if  itemtb["Item_Type"] < 5 then
+				--print("pickup weapon")
+				ply.weapon = {id=itemid,count=1,attr = {0,0,0,0,0,0,0,0,0,0}}
+				local wpk = CPacket.NewWPacket(128)
+				wpk:Write_uint16(NetCmd.CMD_SC_UPDATEWEAPON)
+				wpk:Write_uint32(ply.id)				
+				packWeapon(wpk,ply.weapon)
+				ply:Send2view(wpk)
+				obj:Release()				
+			else
+				if ply.battleitems:AddItem(itemid,1) then
+					ply.battleitems:NotifyUpdate()
+					obj:Release()
+				end
+			end
+		end
+	end
+end)
+
+local t = Timer.New("runImmediate"):Register(function ()
+	if mapidx:Len() ~= 65535 then
+		log_gameserver:Log(CLog.LOG_INFO,"-----------------------map info---------------------------")
+		for k,v in pairs(maps) do
+			local avatarcount = 0
+			local aicount = 0
+			for k1,v1 in pairs(v.avatars) do
+				avatarcount = avatarcount + 1
+				if v1.robot and v1.robot.run then
+					aicount = aicount + 1
+				end
+			end
+			log_gameserver:Log(CLog.LOG_INFO,string.format("mapid:%d,maptype:%d,plycount:%d,avatar count:%d,ai count:%d",
+									    v.mapid,v.maptype,v.logic.plycount,avatarcount,aicount))
+		end
+	end
+end,5000)
 
 
 return {

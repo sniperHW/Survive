@@ -201,7 +201,7 @@ function UISign:createUI()
 
 注：每日凌晨，签到奖励计算到隔天，当天未领取的奖励隔天不可补领。
     ]], 20, {x = 40, y = 300}, nil, {self.tipBack, {x = 0, y = 1}}, {width = 500, height = 0})
-    lblTip:setColor{r = 255, g = 255, b = 0}
+    lblTip:setColor{r = 255, g = 247, b = 153}
     self.tipBack:setVisible(false)
     self:UpdateSign()
 end

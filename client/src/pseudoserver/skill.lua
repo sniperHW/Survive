@@ -1,4 +1,5 @@
 require "src.table.TableSkill"
+require "src.table.TableSkill_Addition"
 local Time = require "src.pseudoserver.time"
 local Util = require "src.pseudoserver.util"
 local NetCmd = require "src.net.NetCmd"
@@ -27,7 +28,13 @@ function skillmgr:Init(skills)
 	self.skills = {}
 	if skills then
 		for k,v in pairs(skills) do
-			self.skills[v] = {id=v,lev=1,nexttime = Time.SysTick(),tb = TableSkill[v]}
+			self.skills[v] = {
+				id=v,
+				lev=1,
+				nexttime = Time.SysTick(),
+				tb = TableSkill[v],
+				Attack_Distance = TableSkill[v]["Attack_Distance"]
+			}
 		end
 	end
 	self.next_aval_tick = Time.SysTick()
@@ -58,7 +65,7 @@ local function notify_atk_failed(avatar,skillid)
 	Send2Client(wpk)		
 end
 
-local function notify_atksuffer(atker,sufferer,skillid,damage,timetick)
+local function notify_atksuffer(atker,sufferer,skillid,miss,crit,damage,timetick)
 	local wpk = GetWPacket()
 	WriteUint16(wpk,NetCmd.CMD_SC_NOTIATKSUFFER)
 	WriteUint32(wpk,timetick or 0)		
@@ -66,11 +73,18 @@ local function notify_atksuffer(atker,sufferer,skillid,damage,timetick)
 	WriteUint16(wpk,skillid)
 	WriteUint32(wpk,sufferer.id)
 	WriteUint32(wpk,damage)
+	if miss then
+		WriteUint32(wpk,1)
+	elseif crit then
+		WriteUint32(wpk,2)
+	else
+		WriteUint32(wpk,0)
+	end	
 	WriteUint32(wpk,timetick or 0)
 	Send2Client(wpk)
 end
 
-local function notify_suffer(atker,skillid,sufferer,damage,pos)
+local function notify_suffer(atker,skillid,sufferer,miss,crit,damage,pos)
 	local wpk = GetWPacket()
 	WriteUint16(wpk,NetCmd.CMD_SC_NOTISUFFER)
 	WriteUint32(wpk,timetick or 0)
@@ -78,6 +92,13 @@ local function notify_suffer(atker,skillid,sufferer,damage,pos)
 	WriteUint16(wpk,skillid)			
 	WriteUint32(wpk,sufferer.id)
 	WriteUint32(wpk,damage)
+	if miss then
+		WriteUint32(wpk,1)
+	elseif crit then
+		WriteUint32(wpk,2)
+	else
+		WriteUint32(wpk,0)
+	end	
 	if pos then
 		WriteUint8(wpk,1)
 		WriteUint16(wpk,pos[1])
@@ -91,31 +112,44 @@ end
 --计算伤害
 local function CalDamage(atker,sufferer,skill)
 	--首先判断sufferer是否合法目标
-	local category = skill.tb["Category"]
+	local category = skill.tb["Category"] 
 	if not category or category == 0 then 
-		return 0 
+		return nil,nil,0 
 	end
-	--print("atker.attr",atker.attr.name)
-	--print("sufferer.attr",sufferer.attr.name,sufferer.id)
+	local crit,miss
 	local atkrate = atker.attr:Get("attack") - sufferer.attr:Get("defencse")
 	if atkrate < 0 then
 		atkrate = 0
 	end
-	local damage = math.floor((skill.tb["Attack_Coefficient"] * atkrate)/1000 + skill.lev * skill.tb["Grade_Coefficient"])
-	if damage <= 0 then
-		if category == 2 then
-			if atker.buff:HasBuff(3002) then
-				damage = 50
-			else
-				damage = 10
-			end
+	local damage = math.floor((skill.tb["Attack_Coefficient"] *atkrate)/1000 + skill.lev * skill.tb["Grade_Coefficient"])
+	if atker ~= sufferer and damage <= 0 then
+		damage = 10
+	end
+
+	if atker ~= sufferer and atker.attr:Get("agile") > math.random(1,1000) then
+		miss = true
+		return miss,crit,0
+	end
+	local suffer_plusrate =  atker.attr:Get("suffer_plusrate")
+	if suffer_plusrate == 0 then
+		suffer_plusrate = 1
+	end
+	if atker ~= sufferer and atker.attr:Get("crit") > math.random(1,1000) then
+		suffer_plusrate = suffer_plusrate + 1.5
+		crit = true
+	end
+	local tb = TableSkill_Addition[skill.lev]
+	if tb then
+		local v = tb[skill.id]
+		if v then
+			suffer_plusrate = suffer_plusrate + v 
 		end
-	end 
-	return damage
+	end	
+	return miss,crit,math.floor(damage*suffer_plusrate)
 end
 
 local function process_hp_change(atker,suffer,skill)
-	local damage = CalDamage(atker,suffer,skill)
+	local miss,crit,damage = CalDamage(atker,suffer,skill)
 	local hp = suffer.attr:Get("life")
 	if damage > hp  then
 		damage = hp
@@ -129,7 +163,7 @@ local function process_hp_change(atker,suffer,skill)
 		suffer.attr:NotifyUpdate()
 		suffer.buff:RemoveBuff(3002)
 	end
-	return damage
+	return miss,crit,damage
 end
 
 function skill1120(skill,atker,sufferers,dir,point,timetick)
@@ -158,11 +192,18 @@ function skill1120(skill,atker,sufferers,dir,point,timetick)
 			WriteUint16(wpk,atker.pos[2])			
 			WriteUint8(wpk,1)
 			WriteUint32(wpk,suffer.id)
-			local damage = process_hp_change(atker,suffer,skill)
+			local miss,crit,damage = process_hp_change(atker,suffer,skill)
 			if suffer_pos then		
 				suffer.pos = {suffer_pos[1],suffer_pos[2]}		
 			end
-			WriteUint32(wpk,0-damage)			
+			WriteUint32(wpk,0-damage)	
+			if miss then
+				WriteUint32(wpk,1)
+			elseif crit then
+				WriteUint32(wpk,2)
+			else
+				WriteUint32(wpk,0)
+			end						
 			WriteUint16(wpk,suffer.pos[1])
 			WriteUint16(wpk,suffer.pos[2])
 			suffer:StopMov()
@@ -219,7 +260,7 @@ local function UseSkill(avatar,skill,byAi,param)
 			elseif atk_type == 2 then
 				dir = ReadUint16(rpk)	
 			else
-				notify_atk_failed(avatar,skill.id)
+				--notify_atk_failed(avatar,skill.id)
 				return false
 			end
 			--fetch all targets
@@ -259,9 +300,9 @@ local function UseSkill(avatar,skill,byAi,param)
 	end
 	if not suffer_function then
 		for k,v in pairs(targets) do
-			local damage = process_hp_change(avatar,v,skill)
+			local miss,crit,damage = process_hp_change(avatar,v,skill)
 			if single_target then
-				notify_atksuffer(avatar,v,skill.id,0-damage,timetick)
+				notify_atksuffer(avatar,v,skill.id,miss,crit,0-damage,timetick)
 			else
 				local Repel_Range = skill.tb["Repel_Range"]
 				local pos
@@ -272,7 +313,7 @@ local function UseSkill(avatar,skill,byAi,param)
 						v.pos = pos
 					end
 				end
-				notify_suffer(avatar,skill.id,v,0-damage,pos,timetick)
+				notify_suffer(avatar,skill.id,v,miss,crit,0-damage,pos,timetick)
 			end
 			if buf and buf > 0 then
 				v.buff:NewBuff(v,buf)

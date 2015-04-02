@@ -3,39 +3,84 @@ local UIHudLayer = class("UIHudLayer",function()
 end)
 
 function UIHudLayer.create()
-    local hud = UIHudLayer.new()
-    
+    local hud = UIHudLayer.new()    
     return hud
+end
+
+function UIHudLayer.getHud()
+    return cc.Director:getInstance():getRunningScene().hud
 end
 
 function UIHudLayer:ctor()
     self.visibleSize = cc.Director:getInstance():getVisibleSize()
     self.origin = cc.Director:getInstance():getVisibleOrigin()
     self.schedulerID = nil
+    self.UIS = {}
     local uimsg = self:openUI("UIMessage")
     uimsg:setLocalZOrder(65535)
+    
+    local draw = cc.DrawNode:create()
+    self:addChild(draw, 10)
+    
+    --[[
+    local function tick()
+        draw:clear()
+        for id, player in pairs(MgrPlayer) do
+            local box = player:GetAvatar3D():getBoundingBox()  
+            local selfPos = player:getParent():convertToWorldSpace(cc.p(player:getPosition()))
+            local offWidth = box.width/4
+            local offHeight = box.height/4
+
+            box = {x = box.x + offWidth, y = box.y + offHeight,
+            width = box.width - offWidth*2,
+            height = box.height - offHeight*2                
+            }
+            
+            draw:drawPoint(selfPos, 3, cc.c4f(1,1,1,1))
+            draw:drawRect(cc.p(box.x,box.y), 
+                cc.p(box.x+box.width,box.y+box.height), cc.c4f(1,1,0,1))
+        end
+    end
+    
+    local function onNodeEvent(event)
+        if "enter" == event then
+            self.schedulerID = cc.Director:getInstance():getScheduler():scheduleScriptFunc(tick, 0, false)     
+        end
+
+        if "exit" == event then
+            cc.Director:getInstance():getScheduler():unscheduleScriptEntry(self.schedulerID)
+        end
+    end
+    self:registerScriptHandler(onNodeEvent)
+    ]]
 end
 
+--[[
+function UIHudLayer.createUI(className)
+    local hud = cc.Director:getInstance():getRunningScene().hud
+    return hud:openUI(className)
+end
+]]
 function UIHudLayer:openUI(className)
-    if self[className] == nil then
+    if self.UIS[className] == nil then
         print("UI."..className)
         local ui = require("UI."..className).create()
-        self[className] = ui
+        self.UIS[className] = ui
         self:addChild(ui)
         return ui
     end
 end
 
 function UIHudLayer:closeUI(className)
-    if self[className] ~= nil then
+    if self.UIS[className] ~= nil then
         print("close ui"..className)
-        self[className]:removeFromParent()
-        self[className] = nil
+        self.UIS[className]:removeFromParent()
+        self.UIS[className] = nil
     end
 end
 
 function UIHudLayer:getUI(className)
-    return self[className]
+    return self.UIS[className]
 end
 
 function UIHudLayer:showHint(type, bagIdx, pos)   
@@ -70,6 +115,7 @@ function UIHudLayer:showHint(type, bagIdx, pos)
         
         hint:setPositionX(visibleSize.width/2 - 200)
         hint:setPositionY(visibleSize.height/2 + height/2)
+        hint:UpdateGuide()
         --[[
         if visibleSize.width - width > pos.x then
             hint:setPositionX(pos.x)

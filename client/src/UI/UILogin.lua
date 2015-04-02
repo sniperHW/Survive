@@ -10,10 +10,15 @@ function UILogin.create()
 end
 
 local checkTickScheduleID = nil
+local lastConnectTime = os.clock()
 local function checkTick(detal)
 	local wpk = GetWPacket()
     WriteUint32(wpk, 0xABABCBCB)
     SendWPacket(wpk)
+
+    if os.clock() - lastConnectTime >= 10 then
+        Close()
+    end
 end
 
 function UILogin:ctor()
@@ -31,8 +36,8 @@ function UILogin:ctor()
     
     local function btnHandle(sender, event)
         print("pre connect")
-        --Connect("192.168.0.87", 8010)
-        Connect("121.41.37.227", 8010)
+        Connect("192.168.75.139", 8010)
+        --Connect("121.41.37.227", 8010)
         --cc.Director:getInstance():replaceScene(require("SceneLoading.lua").create())
     end
     
@@ -86,7 +91,9 @@ function UILogin:ctor()
         local userName = self.txtUserName:getText()
         local pass = self.txtPass:getText()
         CMD_LOGIN(userName, pass, 1)
-        checkTickScheduleID = cc.Director:getInstance():getScheduler():scheduleScriptFunc(checkTick, 5, false)
+        local sche = cc.Director:getInstance():getScheduler()
+        checkTickScheduleID = sche:scheduleScriptFunc(checkTick, 1, false)
+        lastConnectTime = os.clock()+1
     end, netCmd.CMD_CC_CONNECT_SUCCESS)
 
     --beginButton:registerControlEventHandler(btnHandle, cc.CONTROL_EVENTTYPE_TOUCH_UP_INSIDE)
@@ -100,6 +107,12 @@ RegHandler(function (rpk)
     print("CMD_CC_DISCONNECTED")
     cc.Director:getInstance():getScheduler():unscheduleScriptEntry(checkTickScheduleID)
     checkTickScheduleID = nil
+    local UIMessage = require "UI.UIMessage"
+    UIMessage.showMessage("网络断开，请重新登录")
 end, netCmd.CMD_CC_DISCONNECTED)
+
+RegNetHandler(function (rpk)
+    lastConnectTime = os.clock()    
+end, netCmd.CMD_CC_PING)
     
 return UILogin

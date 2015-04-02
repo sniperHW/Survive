@@ -75,7 +75,8 @@ function UIBaseLayer.createLabel(content, fontSize, pos, aligh, extra, demen)
 end
 
 function UIBaseLayer.createBMLabel(font, content, pos, extra)
-    local label = cc.Label:createWithBMFont(font, content, cc.TEXT_ALIGNMENT_LEFT, 0, {x = 0, y = 0})
+    local label = cc.Label:createWithBMFont(font, content, 
+        cc.TEXT_ALIGNMENT_LEFT, 0, {x = 0, y = 0})
     label:setPosition(pos)
     
     for idx, v in pairs(extra) do

@@ -23,7 +23,7 @@ function state_partol:execute()
 	--check if there is a available target in view
 	local viewObjs = avatar:GetViewObj()
 	for k,v in pairs(viewObjs) do
-		if v ~= avatar and not v:isDead() and v.teamid ~= avatar.teamid and not Util.TooLong(avatar.pos,v.pos,350) then
+		if not v.invisible and v ~= avatar and not v:isDead() and v.teamid ~= avatar.teamid and not Util.TooLong(avatar.pos,v.pos,350) then
 			print("got target")
 			self.ro.target = v
 			v:AddTraceMe(avatar)
@@ -135,7 +135,7 @@ function state_trace:execute()
 	local ro = self.ro
 	local avatar = ro.avatar
 	local target = ro.target
-	if not target or target:isDead() or Util.TooLong(avatar.pos,target.pos,350) then
+	if not target or target.invisible or target:isDead() or Util.TooLong(avatar.pos,target.pos,350) then
 		if target then
 			--print("here",target:isDead())
 			if Util.TooLong(avatar.pos,target.pos,350) then
@@ -156,20 +156,16 @@ function state_trace:execute()
 	if target:SizeTraceMe() <= 1 then
 		local distance = Util.Grid2Pixel(Util.Distance(avatar.pos,target.pos))
 		local tpos = Util.ForwardTo(avatar.map,avatar.pos,target.pos,distance-90) 
-		--print("trace1",distance - 90)
-		if not tpos then--or Util.CheckOverLap(avatar,tpos) then
-			--print("trace1 not tpos")
+		if not tpos then
 			Sche.Sleep(1000)
 		else
 			if avatar:Mov(tpos[1],tpos[2]) then
 				Sche.Block()
 			else
-				--print("trace1 mov failed")
 				Sche.Sleep(500)
 			end
 		end
 	else
-		--print("trace2")
 		local tpos
 		tpos,self.ro.trace_dir = target:GetFollowPos(self.ro.trace_dir)
 		if not tpos then
@@ -181,14 +177,6 @@ function state_trace:execute()
 				Sche.Sleep(500)
 			end
 		end		
-		--local tpos = target:GetTracePos(avatar)
-		--if not tpos then --or checkOverLap(avatar,tpos) then
-		--	Sche.Sleep(1000)
-		--elseif avatar:Mov(tpos[1],tpos[2]) then
-		--	Sche.Block()
-		--else
-		--	Sche.Sleep(500)
-		--end
 	end
 	return stat_trace
 end
@@ -227,6 +215,7 @@ local function AiUseSkill(ro,target,skill)
 	if not skill then
 		return false
 	end
+	print("AI USE SKILL",skill.id)
 	local targettype = skill.tb["Target_type"]
 	local atktype = skill.tb["Attack_Types"]
 	if atktype == 3 then
@@ -247,7 +236,7 @@ function state_atk:execute()
 	local ro = self.ro
 	local avatar = ro.avatar
 	local target = ro.target
-	if not target or target:isDead() then 
+	if not target or target.invisible or target:isDead() then 
 		if target then
 			ro.target:RemTraceMe(avatar)
 			ro.target = nil

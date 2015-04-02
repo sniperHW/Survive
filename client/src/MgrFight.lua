@@ -4,19 +4,24 @@ MgrFight = MgrFight or {}
 
 --MgrFight.lockTarget = MgrFight.lockTarget or nil
 --MgrFight.lastSkill = {["skillID"] = math.random(1, 3) + 10, ["useTime"] = 0}
-local lastSkillIdx = 1
+MgrFight.lastSkillIdx = 1
 MgrFight.StateFighting = false
+MgrFight.CanUseSkill = true
+MgrFight.anger = 0
+MgrFight.FivePVERound = 0
+MgrFight.EnterMapTime = 0
 
 local comm = require("common.CommonFun")
 
 local timerTime  = 3.1
 function MgrFight:atkTick(detal)
     timerTime = timerTime + detal
-
-    if MgrFight.StateFighting and MgrPlayer[maincha.id] then
-        if MgrPlayer[maincha.id].attr.life > 0 then
+    local localPlayer = MgrPlayer[maincha.id]
+    
+    if MgrFight.StateFighting and localPlayer then
+        if localPlayer.attr.life > 0 and not localPlayer.moveTo then
             timerTime = 0
-            local skillid = MgrSkill.BaseSkill[lastSkillIdx]
+            local skillid = MgrSkill.BaseSkill[MgrFight.lastSkillIdx]
             if MgrSkill.CanUseSkill(skillid) then
                 local selfDir, targets = comm.getDirSkillTargets(skillid)
 
@@ -41,22 +46,22 @@ function MgrFight:atkTick(detal)
             if dis > 16200 then
                 local off = math.random(60, 90)
                 if selfPosX > tarPosX then
-                    tarPosX = tarPosX + off
-                else
+    tarPosX = tarPosX + off
+    else
     tarPosX = tarPosX - off
-                end
+    end
 
-                if selfPosY > tarPosY then
-                    tarPosY = tarPosY + off
-                else
-                    tarPosY = tarPosY - off
-                end
-                
-                CMD_MOV(cc.WalkTo:map2TilePos({x = tarPosX, y = tarPosY}))
-            end
-        end        
+    if selfPosY > tarPosY then
+    tarPosY = tarPosY + off
+    else
+    tarPosY = tarPosY - off
+    end
 
-        atkTimes = atkTimes or 0 
+    CMD_MOV(cc.WalkTo:map2TilePos({x = tarPosX, y = tarPosY}))
+    end
+    end        
+
+    atkTimes = atkTimes or 0 
         if MgrSkill.CanUseSkill(MgrFight.lastSkill.skillID)
             and not MgrSkill.HasSkillInCD()
             and dis <= 16200 
@@ -71,20 +76,70 @@ end
 
 function MgrFight:atkTarget(selfDir, targets)    
     MgrFight.PlayingSkill = true
-    local skillID = MgrSkill.BaseSkill[lastSkillIdx]
-    lastSkillIdx = lastSkillIdx + 1
-    if lastSkillIdx > #MgrSkill.BaseSkill then
-        lastSkillIdx = 1
+    local skillID = MgrSkill.BaseSkill[MgrFight.lastSkillIdx ]
+    MgrFight.lastSkillIdx  = MgrFight.lastSkillIdx  + 1
+    if MgrFight.lastSkillIdx  > #MgrSkill.BaseSkill then
+        MgrFight.lastSkillIdx  = 1
     end
     
     MgrSkill.UseSkill(skillID, nil, selfDir, targets)
 end
 
+local function HitEff(atkerid, sufferid, type)
+    local scene = cc.Director:getInstance():getRunningScene()
+    local hud = scene.hud
+    
+    if atkerid == maincha.id or sufferid == maincha.id then    
+        local player = MgrPlayer[maincha.id]
+        local posX, posY = player:getPosition()
+        local worldPos = player:getParent():convertToWorldSpace(cc.p(posX+20, posY))
+        local eff = nil 
+        
+        if type == 1 then   --miss
+            eff = cc.Sprite:create("UI/fight/sb.png")
+        elseif type == 2 then   --crit
+            eff = cc.Sprite:create("UI/fight/bj.png")
+            
+            local mapPosX, mapPoxY = scene.map:getPosition()
+            local effPosX = 0
+            local effPosY = 0
+            
+            if math.abs(mapPosX) > 20 then
+                effPosX = 20
+            else
+                mapPosX = -20
+            end 
+
+            local ac1 = cc.MoveBy:create(0.05,{x = effPosX, y = effPosY})
+            local ac2 = cc.MoveBy:create(0.05,{x = -effPosX, y = -effPosY})
+            local ac3 = cc.MoveBy:create(0.05,{x = effPosX, y = effPosY})
+            local ac4 = cc.MoveBy:create(0.05,{x = -effPosX, y = -effPosY})
+            
+            local function onEnd()
+                scene.moveAction = scene.moveAction - 1
+            end
+            
+            scene.moveAction = scene.moveAction + 1
+            local ac = cc.Sequence:create(ac1, ac2, ac3, ac4, cc.CallFunc:create(onEnd))
+            scene.map:runAction(ac)
+        end
+        
+        if eff then
+            eff:setPosition(worldPos)
+            local acScale = cc.EaseOut:create(cc.ScaleTo:create(0.06,1.5), 3)
+            local acMove = cc.EaseOut:create(cc.MoveBy:create(0.06,{x = 20, y = 50}), 3)
+            local ac = cc.Spawn:create(acScale, acMove)
+            eff:runAction(cc.Sequence:create(ac, cc.DelayTime:create(0.3), cc.RemoveSelf:create()))
+            hud:addChild(eff)
+        end
+    end
+end
+
 RegNetHandler(function (packet) 
-    print("CMD_SC_NOTIATK")
+    --print("CMD_SC_NOTIATK")
     local atker = MgrPlayer[packet.atkerid]
     if not atker then
-        print("no find atker:"..packet.atkerid)
+        --print("no find atker:"..packet.atkerid)
         return
     end 
     local skillid = packet.skillid
@@ -95,8 +150,16 @@ RegNetHandler(function (packet)
     local function endHandle()
         atker.playSkillAction = 0
         atker:DelayIdle(0.1)
+
+        if packet.atkerid == maincha.id then
+            local localPlayer = MgrPlayer[maincha.id]
+            if localPlayer and localPlayer.moveTo then
+                CMD_MOV(localPlayer.moveTo)
+            end
+        end
     end
-    if success and packet.atkerid ~= maincha.id then
+    --if success and packet.atkerid ~= maincha.id then
+    if success then
         if success == 2 and skillid ~= 1040 then
             local sprite3D =  atker:GetAvatar3D()
             if sprite3D then
@@ -107,14 +170,23 @@ RegNetHandler(function (packet)
             
             atker.playSkillAction = skillid
             atker:AttackPlayer(skillid, endHandle, nil)
+            
+            --[[
+            local pos = cc.WalkTo:tile2MapPos(packet.atkpoint)        
+            local moveAction = cc.MoveTo:create(0.06, pos)
+            --moveAction:setTag(EnumActionTag.ActionMove)
+            atker:runAction(moveAction)
+            ]]
         elseif success == 1 then
             --atker:setPosition(cc.WalkTo:tile2MapPos(packet.point))
+            atker.playSkillAction = skillid
+            atker:AttackPlayer(skillid, endHandle, nil)
         end
     end
 end,netCmd.CMD_SC_NOTIATK)
 
 RegNetHandler(function (packet) 
-    print("CMD_SC_NOTIATKSUFFER")
+    --print("CMD_SC_NOTIATKSUFFER")    
     local sufferer = MgrPlayer[packet.suffererid]
     local atker = MgrPlayer[packet.atkerid]
 
@@ -122,67 +194,105 @@ RegNetHandler(function (packet)
         return
     end
 
-    local function nullAction()        
+    local function endAtk()      
+        atker.playSkillAction = 0
+        atker:DelayIdle(0.1)  
+        if packet.atkerid == maincha.id then
+            local localPlayer = MgrPlayer[maincha.id]
+            if localPlayer and localPlayer.moveTo then
+                CMD_MOV(localPlayer.moveTo)
+            end
+        end
     end
-    
+
     local elapseTime = os.clock() - packet.atktime * 0.001
     local delayHitTime = atker.delayHit[EnumActions[TableSkill[packet.skillid].ActionName]]
 
-    if packet.atkerid ~= maincha.id then
-        if sufferer.attr.life > 0 then
-            sufferer:DelayHit(delayHitTime, packet.hpchange)
+    --if packet.atkerid ~= maincha.id then
+    if true then
+        if sufferer.attr.life > 0 and packet.hpchange ~= 0 then
+            sufferer:DelayHit(delayHitTime, packet.hpchange, packet.atkerid == maincha.id)
         end
-        atker:AttackPlayer(packet.skillid, nullAction, sufferer)       
+        --[[
+        local pos = cc.WalkTo:tile2MapPos(packet.atkpoint)        
+        local moveAction = cc.MoveTo:create(0.06, pos)
+        --moveAction:setTag(EnumActionTag.ActionMove)
+        atker:runAction(moveAction)
+        ]]
+        atker:AttackPlayer(packet.skillid, endAtk, sufferer)       
     else
-        if sufferer.attr.life > 0 then
-            sufferer:DelayHit(delayHitTime - elapseTime, packet.hpchange)
+        if sufferer.attr.life > 0 and packet.hpchange ~= 0 then
+            sufferer:DelayHit(delayHitTime - elapseTime, packet.hpchange, packet.atkerid == maincha.id)
         end
     end
 
     if sufferer.attr.life <= 0 then
         sufferer:Death()
         MgrPlayer[maincha.id]:Idle()
-        print("sufferer dead")
+        --print("sufferer dead")
+    end
+
+    if packet.crit then
+        HitEff(packet.atkerid, packet.suffererid, 2)
+    elseif packet.miss then
+        HitEff(packet.atkerid, packet.suffererid, 1)
     end
 end,netCmd.CMD_SC_NOTIATKSUFFER)
 
 RegNetHandler(function (packet) 
-    print("CMD_SC_NOTISUFFER")
+    --print("CMD_SC_NOTISUFFER")
     local atker = MgrPlayer[packet.atker]
     local sufferer = MgrPlayer[packet.suffererid]
     if (not sufferer) or (not atker) then
-        print("no sufferer:"..packet.suffererid)
+        --print("no sufferer:"..packet.suffererid)
         return
     end
 
     if packet.bRepel == 1 then
         local pos = cc.WalkTo:tile2MapPos(packet.point)
+        --print("CMD_SC_NOTISUFFER:"..pos.x.." "..pos.y)
         sufferer:Repel(pos, packet.hpchange)
     else
         local elapseTime = os.clock() - packet.atktime * 0.001
         local delayHitTime = atker.delayHit[EnumActions[TableSkill[packet.skillid].ActionName]]
-        if sufferer.attr.life > 0 then
-            sufferer:DelayHit(delayHitTime - elapseTime, packet.hpchange)
+        if sufferer.attr.life > 0 and packet.hpchange ~= 0 then
+            sufferer:DelayHit(delayHitTime - elapseTime, packet.hpchange, packet.atker == maincha.id)
         end
     end    
-    print("noti suffer:"..packet.hpchange)
+    --print("noti suffer:"..packet.hpchange)
     --atker:AttackPlayer(packet.skillid, nil, sufferer)
+    
+    if packet.crit then
+        HitEff(packet.atker, packet.suffererid, 2)
+    elseif packet.miss then
+        HitEff(packet.atker, packet.suffererid, 1)
+    end
 end,netCmd.CMD_SC_NOTISUFFER)  
 
 RegNetHandler(function (packet)
     print("CMD_SC_NOTIATKSUFFER2")
-    
     local atker = MgrPlayer[packet.atker]
     local function atkEnd()
         atker.playSkillAction = 0
         atker:DelayIdle(0.1)
+
+        if packet.atkerid == maincha.id then
+            local localPlayer = MgrPlayer[maincha.id]
+            if localPlayer and localPlayer.moveTo then
+                CMD_MOV(localPlayer.moveTo)
+            end
+        end
     end    
 
     if packet.skillid == 1060 then
         local targetId = {}
+        local hpchanges = {}
         for k, value in pairs(packet.suffers) do
             table.insert(targetId, value.id)
+            table.insert(hpchanges, value.hpchange)
         end
+
+        local attackIdx = 1
         local function attack()
             if #targetId > 0 then
                 local idx = targetId[1]
@@ -196,14 +306,43 @@ RegNetHandler(function (packet)
                     local moveAC = cc.MoveTo:create(0.1, tarP)
                     local angle = math.deg(math.atan2(norP.y,norP.x))
                     atker:GetAvatar3D():setRotation3D{x = 0, y = angle+90, z = 0}
-                    atker:runAction(cc.Sequence:create(moveAC, cc.CallFunc:create(attack)))
+                    local acIdx = "Attack"..attackIdx
+                    attackIdx = attackIdx + 1
+                    local function moveEnd()
+                        atker:GetAvatar3D():stopAllActions()
+                        atker:GetAvatar3D():runAction(cc.Sequence:create(atker.actions[EnumActions[acIdx]],
+                        cc.CallFunc:create(attack))) 
+                        
+                        if hpchanges[attackIdx] ~= 0 then
+                            player:DelayHit(0.5, hpchanges[attackIdx], packet.atker == maincha.id)
+                        end
+                    end
+                    atker:runAction(cc.Sequence:create(moveAC,
+                                    cc.CallFunc:create(moveEnd)))
                 end
+                --[[
+                if #targetId > 0 then
+                    MgrFight.StateFighting = false
+                    atker.playSkillAction = 1060
+                    attack()
+                end
+                ]]
+            else
+                atker.playSkillAction = 0
+                atker:Idle()
             end
-        end
+        end 
 
         if #targetId > 0 then
             MgrFight.StateFighting = false
+            atker.playSkillAction = 1060
             attack()
+            local skillInfo = TableSkill[1060]
+            
+            if skillInfo.Sound and atker.actions[EnumActions.Skill5] then
+                local path = TableSound[skillInfo.Sound].Path
+                comm.playEffect("music/"..path)
+            end
         end
 
         return
@@ -214,12 +353,25 @@ RegNetHandler(function (packet)
     local pos = cc.WalkTo:tile2MapPos(packet.atkerpos)
     local atkerMove = cc.MoveTo:create(0.1, pos)
     atker:runAction(atkerMove)
-
+   
+    local bHasLocalPlayer = false
+    local type = 0
     for k, value in pairs(packet.suffers) do        
         local suffer = MgrPlayer[value.id]
         pos = cc.WalkTo:tile2MapPos(value.pos)
         suffer:Repel(pos, value.hpchange)
+        if packet.suffers == maincha.id then
+            bHasLocalPlayer = true
+        end
     end
+    
+    if bHasLocalPlayer or packet.atker == maincha.id then
+        if packet.crit then
+            HitEff(packet.atker, maincha.id, 2)
+        elseif packet.miss then
+            HitEff(packet.atker, maincha.id, 1)
+        end
+    end 
 end,netCmd.CMD_SC_NOTIATKSUFFER2)
 
 local buffScheduleID = {}
@@ -228,16 +380,25 @@ local function buffScheduleHand()
 end
 
 RegNetHandler(function (packet)   
-    print("netCmd.CMD_SC_BUFFBEGIN:"..packet.id)
+    --print("netCmd.CMD_SC_BUFFBEGIN:"..packet.id)
     local localPlayer = MgrPlayer[maincha.id]
     local atker = MgrPlayer[packet.id]
     local buffEff = comm.getBuffEff(packet.buffid)
-    buffEff:setTag(packet.buffid)
-    atker:addChild(buffEff)
-    atker:stopAllActions()
-
+    if buffEff then
+        buffEff:setTag(packet.buffid)
+        atker:addChild(buffEff)
+        atker:stopAllActions()
+    end
+    
     local buffInfo = TableBuff[packet.buffid]
-    atker:GetAvatar3D():stopAllActions()
+    if buffInfo.ActionName then
+        atker:GetAvatar3D():stopAllActions()
+    end        
+
+    if buffInfo.Sound then
+        local path = TableSound[buffInfo.Sound].Path
+        comm.playEffect("music/"..path)
+    end
 
     if packet.buffid == 3002 then
         local atkActions = atker.actions[EnumActions[buffInfo.ActionName]]
@@ -253,11 +414,17 @@ RegNetHandler(function (packet)
         else
             atker:setVisible(false)
         end
+    elseif packet.buffid == 3201 then
+        local atkActions = atker.actions[EnumActions[buffInfo.ActionName]]
+        atkActions:setTag(packet.buffid)
+        atker:GetAvatar3D():runAction(atkActions)
     else
         local atkActions = atker.actions[EnumActions[buffInfo.ActionName]]
-        local action = cc.RepeatForever:create(atkActions)
-        action:setTag(packet.buffid)
-        atker:GetAvatar3D():runAction(action)
+        if atkActions then
+            local action = cc.RepeatForever:create(atkActions)
+            action:setTag(packet.buffid)
+            atker:GetAvatar3D():runAction(action)
+        end
     end
 
     atker.buffState[packet.buffid] = true
@@ -275,7 +442,6 @@ RegNetHandler(function (packet)
                 return
             end
 
-
             local posX, posY = selfPlayer:getPosition()
             local skillInfo = TableSkill[buffInfo.AtkSkill]
             for id, value in pairs(MgrPlayer) do
@@ -292,14 +458,14 @@ RegNetHandler(function (packet)
             
             CMD_USESKILL_POINT(buffInfo.AtkSkill, posX, posY, targetID)
             if #targetID > 0 then
-                print("buff skill:"..buffInfo.AtkSkill)
+                --print("buff skill:"..buffInfo.AtkSkill)
             end
             end, buffInfo.ClientInterval/1000, false)
     end
 end, netCmd.CMD_SC_BUFFBEGIN)
 
 RegNetHandler(function (packet)
-    print("netCmd.CMD_SC_BUFFEND")
+    --print("netCmd.CMD_SC_BUFFEND")
     local atker = MgrPlayer[packet.id]
     atker:removeChildByTag(packet.buffid)
     atker.buffState[packet.buffid] = nil
@@ -308,11 +474,11 @@ RegNetHandler(function (packet)
         local schedule = cc.Director:getInstance():getScheduler()
         schedule:unscheduleScriptEntry(buffScheduleID[packet.buffid])
     end
-    
+
     if packet.buffid == 3002 then
         local localPlayer = MgrPlayer[maincha.id]
         local sprite3D = atker:GetAvatar3D()
-        
+
         if atker.teamid == localPlayer.teamid then
             sprite3D:runAction(cc.FadeTo:create(0.2, 255))
             sprite3D:getAttachNode(WeaponNodeName):getChildByTag(100):runAction(cc.FadeTo:create(0.2, 255))
@@ -321,6 +487,62 @@ RegNetHandler(function (packet)
         end
     end
     atker.playSkillAction = 0
-    atker:GetAvatar3D():stopActionByTag(packet.buffid)
-    atker:Idle()
+    local buffInfo = TableBuff[packet.buffid]
+    if buffInfo.ActionName then
+        atker:GetAvatar3D():stopActionByTag(packet.buffid)
+        atker:Idle()
+    end
 end, netCmd.CMD_SC_BUFFEND)
+
+RegNetHandler(function (packet)
+    MgrFight.FivePVERound = packet.round 
+    local scene = cc.Director:getInstance():getRunningScene()
+    for key, ui in pairs(scene.hud.UIS) do
+        if ui.onFivePVERound then
+            ui:onFivePVERound()
+        end
+    end
+end, netCmd.CMD_SC_NOTI_5PVE_ROUND)
+
+RegNetHandler(function (packet)
+    local scene = cc.Director:getInstance():getRunningScene()
+    local ui = scene.hud:openUI("UIPVEResult")
+    
+    if packet.lose then
+        ui:Failed()
+    else
+        local items = {{id = 4001, count = math.random(500,5000)},
+            {id = 4004, count = math.random(1000,8000)}}
+        ui:Win(items)
+        addItem(items[1].id, items[1].count)
+        addItem(items[2].id, items[2].count)
+    end
+    
+    local backSchID = nil
+    local function back()
+        cc.Director:getInstance():getScheduler():unscheduleScriptEntry(backSchID)
+        CMD_LEAVE_MAP()
+    end
+                    
+    backSchID = cc.Director:getInstance():getScheduler():scheduleScriptFunc(back, 3, false)
+end, netCmd.CMD_SC_5PVP_RESULT)
+
+RegNetHandler(function (packet)
+    local scene = cc.Director:getInstance():getRunningScene()
+    local ui = scene.hud:openUI("UIPVEResult")
+    
+    local items = {{id = 4001, count = MgrFight.FivePVERound*500},
+        {id = 4004, count = MgrFight.FivePVERound*500}}
+        
+    ui:FailedAward(items)        
+    --addItem(items[1].id, items[1].count)
+    --addItem(items[2].id, items[2].count)
+    
+    local backSchID = nil
+    local function back()
+        cc.Director:getInstance():getScheduler():unscheduleScriptEntry(backSchID)
+        CMD_LEAVE_MAP()
+    end
+                    
+    backSchID = cc.Director:getInstance():getScheduler():scheduleScriptFunc(back, 3, false)
+end, netCmd.CMD_SC_5PVE_RESULT)

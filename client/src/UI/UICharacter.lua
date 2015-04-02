@@ -1,4 +1,5 @@
 local Name2idx = require "src.net.name2idx"
+local UIMessage = require "UI.UIMessage"
 
 local UICharacter = class("UICharacter", function()
     return require("UI.UIBaseLayer").create()
@@ -37,7 +38,8 @@ function UICharacter:ctor()
     self:createRightTab()
     self.nodeAchieve:setVisible(false)
     self.nodeAddAttr:setVisible(false)
-    self.createLabel(Lang.Character, 24, {x = 490, y = 550}, nil, {self.nodeMid})
+    self.createLabel(Lang.Character, 24, 
+        {x = 490, y = 550}, nil, {self.nodeMid})
     --[[
     local function onTouchBegan(sender, event)
         return true
@@ -48,6 +50,25 @@ function UICharacter:ctor()
     local eventDispatcher = self:getEventDispatcher()
     eventDispatcher:addEventListenerWithSceneGraphPriority(listener, self)
     ]]
+
+    local function onNodeEvent(event)
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        if "enter" == event then
+            if MgrGuideStep == 25 then
+                hud:closeUI("UIGuide")
+                local ui = hud:openUI("UIGuide")
+                ui:createWidgetGuide(self.btnAddPoint, 
+                    "UI/pve/jt.png", false)
+            end
+        elseif "exit" == event then
+            if MgrGuideStep == 25 then
+                hud:closeUI("UIGuide")
+                local main = hud:getUI("UIMainLayer")  
+                main.UpdateGuide()    
+            end
+        end
+    end
+    self:registerScriptHandler(onNodeEvent)
 end
 
 function UICharacter:createRightTab()
@@ -81,18 +102,31 @@ function UICharacter:createRightTab()
         self.back2:setVisible(true)
         self.back3:setVisible(true)
         self.back4:setVisible(false)
+
+        if MgrGuideStep == 25 then
+            local hud = cc.Director:getInstance():getRunningScene().hud
+            hud:closeUI("UIGuide")
+            local ui = hud:openUI("UIGuide")
+            ui:createWidgetGuide(self.btnAddpower, 
+                "UI/character/addH.png", false)
+        end
     end
 
     local function onBtnAchieveTouched(sender, type)
+        UIMessage.showMessage(Lang.NotOpen)
+        return
+        --[[
         self.nodeShow:setVisible(false)
         self.nodeAttr:setVisible(false)
         self.nodeAddAttr:setVisible(false)
         self.nodeAchieve:setVisible(true)
+        ]]
     end
 
     local size = self.visibleSize
         
-    self.createSprite("UI/character/tabBack.png", {x = 866, y = 317.5}, {self.nodeMid})
+    self.createSprite("UI/character/tabBack.png", 
+        {x = 866, y = 317.5}, {self.nodeMid})
     local disableColor = {r = 255, g = 241, b = 0}
     self.btnAttr = self.createButton{title = "属 \n\n性",
         pos = { x = 855, y = 430},
@@ -110,7 +144,8 @@ function UICharacter:createRightTab()
         --icon = "UI/common/yellow_btn_light.png",
         handle = onBtnAddAttrTouched,
         parent = self.nodeMid}
-    self.btnAddPoint:setTitleColorForState(disableColor, cc.CONTROL_STATE_DISABLED)
+    self.btnAddPoint:setTitleColorForState(disableColor, 
+        cc.CONTROL_STATE_DISABLED)
     lbl = self.btnAddPoint:getTitleLabelForState(cc.CONTROL_STATE_NORMAL)
     lbl:setDimensions(30, 0)
     self.btnAddPoint:needsLayout()
@@ -121,7 +156,8 @@ function UICharacter:createRightTab()
         handle = onBtnAchieveTouched,
         parent = self.nodeMid}
     self.btnAchieve:setRotation(5)
-    self.btnAchieve:setTitleColorForState({r = 200, g = 200, b = 200}, cc.CONTROL_STATE_DISABLED)
+    self.btnAchieve:setTitleColorForState({r = 200, g = 200, b = 200}, 
+        cc.CONTROL_STATE_DISABLED)
     lbl = self.btnAchieve:getTitleLabelForState(cc.CONTROL_STATE_NORMAL)
     lbl:setDimensions(30, 0)
     self.btnAchieve:needsLayout()
@@ -132,7 +168,7 @@ end
 
 function UICharacter:createCharShow()
     local function onBtnChangeNameTouched(sender, type)
-        print("onBtnChangeNameTouched")
+        UIMessage.showMessage(Lang.NotOpen)
     end
 
     local nodeShow = cc.Node:create()
@@ -140,10 +176,12 @@ function UICharacter:createCharShow()
     nodeShow:setPosition(40,60)
     self.nodeMid:addChild(nodeShow)
 
-    self.back1 = self.createSprite("UI/bag/dw1.png", {x = 295, y= 318}, {self.nodeMid})
+    self.back1 = self.createSprite("UI/bag/dw1.png", 
+        {x = 295, y= 318}, {self.nodeMid})
     self.back1:setLocalZOrder(-1)
     self.back1:setVisible(false)
-    self.back2 = self.createSprite("UI/character/kkkkkk.png", {x = 295, y= 318}, {self.nodeMid})
+    self.back2 = self.createSprite("UI/character/kkkkkk.png", 
+        {x = 295, y= 318}, {self.nodeMid})
     self.back2:setFlippedX(true)
     self.back2:setScale(1.1)
     self.back2:setOpacity(200)
@@ -156,8 +194,8 @@ function UICharacter:createCharShow()
     self.lblPlayerLvl = self.createBMLabel("fonts/LV.fnt", maincha.attr.level, 
         {x = 155, y = 430}, {nodeShow, {x = 0, y = 0.5}})
         
-    self.lblPlayerName = self.createLabel(maincha.nickname, nil, {x = 270, y = 430},
-        cc.TEXT_ALIGNMENT_CENTER, {nodeShow})    
+    self.lblPlayerName = self.createLabel(maincha.nickname, nil, 
+        {x = 270, y = 430}, cc.TEXT_ALIGNMENT_CENTER, {nodeShow})    
     self.lblPlayerName:setColor{r = 0, g = 0, b = 0}
     
     self.btnChangeName = self.createButton{pos = { x = 380, y = 430},
@@ -167,17 +205,19 @@ function UICharacter:createCharShow()
         parent = nodeShow
     }
     
-    --self.iconPlayer = self.createSprite("UI/Character/char.jpg", {x = 185, y = 250}, {nodeShow})
-    self.localPlayer = require("Avatar").create(maincha.avatarid, maincha.equip[2])
+    self.localPlayer = 
+        require("Avatar").create(maincha.avatarid, maincha.equip[2])
     self.localPlayer:getChildByTag(1):setRotation3D{x = 0, y = 0, z = 0}
     self.localPlayer:setPosition(270, 220)
     nodeShow:addChild(self.localPlayer)
     
     self.createSprite("UI/character/cj.png", {x = 270, y = 140}, {nodeShow})
-    self.createBMLabel("fonts/cj.fnt", "拾贝小菜鸟", {x = 270, y = 140}, {nodeShow})
+    self.createBMLabel("fonts/cj.fnt", "拾贝小菜鸟", 
+        {x = 270, y = 140}, {nodeShow})
     
     self.createSprite("UI/character/k2.png", {x = 270, y = 80}, {nodeShow})
-    self.createBMLabel("fonts/exp.fnt", "ID: "..(maincha.id or 1), {x = 270, y = 90}, {nodeShow})
+    self.createBMLabel("fonts/exp.fnt", "ID: "..(maincha.uniqueid), 
+        {x = 270, y = 90}, {nodeShow})
     --self.createSprite("UI/common/exp.png", {x = 180, y = 70}, {nodeShow})
     self.lblPlayerExp = self.createBMLabel("fonts/exp.fnt", 
         "EXP:", {x = 180, y = 70}, {nodeShow, {x = 0, y = 0.5}})
@@ -196,18 +236,21 @@ function UICharacter:createCharAttr()
     local intervalY = 55
     local function createAttrLabel(attrShowName, attrName)
         self.createSprite("UI/character/k.png", {x = 220, y = posY}, {nodeAttr})
-        local lbl = self.createLabel(attrShowName, nil, {x = 130, y = posY}, nil, {nodeAttr, {x = 0, y = 0.5}})
+        local lbl = self.createLabel(attrShowName, nil, {x = 130, y = posY}, 
+            nil, {nodeAttr, {x = 0, y = 0.5}})
         lbl:setColor({r = 0, g = 0, b = 0})
-        self["lbl"..attrName] = self.createLabel(maincha.attr[attrName] or -1, nil,
-            {x = 240, y = posY}, nil, {nodeAttr, {x = 0, y = 0.5}})
+        self["lbl"..attrName] = self.createLabel(maincha.attr[attrName] or -1, 
+            nil, {x = 240, y = posY}, nil, {nodeAttr, {x = 0, y = 0.5}})
         self["lbl"..attrName]:setColor({r = 0, g = 0, b = 0})
         posY = posY - intervalY
     end
 
-    self.back3 = self.createSprite("UI/bag/dw2.png", {x= 670, y = 315}, {self.nodeMid})
+    self.back3 = self.createSprite("UI/bag/dw2.png", 
+        {x= 670, y = 315}, {self.nodeMid})
     self.back3:setLocalZOrder(-1)
     self.back3:setVisible(false)
-    self.back4 = self.createSprite("UI/character/kkkkkk.png", {x= 670, y = 315}, {self.nodeMid})
+    self.back4 = self.createSprite("UI/character/kkkkkk.png", 
+        {x= 670, y = 315}, {self.nodeMid})
     self.back4:setScale(1.1)
     self.back4:setOpacity(200)
     self.back4:setLocalZOrder(-1)
@@ -223,7 +266,7 @@ function UICharacter:createCharAttr()
 end
 
 function UICharacter:UpdateAttr()
-    local attrs = {"attack", "defencse", "maxlife", "hit", "crit", --"action_force",
+    local attrs = {"attack", "defencse", "maxlife", "hit", "crit", 
          "movement_speed", "dodge"}
 
     for _, attr in pairs(attrs) do
@@ -293,7 +336,17 @@ function UICharacter:createAddAttr()
             attrPoint["potential_point"] = attrPoint["potential_point"] - 1
             attrPoint[attrName] = attrPoint[attrName] + 1 
             updatePoint()
+        else
+            UIMessage.showMessage(Lang.NoMorePotential)            
         end        
+
+        if MgrGuideStep == 25 then
+            local hud = cc.Director:getInstance():getRunningScene().hud
+            hud:closeUI("UIGuide")
+            local ui = hud:openUI("UIGuide")
+            ui:createWidgetGuide(self.btnConfirmAdd, 
+                "UI/pve/kstz.png", false)
+        end
     end
 
     local function onSubAttrTouched(sender, type)
@@ -314,32 +367,45 @@ function UICharacter:createAddAttr()
     local function onConfirmAddTouched(sender, type)
         local addpower =  attrPoint["power"] - maincha.attr["power"]
         local addendurance =  attrPoint["endurance"] - maincha.attr["endurance"]
-        local addconstitution =  attrPoint["constitution"] - maincha.attr["constitution"]
+        local addconstitution =  
+            attrPoint["constitution"] - maincha.attr["constitution"]
         local addaccurate =  attrPoint["accurate"] - maincha.attr["accurate"]
         local addlucky =  attrPoint["lucky"] - maincha.attr["lucky"]
         local addagile =  attrPoint["agile"] - maincha.attr["agile"]
 
         CMD_ADDPOINT(addpower, addendurance, addconstitution, addagile,
             addlucky, addaccurate)
+
+        if MgrGuideStep == 25 then
+            local hud = cc.Director:getInstance():getRunningScene().hud
+            hud:closeUI("UIGuide")
+            local ui = hud:openUI("UIGuide")
+            ui:createWidgetGuide(self.btnClose, 
+                "UI/common/close.png", false)
+        end
     end
 
     local posY = 420
     local intervalY = 45
     local function createAddAttrWidget(attrShowName, attrName)
-        self.createSprite("UI/character/heng.png", {x = 220, y = posY}, {nodeAddAttr})
-        self["btnAdd"..attrName] = self.createButton{pos = { x = 300, y = posY - 15},
+        self.createSprite("UI/character/heng.png", 
+            {x = 220, y = posY}, {nodeAddAttr})
+        self["btnAdd"..attrName] = self.createButton{
+            pos = { x = 300, y = posY - 15},
             icon = "UI/character/addH.png",
             handle = onAddAttrTouched,
             parent = nodeAddAttr}
-        self["btnAdd"..attrName]:setTag(Name2idx.idx(attrName))
+        self["btnAdd"..attrName]:setTag(Name2idx.Idx(attrName))
         
-        self["btnSub"..attrName] = self.createButton{pos = { x = 100, y = posY - 15},
+        self["btnSub"..attrName] = self.createButton{
+            pos = { x = 100, y = posY - 15},
             icon = "UI/character/subH.png",
             handle = onSubAttrTouched,
             parent = nodeAddAttr}
-        self["btnSub"..attrName]:setTag(Name2idx.idx(attrName))
+        self["btnSub"..attrName]:setTag(Name2idx.Idx(attrName))
 
-        self.createLabel(attrShowName, nil, {x = 160, y = posY}, nil, {nodeAddAttr, {x = 0, y = 0.5}})
+        self.createLabel(attrShowName, nil, {x = 160, y = posY}, nil, 
+            {nodeAddAttr, {x = 0, y = 0.5}})
         self["lbl"..attrName] = self.createLabel(maincha.attr[attrName], nil,
             {x = 220, y = posY}, nil, {nodeAddAttr, {x = 0, y = 0.5}})
         posY = posY - intervalY
@@ -364,14 +430,15 @@ function UICharacter:createAddAttr()
         parent = nodeAddAttr}
     --btn:setPreferredSize({width = 100, height = 50})
 
-    local btn = self.createButton{title = Lang.ConfirmAddPoint,
+    self.btnConfirmAdd = self.createButton{title = Lang.ConfirmAddPoint,
         pos = { x = 260, y = 60},
         icon = "UI/common/k.png",
         handle = onConfirmAddTouched,
         parent = nodeAddAttr}
-    btn:setPreferredSize({width = 112, height = 41})
+    self.btnConfirmAdd:setPreferredSize({width = 112, height = 41})
 
-    lbl = self.createLabel(Lang.Potential..":", nil, {x = 140, y = 80}, nil, {nodeAddAttr, {x = 0, y = 0.5}})
+    lbl = self.createLabel(Lang.Potential..":", nil, {x = 140, y = 80}, 
+        nil, {nodeAddAttr, {x = 0, y = 0.5}})
     lbl:setColor(ColorBlack)
     self["lblpotential_point"] = self.createLabel(maincha.attr.potential_point,
          nil, {x = 210, y = 80}, nil, {nodeAddAttr, {x = 0, y = 0.5}})
@@ -384,8 +451,10 @@ function UICharacter:createAchieve()
     self.nodeMid:addChild(nodeAchieve)
     self.nodeAchieve = nodeAchieve
     
-    self.createScale9Sprite("UI/common/bg3.png", nil, {width = 280, height = 550}, {nodeAchieve})
-    self.createScale9Sprite("UI/common/bg3.png", {x = 320, y = 0}, {width = 480, height = 550}, {nodeAchieve})
+    self.createScale9Sprite("UI/common/bg3.png", nil, 
+        {width = 280, height = 550}, {nodeAchieve})
+    self.createScale9Sprite("UI/common/bg3.png", {x = 320, y = 0}, 
+        {width = 480, height = 550}, {nodeAchieve})
     
     local function onAllTouched(sender, type)
     	
@@ -429,8 +498,10 @@ function UICharacter:createAchieve()
         local cell = table:dequeueCell()
         if cell == nil then
         	cell = cc.TableViewCell:create()
-            self.createScale9Sprite("UI/common/item_bk.png", {x = 0, y = 5}, {width = 460, height = 70}, {cell})
-            cell.lbl = self.createLabel(tostring(idx), nil, {x = 230, y = 40}, nil, {cell})
+            self.createScale9Sprite("UI/common/item_bk.png", {x = 0, y = 5}, 
+                {width = 460, height = 70}, {cell})
+            cell.lbl = self.createLabel(tostring(idx), nil, {x = 230, y = 40}, 
+                nil, {cell})
         end
         cell.lbl:setString(tostring(idx))
     	return cell
@@ -439,10 +510,12 @@ function UICharacter:createAchieve()
     local tableAchieve = cc.TableView:create({width = 460, height = 520})
     tableAchieve:setVerticalFillOrder(cc.TABLEVIEW_FILL_TOPDOWN)
     tableAchieve:setPosition(330, 15)
-    tableAchieve:registerScriptHandler(numOfCells, cc.NUMBER_OF_CELLS_IN_TABLEVIEW)
-    tableAchieve:registerScriptHandler(sizeOfCellIdx, cc.TABLECELL_SIZE_FOR_INDEX)
+    tableAchieve:registerScriptHandler(numOfCells, 
+        cc.NUMBER_OF_CELLS_IN_TABLEVIEW)
+    tableAchieve:registerScriptHandler(sizeOfCellIdx, 
+        cc.TABLECELL_SIZE_FOR_INDEX)
     tableAchieve:registerScriptHandler(cellOfIdx, 
-        cc.Handler.TABLECELL_AT_INDEX - cc.Handler.SCROLLVIEW_SCROLL)   --TODO cocos2dx lua bug
+        cc.Handler.TABLECELL_AT_INDEX - cc.Handler.SCROLLVIEW_SCROLL)   
     nodeAchieve:addChild(tableAchieve)
     tableAchieve:reloadData()
 end

@@ -115,10 +115,15 @@ function UISetting:createUI()
         parent = self.nodeMid}
     self.btnClose:setPreferredSize({width = 120, height = 45})
     
+    local function onExitTouched(sender, event)
+        --cc.Director:getInstance():getOpenGLView():endToLua()
+        cc.Director:getInstance():endToLua()
+    end
+    
     self.btnClose = self.createButton{title = "退出登录",
         pos = {x = 600, y = 200},
         icon = "UI/common/k.png",
-        handle = nil,
+        handle = onExitTouched,
         parent = self.nodeMid}
     self.btnClose:setPreferredSize({width = 120, height = 45})
 end

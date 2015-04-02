@@ -31,9 +31,9 @@ function battleitems:on_entermap(wpk)
 	end
 	WriteUint8(wpk,#tmp)
 	for k,v in pairs(tmp) do
-			WriteUint8(wpk,k)
-			WriteUint16(wpk,v.id)
-			WriteUint16(wpk,v.count)
+			WriteUint8(wpk,v[1])
+			WriteUint16(wpk,v[2].id)
+			WriteUint16(wpk,v[2].count)
 	end
 end
 
@@ -46,7 +46,7 @@ function avatar:new()
 	return o
 end
 
-function avatar:Init(id,avatid,map,nickname,attr,skill,pos,dir,teamid,fashion,weapon)
+function avatar:Init(id,avatid,map,nickname,attr,skill,pos,dir,teamid,fashion,weapon,items)
 	self.id = id
 	self.map = map
 	self.nickname = nickname
@@ -61,7 +61,7 @@ function avatar:Init(id,avatid,map,nickname,attr,skill,pos,dir,teamid,fashion,we
 	self.speed = 27
 	self.buff = Buff.New(self)
 	self.fashion = fashion
-	self.battleitems = battleitems:new({})
+	self.battleitems = battleitems:new(items)
 	print("avatar init",weapon)
 	self.weapon = weapon
 	return self
@@ -125,7 +125,7 @@ function avatar:EnterSee(other)
 		local wpk = GetWPacket()
 		WriteUint16(wpk,NetCmd.CMD_SC_MOV)
 		WriteUint32(wpk,other.id)
-		--wpk_write_uint16(wpk,other.speed)
+		WriteUint16(wpk,other.speed)
 		WriteUint16(wpk,target[1])
 		WriteUint16(wpk,target[2])
 		Send2Client(wpk)
@@ -153,7 +153,7 @@ function avatar:Mov(x,y)
 		local wpk = GetWPacket()
 		WriteUint16(wpk,NetCmd.CMD_SC_MOV)
 		WriteUint32(wpk,self.id)
-		--wpk_write_uint16(wpk,self.speed)
+		WriteUint16(wpk,self.speed)
 		WriteUint16(wpk,target[1])
 		WriteUint16(wpk,target[2])	
 		Send2Client(wpk)
@@ -392,7 +392,7 @@ function avatar:ProcessPacket(cmd,rpk)
 end
 
 return {
-	New = function (id,avatid,map,nickname,attr,skill,pos,dir,teamid,fashion,weapon) 
-		return avatar:new():Init(id,avatid,map,nickname,attr,skill,pos,dir,teamid,fashion,weapon)
+	New = function (id,avatid,map,nickname,attr,skill,pos,dir,teamid,fashion,weapon,items) 
+		return avatar:new():Init(id,avatid,map,nickname,attr,skill,pos,dir,teamid,fashion,weapon,items)
 	end
 }

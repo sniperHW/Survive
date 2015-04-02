@@ -12,8 +12,29 @@ local skillEffAttr = {
 
 local buffEffAttr = {
     [3001] = {pos = {x = 0, y = 50}},
-    [3002] = {pos = {x = 0, y = 50}}
+    [3002] = {pos = {x = 0, y = 50}},
+    [3201] = {pos = {x = 0, y = 50}},
 }
+
+function comm.getItemCount(itemid)
+    local bagdata = maincha.bag
+    for i = 1, #bagdata do
+        if bagdata[i].id == itemid then
+            return bagdata[i].count, bagdata[i].bagpos
+        end
+    end
+    return 0, nil
+end
+
+function comm.getItem(itemid)
+    local bagdata = maincha.bag
+    for i = 1, #bagdata do
+        if bagdata[i].id == itemid then
+            return bagdata[i]
+        end
+    end
+    return nil
+end
 
 function comm.getEffAni(effID)
     if effID < 1 then
@@ -25,7 +46,7 @@ function comm.getEffAni(effID)
 
     local frameCache = cc.SpriteFrameCache:getInstance()
     frameCache:addSpriteFrames("effect/"..tblEff.Resource_Path..".plist")
-    print("effect/"..tblEff.Resource_Path..".plist")
+    --print("effect/"..tblEff.Resource_Path..".plist")
     local name = ""
     for i = tblEff.Start_Frame, tblEff.End_Frame do
         name = string.format(tblEff.Name..".png", i)
@@ -162,7 +183,7 @@ function comm.getBuffEff(buffID, d)
         end        
     end
 
-    if buffEffAttr[buffID].pos then
+    if buffEffAttr[buffID] and buffEffAttr[buffID].pos then
         sprite:setPosition(buffEffAttr[buffID].pos)
     end
 
@@ -179,6 +200,7 @@ function comm.getDirSkillTargets(skillID)
     
     local selfPosX, selfPosY = localPlayer:getPosition()
     local selfPos = localPlayer:getParent():convertToWorldSpace({x = selfPosX, y = selfPosY})
+    --local selfPos = cc.p(selfPosX, selfPosY)
     local selfDir = localPlayer:GetAvatar3D():getRotation3D().y - 90
 
     local skillInfo = TableSkill[skillID]
@@ -189,12 +211,39 @@ function comm.getDirSkillTargets(skillID)
     
     for id, value in pairs(MgrPlayer) do
         if value and value.teamid ~= localPlayer.teamid 
-            and value.attr.life > 0 then
+            and value.attr.life and value.attr.life > 0 then
             local tarPosX, tarPosY = value:getPosition()
-            local tarPos = cc.p(tarPosX, tarPosY)
+            local tarPos = localPlayer:getParent():convertToWorldSpace(cc.p(tarPosX, tarPosY))
             local dis = cc.pGetDistance(selfPos, tarPos)
             
+            local dirVec = cc.pSub(tarPos, selfPos)
+            local dir = math.deg(cc.pToAngleSelf(dirVec))
+            if dir < 0 then
+                dir = dir + 360
+            end
+            
+            local inanlge = false
+            local diffDir = dir - selfDir
+            if diffDir < 0 then
+                diffDir = diffDir + 360
+            end
+            if diffDir > 180 then
+                diffDir = 360 -diffDir
+            end
+
+            if diffDir < skillInfo.Angle/2 then
+                inanlge = true 
+            end            
+            
             local box = value:GetAvatar3D():getBoundingBox()
+            local offWidth = box.width/4
+            local offHeight = box.height/4
+            
+            box = {x = box.x + offWidth, y = box.y + offHeight,
+                width = box.width - offWidth * 2,
+                height = box.height - offHeight* 2                
+            }
+            
             if cc.rectContainsPoint(box, selfPos) then
                 table.insert(targets, value.id)
             else
@@ -206,16 +255,17 @@ function comm.getDirSkillTargets(skillID)
     
                 local maxangle = 0
                 local minangle = -1
-                local inanlge = false
+                
     
                 for k, p in ipairs(boxpoints) do
                     local d = cc.pGetDistance(selfPos, p)
                     if d < dis then
                         dis = d
                     end
-    
+                    
+                    --[[
                     local dirVec = cc.pSub(p, selfPos)
-                    local dir = cc.pToAngleSelf(dirVec) * 57.3
+                    local dir = math.deg(cc.pToAngleSelf(dirVec))
                     
                     if dir < 0 then
                         dir = dir + 360
@@ -224,7 +274,7 @@ function comm.getDirSkillTargets(skillID)
                     if dir > maxangle then
                         maxangle = dir
                     end
-    
+
                     if minangle < dir then
                         minangle = dir
                     end 
@@ -242,8 +292,9 @@ function comm.getDirSkillTargets(skillID)
                            inanlge = true 
                         end
                     end
+                    ]]
                 end
-    
+                --[[
                 if not inanlge then
                     local midangle = (minangle + maxangle) * 0.5
     
@@ -254,12 +305,12 @@ function comm.getDirSkillTargets(skillID)
                     if diffDir > 180 then
                         diffDir = 360 -diffDir
                     end
-                   
-                    if diffDir < skillInfo.Angle/2 then
+
+                if diffDir < skillInfo.Angle/2 then
                        inanlge = true 
                     end
                 end
-    
+                ]]
                 if dis < skillInfo.Attack_Distance and inanlge then
                     table.insert(targets, value.id)
                 end
@@ -272,7 +323,7 @@ function comm.getDirSkillTargets(skillID)
             elseif selfDir == 90 then
                 selfPos = cc.pSub(selfPos, {x = 0, y = 50})
             else
-                local nor = cc.pNormalize({x = math.cos(selfDir), y = math.sin(selfDir)})
+            local nor = cc.pNormalize({x = math.cos(selfDir), y = math.sin(selfDir)})
                 selfPos = cc.pSub(selfPos, cc.pMul(nor, 50))
             end
             
@@ -398,7 +449,7 @@ function comm.calculateEquipAttr(attr, equipID)
 
         local a = TableIntensify[Intensify][attrIdx]
         local b = TableRising_Star[stars][attrIdx]
-        value = (equipInfo[attrIdx] + a + b ) * (1 + jewelValue)
+        value = math.ceil((equipInfo[attrIdx] + a + b ) * (1 + jewelValue*0.01))
     end
 
     return name, value, attrIdx
@@ -413,8 +464,61 @@ end
 
 function comm.playEffect(path)
    if MgrSetting.bPlayEffect then
-        cc.SimpleAudioEngine:getInstance():playEffect(path)
+   --[[
+        if MgrSetting.curEffect then
+            cc.SimpleAudioEngine:getInstance():stopEffect(MgrSetting.curEffect)
+        end
+       ]] 
+        MgrSetting.curEffect = cc.SimpleAudioEngine:getInstance():playEffect(path)
     end
+end
+
+function comm.parseOneItem(str)
+    local item = {}
+    local b, e = string.find(str, ":")
+    if not b then
+        return nil
+    end
+    local itemID = tonumber(string.sub(str, 1, b - 1))
+    local itemNum = tonumber(string.sub(str, b + 1, string.len(str))) 
+    return {itemID, itemNum}
+end
+
+function comm.parseMutilItems(strItem)
+    local beginPos = 1
+    local items = {}
+    local strs = {}
+    local strItems = strItem
+    
+    local function parseOneItem(str)
+        local item = {}
+        local b, e = string.find(str, ":", beginPos)
+        if not b then
+            return nil
+        end
+        local itemID = tonumber(string.sub(str, beginPos, b - 1))
+        local itemNum = tonumber(string.sub(str, b + 1, string.len(str))) 
+        return {itemID, itemNum}
+    end
+
+    local function getItem()
+        local begin, last = string.find(strItems, ",", beginPos)
+        if begin then
+            local str = string.sub(strItems, beginPos, last - 1)
+            local result = parseOneItem(str)                 
+            table.insert(items, result)
+            beginPos = last + 1
+            return getItem()
+        else      
+            local result = parseOneItem(strItems)    
+            if result then
+                table.insert(items, result)
+            end                  
+            return items
+        end
+    end
+    
+    return getItem()    
 end
 
 return comm

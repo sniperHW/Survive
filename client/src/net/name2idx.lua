@@ -20,11 +20,16 @@ local nameidx  = {
 	pearl = NextNum(),--珍珠
 	soul =   NextNum(),--武魂
 	action_force = NextNum(),--行动力
-	potential_point = NextNum(),
-	fishing_start =  NextNum(),
-	gather_start =  NextNum(),
-	sit_start = NextNum(),
-
+	potential_point = NextNum(), --可供使用的潜能点
+	fishing_start =  NextNum(), --钓鱼开始时间
+	gather_start =  NextNum(), --采集开始时间
+	sit_start = NextNum(), --打坐开始时间
+	spve_last_award = NextNum(), --上次领取奖励的关卡号
+	spve_history_max = NextNum(), --历史最大关卡记录
+	spve_today_max = NextNum(), --尚未提交的关卡记录
+	introduce_step = NextNum(), --新手引导步骤
+	online_award = NextNum(),
+	stamina = NextNum(),
 	attack = NextNum(),  --攻击
 	defencse = NextNum(),--防御
 	life = NextNum(),    --当前生命
@@ -34,8 +39,10 @@ local nameidx  = {
 	hit = NextNum(),--命中
 	anger = NextNum(),--怒气
 	combat_power = NextNum(),--战斗力
-	suffer_plusrate = NextNum(),	
+	suffer_plusrate = NextNum(), --伤害加成倍率
+	endidx = NextNum()
 }
+
 
 local idxname = {}
 
@@ -52,6 +59,6 @@ local function idx2name(idx)
 end
 
 return {
-	idx = name2idx,
+	Idx = name2idx,
 	name = idx2name,
 }

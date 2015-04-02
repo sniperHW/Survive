@@ -1,3 +1,5 @@
+local UIMessage = require "UI.UIMessage"
+
 local UICreatePlayer = class("UICreatePlayer", function()
     return require("UI.UIBaseLayer").create()
 end)
@@ -37,13 +39,13 @@ function UICreatePlayer:createPlayer()
  --   self.createScale9Sprite("UI/createCharacter/frameLeft.png", {x = 0, y = 10}, 
  --       {width = 480, height = 530}, {nodePlayer})
     local scrollIndicator = {}
-    for i = 1, 6 do
+    for i = 1, 4 do
         scrollIndicator[i] = self.createSprite("UI/createCharacter/scrollIndicatorD.png",
-            {x = 50 + 60* i, y = 50}, {nodePlayer})
+            {x = 100 + 60* i, y = 50}, {nodePlayer})
     end
     
     local function numOfCells(table)
-        return 6
+        return 4
     end
     
     local function cellWillRecycle(table, cell)
@@ -88,7 +90,7 @@ function UICreatePlayer:createPlayer()
         local idx = math.ceil((offX/bkSize.width)) + 1
         idx = math.min(math.max(1,idx), 6)
         
-        for i = 1, 6 do
+        for i = 1, 4 do
             if idx == i then
                 scrollIndicator[i]:setTexture(textureH)
             else
@@ -118,7 +120,7 @@ function UICreatePlayer:getCurAvatarIdx()
     local offset = self.tablePlayer:getContentOffset()
     local offX = math.abs(math.min(offset.x, 0))
     local idx = math.ceil((offX/bkSize.width)) + 1
-    idx = math.min(math.max(1,idx), 6)
+    idx = math.min(math.max(1,idx), 4)
     return idx
 end
 
@@ -137,8 +139,10 @@ function UICreatePlayer:createWeapon()
             weaponID = 5001
         elseif sender == self.btnRod then
             weaponID = 5101
-        --[[elseif sender == self.btnGun then
-            weaponID = 5201]]
+        elseif sender == self.btnGun then
+            UIMessage.showMessage(Lang.NotOpen)
+            return
+            --weaponID = 5201
         end
 
         local idx = self:getCurAvatarIdx()
@@ -210,9 +214,26 @@ function UICreatePlayer:createWeapon()
     self.txtUserName:registerScriptEditBoxHandler(onTextHandle)
     nodeWeapon:addChild(self.txtUserName)
     
+    local function onRandomTouched(...)
+        local idx1 = math.random(1, #Tablename)
+        local idx2 = math.random(1, 34)
+        local idx3 = math.random(1, 10)
+        local name = ""
+        if Tablename[idx1].name1 then
+            name = name..Tablename[idx1].name1
+        end
+        if Tablename[idx2].name2 then
+            name = name..Tablename[idx2].name2
+        end
+        if Tablename[idx3].name3 then
+            name = name..Tablename[idx3].name3
+        end
+        self.txtUserName:setText(name)
+    end
+    
     self.createButton{pos = {x = 230, y = 85},
         icon = "UI/createCharacter/random.png",
-        handle = onBtnTouched,
+        handle = onRandomTouched,
         parent = nodeWeapon   
     } 
 

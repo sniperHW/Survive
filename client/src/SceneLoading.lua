@@ -47,16 +47,16 @@ function SceneLoading:ctor()
          
     local mapInfo = TableMap[targetMapID]
     if mapInfo.Source_Path == "PVP" then
+        local path = nil
         for i = 1, 8 do
-            table.insert(loadImages, "Scene/"..mapInfo.Source_Path..i..".png")
+            path = "Scene/"..mapInfo.Source_Path..i..".png"
+            table.insert(MgrLoadedMap, path)
+            table.insert(loadImages, path)
         end
     else
-        table.insert(loadImages, "Scene/"..mapInfo.Source_Path..".png")        
-    end
-    
-    local tableEff = TableSpecial_Effects 
-    for _, value in pairs(tableEff) do
-        table.insert(loadImages, "effect/"..value.Resource_Path..".png")
+        local path = "Scene/"..mapInfo.Source_Path..".png"
+        table.insert(MgrLoadedMap, path)
+        table.insert(loadImages, path)        
     end
     
     local totalCount = #loadImages
@@ -65,17 +65,32 @@ function SceneLoading:ctor()
             print(#loadImages)
             local image = loadImages[1]
             table.remove(loadImages, 1)
-            self.loadingProgress:setPercentage((totalCount - #loadImages)/totalCount* 100)
+            local percentage = (totalCount - #loadImages)/totalCount * 100
+            self.loadingProgress:setPercentage(percentage)
             local cache = cc.Director:getInstance():getTextureCache()
             cache:addImageAsync(image, onLoad) 
         else
-            local scene = nil 
-            if self.mapID == 205 then
-                scene = require("SceneGarden").create(0)
+            if MgrPlayer[maincha.id] 
+                or self.mapID == 205
+                or self.mapID == 202
+                or MgrGuideStep == 4 
+                or MgrGuideStep == 15 then
+                
+                local scene = nil 
+                if self.mapID == 205 then
+                    scene = require("SceneGarden").create(0)
+                else
+                    if MgrGuideStep == 4 or MgrGuideStep == 17 then
+                        scene = require("SceneGuidePVE").create(targetMapID)
+                    else
+                        scene = require("SceneCity").create(targetMapID)
+                    end
+                end
+                cc.Director:getInstance():replaceScene(scene)
             else
-                scene = require("SceneCity").create(targetMapID)
+                self:runAction(cc.Sequence:create(cc.DelayTime:create(1), 
+                    cc.CallFunc:create(onLoad)))
             end
-            cc.Director:getInstance():replaceScene(scene)
         end
     end
 
@@ -104,7 +119,12 @@ function SceneLoading:ctor()
     local function onNodeEvent(event)
         if "enter" == event then
             local cache = cc.Director:getInstance():getTextureCache()
-            cache:removeUnusedTextures()
+            for _, path in pairs(MgrLoadedMap) do
+                cache:removeTextureForKey(path)
+            end
+            MgrLoadedMap = {}
+            --cache:removeUnusedTextures()
+            --MgrPlayer = {}
             onLoad()
         elseif "exit" == event and self.schedulerID then
             cc.Director:getInstance():getScheduler():unscheduleScriptEntry(self.schedulerID)

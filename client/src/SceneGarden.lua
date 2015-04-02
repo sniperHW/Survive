@@ -75,15 +75,15 @@ function SceneGarden:ctor()
     self:addChild(self.hud, 1)
 
     local function onBtnBackTouched(sender, event)
-        local running = cc.Director:getInstance():getRunningScene()
+        self.hud:closeUI("UIGuide")
         local scene = require("SceneLogin").create()
         cc.Director:getInstance():replaceScene(scene)
-        scene.hud:closeUI("UILogin")
-        scene.hud:openUI("UIMainLayer")
+        scene:setOpenUI("UIMainLayer")
         MgrPlayer = {}
     end
     
     local function onBtnTouched(sender, event)
+        local hud = cc.Director:getInstance():getRunningScene().hud
         if curState == stateIdle or curState == statePVE then
             if sender == self.btnFish then
                 CMD_HOMEACTION(stateFish)
@@ -94,8 +94,30 @@ function SceneGarden:ctor()
             elseif sender == self.btnPVE then
                 curState = statePVE
                 self:walkTo({x = 55, y = 105})    
+                
+                if MgrGuideStep == 19 then
+                    hud:closeUI("UIGuide")
+                    local ui = hud:openUI("UIGuide")
+                    ui:createClipNode()
+                end
             end
+            
+            local function onDone()
+                cc.Director:getInstance():getScheduler():unscheduleScriptEntry(self.guideSchID)
+                hud:closeUI("UIGuide")
+                local ui = hud:openUI("UIGuide")
+                ui:createClipNode(sender)
+            end
+            
+            if MgrGuideStep >= 10 and MgrGuideStep <= 12 then
+                hud:closeUI("UIGuide")
+                local ui = hud:openUI("UIGuide")
+                ui:createClipNode()
+                self.guideSchID = cc.Director:getInstance():getScheduler():scheduleScriptFunc(onDone, 10, false)
+            end            
         else
+            local hud = cc.Director:getInstance():getRunningScene().hud
+            hud:closeUI("UIGuide")
             if sender == self.btnFish then
                 if curState == stateFish then
                     require("UI.UIPopup").Popup("是否取消钓鱼？",
@@ -139,7 +161,7 @@ function SceneGarden:ctor()
     end
 
     local vWidth, vHeight = self.visibleSize.width,  self.visibleSize.height
-    require("UI.UIBaseLayer").createButton({
+    self.btnBack = require("UI.UIBaseLayer").createButton({
         pos = {x = vWidth-80, y = vHeight-90},
         icon = "UI/fight/back.png",
         handle = onBtnBackTouched,
@@ -195,7 +217,8 @@ function SceneGarden:ctor()
             self.map:setPosition(posX, posY)
             local dis = cc.pGetDistance({x = px, y = py}, {x = 460, y = 130})
             if dis < 50 then
-                CMD_ENTERMAP(202)
+                local scene = require("SceneLoading").create(202)
+                cc.Director:getInstance():replaceScene(scene)
             end
         else
         --print("**********no local player**************")            
@@ -242,15 +265,37 @@ function SceneGarden:ctor()
     eventDispatcher:addEventListenerWithSceneGraphPriority(listener, self)
 
     local function onNodeEvent(event)
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        if "enter" == event then
+            if MgrGuideStep == 10 then
+                local ui = hud:openUI("UIGuide")
+                ui:createClipNode(self.btnFish)
+            elseif MgrGuideStep == 11 then
+                local ui = hud:openUI("UIGuide")
+                ui:createClipNode(self.btnGather)
+            elseif MgrGuideStep == 12 then
+                local ui = hud:openUI("UIGuide")
+                ui:createClipNode(self.btnSit)
+            elseif MgrGuideStep == 19 then
+                local ui = hud:openUI("UIGuide")
+                ui:createClipNode(self.btnPVE)
+            end
+        end
+        
         if "exit" == event then
             cc.Director:getInstance():getScheduler():unscheduleScriptEntry(self.schedulerID)
             cc.SimpleAudioEngine:getInstance():stopMusic()
+            --[[
+            if MgrGuideStep == 17 then
+                
+            end
+            ]]
         end
     end
     self:registerScriptHandler(onNodeEvent)
 
     self:createUI()
-    --self:OpenResult()
+    --self:OpenResult(1, 2, {4001, 4002})
     self:UpdateBtnState()
 end
 
@@ -376,7 +421,8 @@ end
 
 function SceneGarden:UpdateInfo()
     self.lblLevel:setString(maincha.attr.level)
-    self.lblFightValue:setString(maincha.attr.combat_power)
+    local fight = maincha.attr.attack * 2 + maincha.attr.defencse * 1.5 + maincha.attr.maxlife * 0.2
+    self.lblFightValue:setString(math.ceil(fight))
     self.lblaction:setString(maincha.attr.action_force)
     self.lblpearl:setString(maincha.attr.pearl)
     self.lblshell:setString(maincha.attr.shell)
@@ -469,14 +515,14 @@ function SceneGarden:makeFlowers()
     end
 end
 
-function SceneGarden:OpenResult()
+function SceneGarden:OpenResult(action, count, reward_item)
     local baseLayer = require("UI.UIBaseLayer")
     local back = baseLayer.createScale9Sprite("UI/common/tip.png", 
         {x = self.visibleSize.width/2 - 250, y = self.visibleSize.height/2 - 175},
-        {width = 500, height = 350},{self})
-    baseLayer.createSprite("UI/Garden/gjjl.png", {x = 250, y = 260}, {back})    
-    --baseLayer.createSprite("UI/Garden/gjjl.png", {x = 250, y = 280}, {back})    
-    
+        {width = 500, height = 350},{self.hud})
+    baseLayer.createSprite("UI/Garden/gjjl.png", {x = 250, y = 300}, {back})    
+    local spr = baseLayer.createSprite("UI/pve/kk.png", {x = 250, y = 160}, {back})    
+    spr:setScaleX(1.7)
     local function onTouchBegan()
         return true
     end
@@ -488,12 +534,83 @@ function SceneGarden:OpenResult()
     
     local function onGetTouched(sender, event)
         back:removeFromParent()
+        
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        
+        if MgrGuideStep == 10 then
+            local ui = hud:openUI("UIGuide")
+            ui:createClipNode(self.btnGather)
+            CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)  
+            MgrGuideStep = 11
+        elseif MgrGuideStep == 11 then
+            local ui = hud:openUI("UIGuide")
+            ui:createClipNode(self.btnSit)
+            CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
+            MgrGuideStep = 12
+        elseif MgrGuideStep == 12 then
+            CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
+            
+            local function onTalkEnd()
+                local ui = hud:openUI("UIGuide")
+                ui:createClipNode(self.btnBack)
+            end
+            
+            local ui = hud:openUI("UINPCTalk")            
+            ui:ShowTalk(10, onTalkEnd)
+        end
+    end
+    
+    local item1 = 0
+    if action == 1 then
+        item1 = 4001
+    elseif action == 2 then
+        item1 = 4003
+    elseif action == 3 then
+        item1 = 4004
+    end
+
+    local items = {{item1, count}, {4003, 1}, {4004, 2}}
+
+    if MgrGuideStep >= 10 and MgrGuideStep <= 12 then
+        local strAwards = TableNewbie_Reward[MgrGuideStep].Guide_Reward
+        items = comm.parseMutilItems(strAwards)
+    end
+    
+    --[[
+    if MgrGuideStep == 10 then
+        items = {{4001, 30000}, {5813, 50}}
+    elseif MgrGuideStep == 11 then
+        items = {{4003, 10000}, {5811, 100}}
+    elseif MgrGuideStep == 12 then
+        items = {{4004, 52}, {5812, 50}}
+    end
+    ]]
+    
+    for i = 1, #items do
+        local itemInfo = TableItem[items[i][1]]
+        
+        if not itemInfo then
+            break
+        end
+        
+        local iconPath = "icon/itemIcon/"..itemInfo.Icon..".png"
+        local spr = cc.Sprite:create(iconPath)
+        spr:setPosition(10+ i * 120,160)
+        spr:setScale(0.7)
+        back:addChild(spr)
+        
+        local label = cc.Label:createWithBMFont("fonts/shop.fnt", items[i][2], 
+            cc.TEXT_ALIGNMENT_LEFT, 0, {x = 0, y = 0})
+        label:setPosition(20+ i * 120, 120)
+        back:addChild(label)
+        
+        --self.createSprite(iconPath, {x = 0, y = 1}, back)
     end
     
     baseLayer.createButton{icon = "UI/common/k.png",
-        pos = {x = 250, y = 60},
+        pos = {x = 250, y = 50},
         ignore = false,
-        title = "领取",
+        title = "领 取",
         parent = back,
         handle = onGetTouched}
 end
@@ -538,7 +655,7 @@ function SceneGarden:walkTo(tarPos)
             animaS:setTag(100)
         else
             self.localPlayer:GetAvatar3D():stopActionByTag(100)
-            self.localPlayer:Idle()
+            self.localPlayer:DelayIdle(0.1)
         end
     end
 
@@ -548,6 +665,7 @@ function SceneGarden:walkTo(tarPos)
     se:setTag(EnumActionTag.ActionMove)    
     self.localPlayer:runAction(se)        
     self.localPlayer:Walk()
+
 end
 
 RegNetHandler(function (packet)
@@ -590,6 +708,7 @@ RegNetHandler(function (packet)
         local attachNode = scene.localPlayer:GetAvatar3D():getAttachNode(WeaponNodeName)
         attachNode:removeChildByTag(EnumChildTag.Weapon)
         scene.localPlayer:GetAvatar3D():stopActionByTag(100)
+        scene:OpenResult(packet.action, 2, {4001, 4002})
     end
 end,netCmd.CMD_GC_HOMEBALANCE_RET)
 

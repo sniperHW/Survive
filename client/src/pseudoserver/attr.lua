@@ -12,12 +12,12 @@ end
 function attr:Init(avatar,baseinfo)
 	self.attr = {}
 	for k,v in pairs(baseinfo) do
-		local idx = Name2idx.idx(k)
+		local idx = Name2idx.Idx(k)
 		if idx then
 			self.attr[idx] = v
 		end
 	end
-	self.attr[Name2idx.idx("life")] = self.attr[Name2idx.idx("maxlife")]
+	self.attr[Name2idx.Idx("life")] = self.attr[Name2idx.Idx("maxlife")]
 	self.avatar = avatar
 	self.name = "attr"
 	print("attr:init",self)		
@@ -25,17 +25,58 @@ function attr:Init(avatar,baseinfo)
 end
 
 function attr:Get(name)
-	local idx = Name2idx.idx(name) or 0
-	return self.attr[idx]
+	local idx = Name2idx.Idx(name) or 0
+	return self.attr[idx] or 0
 end
 
 function attr:Set(name,val)
-	local idx = Name2idx.idx(name) or 0
+	local idx = Name2idx.Idx(name) or 0
 	if self.attr[idx] then
 		self.attr[idx] = val
 		self.flag = self.flag or {}
 		self.flag[idx] = true
 	end
+end
+
+function attr:Add(name,val,max)
+	if val < 0 then
+		return nil
+	end
+	local idx = Name2idx.Idx(name) or 0
+	if idx > 0 then
+		local old = self.attr[idx]
+		local new = old + val
+		if new < old or new > 0xFFFFFFFF then
+			new = 0xFFFFFFFF
+		end
+		if max and new > max then
+			new = max
+		end		
+		self.attr[idx] = new or 0
+		self.flag = self.flag or {}
+		self.flag[idx] = true
+		return new		
+	end
+	return nil
+end
+
+function attr:Sub(name,val)
+	if val < 0 then
+		return nil
+	end
+	local idx = Name2idx.Idx(name) or 0
+	if idx > 0 then
+		local old = self.attr[idx]
+		local new = old - val
+		if new < 0 or new > old then
+			new = 0
+		end
+		self.attr[idx] = new or 0
+		self.flag = self.flag or {}
+		self.flag[idx] = true
+		return new		
+	end
+	return nil
 end
 
 function attr:pack(wpk)

@@ -42,7 +42,18 @@ local LangCh = LangCh or {
     ["LevelLimit"]      = "不能超过人物等级",
     ["ShellNotEnough"]  = "贝币不足",
     ["SoulNotEnough"]   = "精元不足",
-    ["LastSkillLocked"] = "上个技能未解锁"
+    ["LastSkillLocked"] = "上个技能未解锁",
+    ["MaterialNotEnough"] = "材料不足",
+    ["LandNotOpen"]     = "该岛屿暂未开放",
+    ["NoJewelUninlay"]  = "没有宝石可以卸下",
+    ["NoJewelInlay"]  = "没有宝石可以镶嵌",
+    ["UpToMax"]  = "已达到最大携带上限",
+    ["LessUseLevel"]    = "未达到使用等级" ,
+    ["VipPos"]          = "没有权限携带更多的道具了",
+    ["NotOpen"]         = "暂未开放",
+    ["NoMorePotential"] = "没有多余的潜能点",
+    ["SuccessSynthesis"] = "恭喜你合成了 %s",
+    ["TouchPoint"]      = "请点击箭头指向的关卡"
 }
 
 return LangCh

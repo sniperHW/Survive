@@ -39,10 +39,17 @@ function Send2Client(wpk)
 	msgque:Push({wpk})
 end
 
+local function BegPlay(round)
+	UsePseudo = true
+	--DestroyMap()
+	Map.InitMap(round)
+end
+
 return {
 	Send2Pseudo = Send2Pseudo,
 	TickPseudo = TickPseudo,
 	DestroyMap = DestroyMap,
+	BegPlay = BegPlay,
 }
 
 

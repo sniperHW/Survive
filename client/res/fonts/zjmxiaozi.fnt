@@ -1,0 +1,26 @@
+info face="方正藏体简体" size=18 bold=0 italic=0 charset="" unicode=1 stretchH=100 smooth=1 aa=1 padding=6,6,6,6 spacing=4,4 outline=2
+common lineHeight=18 base=15 scaleW=512 scaleH=512 pages=1 packed=0 alphaChnl=0 redChnl=0 greenChnl=0 blueChnl=0
+page id=0 file="zjmxiaozi_0.png"
+chars count=22
+char id=44   x=176   y=37    width=20    height=21    xoffset=-7    yoffset=3     xadvance=6     page=0  chnl=15
+char id=69   x=91    y=38    width=26    height=28    xoffset=-7    yoffset=-6    xadvance=11    page=0  chnl=15
+char id=80   x=60    y=38    width=27    height=28    xoffset=-7    yoffset=-6    xadvance=13    page=0  chnl=15
+char id=86   x=27    y=38    width=29    height=28    xoffset=-8    yoffset=-6    xadvance=13    page=0  chnl=15
+char id=101  x=149   y=37    width=23    height=26    xoffset=-8    yoffset=-4    xadvance=7     page=0  chnl=15
+char id=112  x=0     y=38    width=23    height=29    xoffset=-7    yoffset=-4    xadvance=8     page=0  chnl=15
+char id=118  x=121   y=37    width=24    height=26    xoffset=-8    yoffset=-4    xadvance=8     page=0  chnl=15
+char id=20154 x=407   y=0     width=30    height=32    xoffset=-8    yoffset=-7    xadvance=14    page=0  chnl=15
+char id=21103 x=441   y=0     width=30    height=32    xoffset=-8    yoffset=-8    xadvance=14    page=0  chnl=15
+char id=21333 x=137   y=0     width=30    height=33    xoffset=-8    yoffset=-8    xadvance=14    page=0  chnl=15
+char id=22411 x=0     y=0     width=31    height=34    xoffset=-8    yoffset=-8    xadvance=14    page=0  chnl=15
+char id=22810 x=69    y=0     width=29    height=34    xoffset=-8    yoffset=-8    xadvance=14    page=0  chnl=15
+char id=22823 x=171   y=0     width=30    height=33    xoffset=-8    yoffset=-8    xadvance=14    page=0  chnl=15
+char id=24320 x=475   y=0     width=30    height=31    xoffset=-8    yoffset=-7    xadvance=14    page=0  chnl=15
+char id=25346 x=35    y=0     width=30    height=34    xoffset=-8    yoffset=-8    xadvance=14    page=0  chnl=15
+char id=25918 x=205   y=0     width=30    height=33    xoffset=-8    yoffset=-8    xadvance=14    page=0  chnl=15
+char id=26242 x=239   y=0     width=30    height=33    xoffset=-8    yoffset=-8    xadvance=14    page=0  chnl=15
+char id=26410 x=273   y=0     width=30    height=33    xoffset=-8    yoffset=-8    xadvance=14    page=0  chnl=15
+char id=26412 x=341   y=0     width=29    height=33    xoffset=-7    yoffset=-8    xadvance=14    page=0  chnl=15
+char id=26426 x=307   y=0     width=30    height=33    xoffset=-8    yoffset=-8    xadvance=14    page=0  chnl=15
+char id=32452 x=102   y=0     width=31    height=33    xoffset=-8    yoffset=-7    xadvance=14    page=0  chnl=15
+char id=38431 x=374   y=0     width=29    height=33    xoffset=-7    yoffset=-8    xadvance=14    page=0  chnl=15

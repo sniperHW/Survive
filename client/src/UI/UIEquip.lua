@@ -1,4 +1,5 @@
 local comm = require("common.CommonFun")
+local UIMessage = require "UI.UIMessage"
 
 local UIEquip = class("UIEquip", function()
     return require("UI.UIBaseLayer").create()
@@ -21,7 +22,7 @@ local colorStr = {
     "橙色品质"
 }
 
-function UIEquip:create()
+function UIEquip.create()
     local layer = UIEquip.new()
     return layer
 end
@@ -49,6 +50,25 @@ function UIEquip:ctor()
     self:createInlay()
     self:createStar()
     self:createRightTab()
+
+    local function onNodeEvent(event)
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        if "enter" == event then
+            if MgrGuideStep == 23 then
+                hud:closeUI("UIGuide")
+                local ui = hud:openUI("UIGuide")
+                ui:createWidgetGuide(self.btnIntensifyBack, 
+                    "UI/equip/btnback0.png", true)
+            end
+        elseif "exit" == event then
+            if MgrGuideStep == 23 then
+                hud:closeUI("UIGuide")
+                local main = hud:getUI("UIMainLayer")  
+                main.UpdateGuide()    
+            end
+        end
+    end
+    self:registerScriptHandler(onNodeEvent)
 end
 
 function UIEquip:createRightTab()
@@ -360,7 +380,49 @@ function UIEquip:createUpgrade()
     end
 
     local function onUpgradeTouched(sender, event)
-        CMD_EQUIP_UPRADE(self.selectedBagPos)
+        if MgrGuideStep == 23 then
+            local hud = cc.Director:getInstance():getRunningScene().hud
+            hud:closeUI("UIGuide")
+            local ui = hud:openUI("UIGuide")
+            ui:createWidgetGuide(self.btnClose, 
+                "UI/common/close.png", false)
+        end
+        
+        local equip = maincha.equip[self.selectedBagPos]
+        if equip then
+            local intensify = bit.rshift(equip.attr[3], 16)
+            local intensifyInfo = TableIntensify[intensify]
+            
+            if intensify >= maincha.attr.level then
+                UIMessage.showMessage(Lang.LevelLimit)
+                return
+            end
+            
+            if maincha.attr.shell < intensifyInfo.Money then
+                UIMessage.showMessage(Lang.ShellNotEnough)
+                return 
+            end
+            
+            if intensifyInfo.Prop1 then
+                local item = comm.parseOneItem(intensifyInfo.Prop1)
+                local count = comm.getItemCount(item[1])
+                if count < item[2] then
+                    UIMessage.showMessage(Lang.MaterialNotEnough)
+                    return
+                end
+            end
+            
+            if intensifyInfo.Prop2 then
+                local item = comm.parseOneItem(intensifyInfo.Prop2)
+                local count = comm.getItemCount(item[1])
+                if count < item[2] then
+                    UIMessage.showMessage(Lang.MaterialNotEnough)
+                    return
+                end
+            end
+            
+            CMD_EQUIP_UPRADE(self.selectedBagPos) 
+        end
     end
     
     self.btnIntensifyBack = 
@@ -380,7 +442,6 @@ end
 function UIEquip:UpdateUpgrade()
     local equip = maincha.equip[self.selectedBagPos]
     if equip then
-        print("***********:"..self.selectedBagPos)
         local intensify = bit.rshift(equip.attr[3], 16)
         local itemid = equip.id
         local itemInfo = TableItem[itemid]
@@ -592,8 +653,41 @@ function UIEquip:createStar()
         self.UpStar[i] = item
     end
 
-    local function onStarTouched(sender, event)
-        CMD_EQUIP_ADDSTAR(self.selectedBagPos)
+    local function onStarTouched(sender, event)   
+        local equip = maincha.equip[self.selectedBagPos]
+        if equip then
+            local stars = bit.band(equip.attr[3], 0x0000FFFF)
+            local starInfo = TableRising_Star[stars]
+            
+            if stars >= maincha.attr.level then
+                UIMessage.showMessage(Lang.LevelLimit)
+                return
+            end
+            
+            if maincha.attr.shell < starInfo.Money then
+                UIMessage.showMessage(Lang.ShellNotEnough)
+                return 
+            end
+            
+            if starInfo.Prop1 then
+                local item = comm.parseOneItem(starInfo.Prop1)
+                local count = comm.getItemCount(item[1])
+                if count < item[2] then
+                    UIMessage.showMessage(Lang.MaterialNotEnough)
+                    return
+                end
+            end
+            
+            if starInfo.Prop2 then
+                local item = comm.parseOneItem(starInfo.Prop2)
+                local count = comm.getItemCount(item[1])
+                if count < item[2] then
+                    UIMessage.showMessage(Lang.MaterialNotEnough)
+                    return
+                end
+            end
+            CMD_EQUIP_ADDSTAR(self.selectedBagPos)
+        end
     end
     
     self.createSprite("UI/equip/btnback0.png", {x = 750, y = 180}, {nodeStar})
@@ -615,14 +709,15 @@ function UIEquip:UpdateStar()
         local itemInfo = TableItem[itemid]
         local iconPath = "icon/itemIcon/"..itemInfo.Icon..".png"
         local intensify = bit.rshift(equip.attr[3], 16)
+        local stars = bit.band(equip.attr[3], 0x0000FFFF)
         
-        local intensifyInfo = TableRising_Star[intensify]
+        local starInfo = TableRising_Star[stars]
         self.UpStar[1].lblNum:setVisible(true)
-        self.UpStar[1].lblNum:setString(intensifyInfo.Money)
+        self.UpStar[1].lblNum:setString(starInfo.Money)
         self.UpStar[1].icon:setVisible(true)
         self.UpStar[1].btnBack:setVisible(true)
 
-        local str = intensifyInfo.Prop1
+        local str = starInfo.Prop1
         if str then
             local begin, last = string.find(str,":")
             local needItemID = tonumber(string.sub(str, 1, begin - 1))
@@ -641,7 +736,7 @@ function UIEquip:UpdateStar()
             self.UpStar[2].btnBack:setVisible(false)
         end
 
-        local str = intensifyInfo.Prop2
+        local str = starInfo.Prop2
         if str then
             local begin, last = string.find(str,":")
             local needItemID = tonumber(string.sub(str, 1, begin - 1))
@@ -798,6 +893,8 @@ function UIEquip:createInlay()
                 self.selectedStonePos = 0
                 CMD_EQUIP_INSET(self.selectedBagPos, inlayPos, 
                     item.id)
+            else
+                UIMessage.showMessage(Lang.NoJewelInlay)
             end
         end 
     end
@@ -827,6 +924,8 @@ function UIEquip:createInlay()
             if inlayPos > 0 then
                 self.selectedInlayedStone = 0
                 CMD_CG_EQUIP_UNINSET(self.selectedBagPos, inlayPos)
+            else
+                UIMessage.showMessage(Lang.NoJewelUninlay)
             end
         end
     end

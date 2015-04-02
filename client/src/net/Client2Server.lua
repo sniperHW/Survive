@@ -1,7 +1,6 @@
 local netCmd = require "src.net.NetCmd"
-local Pseudo = require "src.pseudoserver.pseudoserver"
-
 UsePseudo = false
+local Pseudo = require "src.pseudoserver.pseudoserver"
 
 function CMD_LOGIN(name, pass, logintype)		
 	local wpk = GetWPacket()
@@ -142,9 +141,10 @@ function CMD_ADDPOINT(power,endurance,constitution,agile,lucky,accurate)
     SendWPacket(wpk)
 end
 
-function CMD_CHAT(str)
+function CMD_CHAT(target,str)
     local wpk = GetWPacket()
-    WriteUint16(wpk, netCmd.CMD_CG_CHAT)   
+    WriteUint16(wpk, netCmd.CMD_CG_CHAT)
+    WriteString(wpk,target or "all")   
     WriteString(wpk,str)
     SendWPacket(wpk) 
 end
@@ -236,12 +236,174 @@ end
     SendWPacket(wpk)     
 end
 
- function CMD_EVERYDAYTASK_GETAWARD(task)
+function CMD_EVERYDAYTASK_GETAWARD(task)
     local wpk = GetWPacket()
     WriteUint16(wpk, netCmd.CMD_CG_EVERYDAYTASK_GETAWARD)
     WriteUint8(wpk,task)
     SendWPacket(wpk)     
 end
+
+function CMD_COMMIT_INTRODUCE_STEP(val)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_COMMIT_INTRODUCE_STEP)
+    WriteUint16(wpk,val)
+    SendWPacket(wpk)     
+end
+
+ function CMD_COMMIT_COMMIT_SPVE(val)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_COMMIT_SPVE)
+    WriteUint16(wpk,val)
+    SendWPacket(wpk)     
+end
+
+function CMD_ACHIEVE(val)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_ACHIEVE)
+    SendWPacket(wpk)     
+end
+
+function CMD_ACHIEVE_AWARD(id)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_ACHIEVE_AWARD)
+    WriteUint16(wpk,id)
+    SendWPacket(wpk) 
+end
+
+function CMD_COMPOSITE(id,bagpos)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_COMPOSITE)
+    WriteUint16(wpk,id)
+    WriteUint8(wpk, #bagpos)
+    for i = 1, #bagpos do
+        WriteUint8(wpk, bagpos[i])
+    end
+    SendWPacket(wpk) 
+end
+
+function CMD_PVE_GETAWARD()
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_PVE_GETAWARD)
+    SendWPacket(wpk)    
+end
+
+--CMD_CG_STONE_COMPOSITE
+
+function CMD_STONE_COMPOSITE(id,bagpos,all)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_STONE_COMPOSITE)
+    WriteUint16(wpk,id)
+    WriteUint8(wpk, bagpos)
+    WriteUint8(wpk,all)
+    SendWPacket(wpk) 
+end
+
+function CMD_FRIEND_ADD(id,nickname)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_FRIEND_ADD)
+    WriteString(wpk,"friend")
+    if id then
+        WriteString("id")
+        WriteUint32(wpk,id)        
+    elseif nickname then
+        WriteString("name")
+        WriteString("nickname")
+    end
+    SendWPacket(wpk) 
+end
+
+function CMD_BLACK_ADD(id)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_FRIEND_ADD)
+    WriteString(wpk,"black")
+    WriteString("id")
+    WriteUint32(wpk,id)          
+    SendWPacket(wpk) 
+end
+
+function CMD_FRIEND_REMOVE(id)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_FRIEND_REMOVE)
+    WriteString(wpk,"friend")    
+    WriteUint32(wpk,id)
+    SendWPacket(wpk) 
+end
+
+function CMD_BLACK_REMOVE(id)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_FRIEND_REMOVE)
+    WriteString(wpk,"black")
+    WriteUint32(wpk,id)
+    SendWPacket(wpk) 
+end
+
+function CMD_FRIEND_PEEKINFO(id)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_FRIEND_PEEKINFO)
+    WriteUint32(wpk,id)
+    SendWPacket(wpk)     
+end
+
+function CMD_FRIEND_GETALL(id)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_FRIEND_GETALL)
+    SendWPacket(wpk)     
+end
+
+function CMD_SINGLE_USE_ITEM(bagpos)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_SINGLE_USE_ITEM)
+    WriteUint8(wpk, bagpos)
+    SendWPacket(wpk)   
+end
+
+function CMD_SURVIVE_APPLY()
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_SURVIVE_APPLY)
+    SendWPacket(wpk)   
+end
+
+function CMD_SURVIVE_CONFIRM(itemno)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_SURVIVE_CONFIRM)
+    WriteUint8(wpk,itemno)
+    SendWPacket(wpk)   
+end
+
+function CMD_PICKUP(id)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CS_PICKUP)
+    WriteUint32(wpk,id)
+    SendWPacket(wpk)   
+end
+
+function CMD_GETMAILLIST()
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_GETMAILLIST)
+    SendWPacket(wpk)
+end
+
+function CMD_MAILMARKREAD(idx)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_MAILMARKREAD)
+    WriteString(wpk,idx)
+    SendWPacket(wpk)
+end
+
+function CMD_MAILGETATTACH(idx)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_MAILGETATTACH)
+    WriteString(wpk,idx)
+    SendWPacket(wpk)
+end
+
+function CMD_MAILDELETE(idx)
+    local wpk = GetWPacket()
+    WriteUint16(wpk, netCmd.CMD_CG_MAILDELETE)
+    WriteString(wpk,idx)
+    SendWPacket(wpk)
+end
+
 
 cc.Director:getInstance():getScheduler():scheduleScriptFunc(function () 
     if UsePseudo then

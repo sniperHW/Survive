@@ -28,10 +28,11 @@ function UIPopup:showPopMessag(msgStr)
     self.createScale9Sprite("UI/common/tip.png", {x = 0, y = 0}, 
         {width = 400, height = 247}, {self, {x = 0.5, y = 0.5}})
     --local msgStr = "洗点功能按钮点击有弹出确认框，玩家花费相应的货币洗点（加点界面）"
-    self.createLabel(msgStr, nil, 
+    local lbl = self.createLabel(msgStr, nil, 
         { x = 0, y = 80}, nil, {self, {x = 0.5, y = 1}},
         {width = 360, height = 0})
-        
+    lbl:enableOutline(ColorBlack, 2)   
+    
     local function onConfirmTouched(sender, event)
         if sender == self.btnConfirm then
             if self.popType == EnumPopupType.cancelGarden then
@@ -41,21 +42,30 @@ function UIPopup:showPopMessag(msgStr)
         self:removeFromParent()
     end
 
-    self.btnConfirm  = self.createButton{
-        pos = {x = -100, y = -60},
-        icon = "UI/common/kuang2.png",
-        handle = onConfirmTouched,
-        ignore = false,
-        parent =  self    
-    }
-    self.btnSkillHandle  = self.createButton{
-        pos = {x = 100, y = -60},
-        icon = "UI/common/kuang1.png",
-        handle = onConfirmTouched,
-        ignore = false,
-        parent =  self    
-    }
-
+    if MgrGuideStep >= 10 and MgrGuideStep <= 12 then
+        self.btnConfirm  = self.createButton{
+            pos = {x = 0, y = -60},
+            icon = "UI/common/kuang2.png",
+            handle = onConfirmTouched,
+            ignore = false,
+            parent =  self    
+        }
+    else
+        self.btnConfirm  = self.createButton{
+            pos = {x = -100, y = -60},
+            icon = "UI/common/kuang2.png",
+            handle = onConfirmTouched,
+            ignore = false,
+            parent =  self    
+        }
+        self.btnSkillHandle  = self.createButton{
+            pos = {x = 100, y = -60},
+            icon = "UI/common/kuang1.png",
+            handle = onConfirmTouched,
+            ignore = false,
+            parent =  self    
+        }
+    end
 end
 
 return UIPopup

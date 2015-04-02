@@ -1,4 +1,7 @@
 local comm = require("common.CommonFun")
+local uihud = require ("UI.UIHudLayer")
+local UIMessage = require "UI.UIMessage"
+
 local UIMainLayer = class("UIMainLayer", function()
     return require("UI.UIBaseLayer").create()
 end)
@@ -48,6 +51,10 @@ function UIMainLayer:ctor()
     local rainbow = cc.Sprite:createWithSpriteFrameName("garden1.png")
     rainbow:setPosition({x = 85, y = 82.5})
     landGarden:addChild(rainbow)
+    
+    self.createSprite("UI/main/xiaozidw.png", {x = 105, y = 24}, {landGarden})
+    self.createBMLabel("fonts/zjmxiaozi.fnt", "单人PVE", {x = 111, y = 24}, {landGarden})
+    
     local function rainbowAni()
         local ac0 = cc.FadeTo:create(math.random(3, 6), math.random(50, 80))   
         local dealy0 = cc.DelayTime:create(math.random(2,5))   
@@ -65,7 +72,7 @@ function UIMainLayer:ctor()
     map:addChild(landGarden)
 
     local landCar, carAni = createAniSprite("CAR%d.png", 3, 0.2)
-    landCar:setTag(201)
+    landCar:setTag(0)
     maps[2] = landCar
     local function radAni()
         local radTime = math.random(1, 3)
@@ -84,7 +91,9 @@ function UIMainLayer:ctor()
     backSelected:setPosition({x = 175, y = 130})
     backSelected:setVisible(false)
     landCar:addChild(backSelected, -1, backTag)
-    
+    self.createSprite("UI/main/xiaozidw.png", {x = 235, y = 160}, {landCar})
+    self.createBMLabel("fonts/zjmxiaozi.fnt", "暂未开放", {x = 235, y = 160}, {landCar})
+
     map:addChild(landCar)
 
     local landAdventure = cc.Sprite:createWithSpriteFrameName("adventure.png")
@@ -94,6 +103,9 @@ function UIMainLayer:ctor()
     iconName = cc.Sprite:createWithSpriteFrameName("3.png")
     iconName:setPosition(140, 80)
     landAdventure:addChild(iconName)
+    self.createSprite("UI/main/xiaozidw.png", {x = 140, y = 45}, {landAdventure})
+    self.createBMLabel("fonts/zjmxiaozi.fnt", "多人PVP", {x = 145, y = 45}, {landAdventure})
+
     map:addChild(landAdventure)    
     
     local backSelected = cc.Sprite:createWithSpriteFrameName("adventure0.png")
@@ -109,6 +121,8 @@ function UIMainLayer:ctor()
     iconName = cc.Sprite:createWithSpriteFrameName("4.png")
     iconName:setPosition(100, -10)
     landTisk:addChild(iconName)    
+    self.createSprite("UI/main/xiaozidw.png", {x = 100, y = -40}, {landTisk})
+    self.createBMLabel("fonts/zjmxiaozi.fnt", "多人PVE", {x = 100, y = -40}, {landTisk})
     map:addChild(landTisk)
     
     local backSelected = cc.Sprite:createWithSpriteFrameName("TISK.png")
@@ -117,7 +131,7 @@ function UIMainLayer:ctor()
     landTisk:addChild(backSelected, -1, backTag)
 
     local landAncient = cc.Sprite:createWithSpriteFrameName("ancient.png")
-    landAncient:setTag(202)
+    landAncient:setTag(0)
     maps[5] = landAncient
     landAncient:setPosition(1140, 380)
     map:addChild(landAncient)
@@ -134,10 +148,12 @@ function UIMainLayer:ctor()
     
     iconName = cc.Sprite:createWithSpriteFrameName("5.png")
     iconName:setPosition(1140, 300)
+    self.createSprite("UI/main/xiaozidw.png", {x = 150, y = -20}, { landAncient})
+    self.createBMLabel("fonts/zjmxiaozi.fnt", "暂未开放", {x = 150, y = -20}, {landAncient})
     map:addChild(iconName)    
 
     local landLive, ani = createAniSprite("live%d.png", 4, 0.15)
-    landLive:setTag(0)
+    landLive:setTag(206)
     maps[6] = landLive
     landLive:runAction(cc.RepeatForever:create(ani))
     landLive:setPosition(1080, 180)
@@ -150,6 +166,8 @@ function UIMainLayer:ctor()
     backSelected:setPosition({x = 175, y = 128})
     backSelected:setVisible(false)
     landLive:addChild(backSelected, -1, backTag)
+    self.createSprite("UI/main/xiaozidw.png", {x = 190, y = 150}, {landLive})
+    self.createBMLabel("fonts/zjmxiaozi.fnt", "大型PVP", {x = 190, y = 150}, {landLive})
     
     local bTouchMoved = false
     local touchBeginPoint = nil
@@ -194,29 +212,147 @@ function UIMainLayer:ctor()
     local function onTouchEnded(touch, event)
         if not bTouchMoved and chooseMap then
             local tag = chooseMap:getTag()
-            if tag == 205 then
+            local hud = cc.Director:getInstance():getRunningScene().hud
+            if tag == 204 then
+                hud:openUI("UIChoosePVP")
+            elseif tag == 205 then
                 local scene = require("SceneLoading").create(tag)
                 cc.Director:getInstance():replaceScene(scene)
+            elseif tag == 206 then
+                CMD_SURVIVE_APPLY()
             elseif tag > 0 then
                 CMD_ENTERMAP(tag)
+            elseif tag == 0 then
+                UIMessage.showMessage(Lang.LandNotOpen) 
             end
+            
+            if tag == 203 then               
+                hud:openUI("UIWaitTeamPVE")
+            end
+            
             chooseMap:getChildByTag(backTag):setVisible(false)
+            chooseMap = nil
             print("choose map:"..tag)
         end
     end
 
     local listener = cc.EventListenerTouchOneByOne:create()
-    listener:registerScriptHandler(onTouchBegan,cc.Handler.EVENT_TOUCH_BEGAN )
-    listener:registerScriptHandler(onTouchMoved,cc.Handler.EVENT_TOUCH_MOVED )
-    listener:registerScriptHandler(onTouchEnded,cc.Handler.EVENT_TOUCH_ENDED )
+    listener:registerScriptHandler(onTouchBegan,cc.Handler.EVENT_TOUCH_BEGAN)
+    listener:registerScriptHandler(onTouchMoved,cc.Handler.EVENT_TOUCH_MOVED)
+    listener:registerScriptHandler(onTouchEnded,cc.Handler.EVENT_TOUCH_ENDED)
     listener:setSwallowTouches(true)
     local eventDispatcher = self:getEventDispatcher()
     eventDispatcher:addEventListenerWithSceneGraphPriority(listener, self)
     
+    MgrGuideStep = maincha.attr.introduce_step
+    local function onTalkEnd()
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        if MgrGuideStep > maincha.attr.introduce_step then
+            CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
+        end
+        
+        if MgrGuideStep == 0 then
+            local ui = hud:openUI("UINPCTalk")
+            ui:ShowTalk(1, onTalkEnd)     
+        elseif MgrGuideStep == 1 then
+            local ui = hud:openUI("UIGetAward")
+            ui:setOnEnd(onTalkEnd)            
+        elseif MgrGuideStep == 2 then
+            local ui = hud:openUI("UINPCTalk")
+            ui:ShowTalk(2, onTalkEnd)
+        elseif MgrGuideStep == 3 then
+            local scene = require("SceneLoading").create(202)
+            cc.Director:getInstance():replaceScene(scene)
+        elseif MgrGuideStep == 4 then
+            local ui = hud:openUI("UINPCTalk")
+            ui:ShowTalk(8, onTalkEnd)
+        elseif MgrGuideStep == 5 then
+            local ui = hud:openUI("UIGuide")
+            ui:createWidgetGuide(self.btnBag, "UI/main/bag.png", false)
+        elseif MgrGuideStep == 6 then
+            self.showMenu()
+            local ui = hud:openUI("UINewOpen")
+            ui:Show("UI/main/xs.png", cc.p(self.visibleSize.width - 91, 180), onTalkEnd)
+        elseif MgrGuideStep == 7 then
+            hud:closeUI("UINewOpen")
+            self.btnAchieve:setVisible(true)
+            local ui = hud:openUI("UIGuide")
+            ui:createWidgetGuide(self.btnAchieve, "UI/main/xs.png", false)
+        elseif MgrGuideStep == 8 then
+            local ui = hud:openUI("UINPCTalk")
+            ui:ShowTalk(9, onTalkEnd)
+        elseif MgrGuideStep >= 9 and MgrGuideStep <= 11 then
+            local ui = hud:openUI("UIGuide")
+            ui:createClipNode(maps[1])
+        elseif MgrGuideStep == 12 then
+            hud:closeUI("UIGuide")
+            local ui = hud:openUI("UIGuide")
+            ui:createWidgetGuide(self.btnSkill, "UI/main/skill.png", false)
+        elseif MgrGuideStep == 13 then
+            local ui = hud:openUI("UINPCTalk")
+            ui:ShowTalk(11, onTalkEnd)
+        elseif MgrGuideStep == 14 then
+            local ui = hud:openUI("UIGuide")
+            ui:createWidgetGuide(self.btnBag, "UI/main/bag.png", false)
+        elseif MgrGuideStep == 15 then        
+            local ui = hud:openUI("UINPCTalk")
+            ui:ShowTalk(12, onTalkEnd)
+        elseif MgrGuideStep == 16 then
+            local scene = require("SceneLoading").create(202)
+            cc.Director:getInstance():replaceScene(scene)
+        elseif MgrGuideStep == 17 then
+            local ui = hud:openUI("UINPCTalk")
+            ui:ShowTalk(13, onTalkEnd)
+        elseif MgrGuideStep == 18 then
+            local ui = hud:openUI("UIGuide")
+            ui:createClipNode(maps[1])
+        elseif MgrGuideStep == 19 then
+            local ui = hud:openUI("UIGuide")
+            ui:createWidgetGuide(self.btnAchieve, "UI/main/xs.png", false)
+        elseif MgrGuideStep == 20 then
+            self.showMenu()
+            local ui = hud:openUI("UINewOpen")
+            ui:Show("UI/main/mrrw.png", cc.p(self.visibleSize.width - 91, 270), onTalkEnd)
+        elseif MgrGuideStep == 21 then
+            hud:closeUI("UINewOpen")
+            self.btnDayMission:setVisible(true)
+            local ui = hud:openUI("UINPCTalk")
+            ui:ShowTalk(14, onTalkEnd)
+        elseif MgrGuideStep == 22 then
+            if maincha.attr.level >= 10 then
+                local ui = hud:openUI("UIGuide")
+                ui:createWidgetGuide(self.btnEquip, 
+                    "UI/main/wax.png", false)
+            end
+        elseif MgrGuideStep == 23 then
+            local function onEnd()
+                local ui = hud:openUI("UIGuide")
+                ui:createWidgetGuide(self.btnDayMission, "UI/main/mrrw.png", false)
+            end
+            local ui = hud:openUI("UINPCTalk")
+            ui:ShowTalk(15, onEnd)
+        elseif MgrGuideStep == 24 then
+            if maincha.attr.level >= 20 then
+                local ui = hud:openUI("UIGuide")
+                ui:createWidgetGuide(self.btnHead, "yuan.png", true)
+            end            
+        end
+        
+        MgrGuideStep = MgrGuideStep + 1
+    end
+    
+    self.UpdateGuide = onTalkEnd
+    
     local function onNodeEvent(event)
-        if "exit" == event then
+        if "enter" == event then
+            onTalkEnd()
+        elseif "exit" == event then
             --cc.Director:getInstance():getScheduler():unscheduleScriptEntry(self.schedulerID)
             cc.SimpleAudioEngine:getInstance():stopMusic()
+            if self.onlineSchID then
+                local scheduler = cc.Director:getInstance():getScheduler()
+                scheduler:unscheduleScriptEntry(self.onlineSchID)
+            end
         end
     end
     self:registerScriptHandler(onNodeEvent)
@@ -227,6 +363,7 @@ function UIMainLayer:ctor()
     self:createLeftBottom()
     
     self:UpdateInfo()
+    self:UpdateOnline()
 end
 
 local function onHeadTouched(sender, type)
@@ -236,9 +373,58 @@ local function onHeadTouched(sender, type)
     hud:openUI("UICharacter")
 end
 
+local function getOnlineInfo()
+    local maxTime = 0
+    local times = {60, 300, 600, 1800, 3600, 7200}
+    for i = 16, 21 do
+        if MgrAchieve and not MgrAchieve[i].awarded then
+            maxTime = times[i-15]
+            return maxTime, i
+        end
+    end
+
+    return 0, nil
+end
+
+function UIMainLayer:UpdateOnline()
+    local maxTime, achieveID = getOnlineInfo()
+
+    if maincha.attr.online_award == 0 or maxTime == 0 then
+        self.btnOnline:setVisible(false)
+        self.iconOnline:setVisible(false)
+        self.lblOnline:setVisible(false)
+    else
+        self.btnOnline:setVisible(true)
+        self.iconOnline:setVisible(true)
+        self.lblOnline:setVisible(true)
+        
+        if self.onlineSchID then
+            cc.Director:getInstance():getScheduler():unscheduleScriptEntry(self.onlineSchID)
+        end        
+        
+        local function updateOnline()
+            local t = math.ceil(os.clock() - BeginTime.localtime)
+            local st = maincha.attr.online_award - BeginTime.servertime
+            local rt = t - st 
+            rt = math.max(0, maxTime - math.max(rt, 0))
+            local min = math.floor(rt/60)
+            local sec = rt % 60
+            local str = string.format("%02d:%02d",min, sec)
+            self.lblOnline:setString(str)
+        end
+
+        self.onlineSchID = cc.Director:getInstance():getScheduler():scheduleScriptFunc(updateOnline, 1, false)
+    end
+end
+
+function UIMainLayer:onUpdateAchieve()
+    self:UpdateOnline()
+end
+
 function UIMainLayer:UpdateInfo()
     self.lblLevel:setString(maincha.attr.level)
-    self.lblFightValue:setString(maincha.attr.combat_power)
+    local fight = maincha.attr.attack * 2 + maincha.attr.defencse * 1.5 + maincha.attr.maxlife * 0.2
+    self.lblFightValue:setString(math.ceil(fight))
     self.lblaction:setString(maincha.attr.action_force)
     self.lblpearl:setString(maincha.attr.pearl)
     self.lblshell:setString(maincha.attr.shell)
@@ -256,7 +442,7 @@ function UIMainLayer:createLeftTop()
     self.createSprite("UI/main/infoBack.png", {x = 102, y = -82}, {nodeLeftTop})
 
     local headPath = string.format("UI/main/head%d.png",maincha.avatarid)
-    self.createButton{icon = headPath,
+    self.btnHead = self.createButton{icon = headPath,
         pos = {x = 61, y = -56},
         ignore = false,
         handle = onHeadTouched,
@@ -304,11 +490,10 @@ function UIMainLayer:createLeftTop()
         pos = {x = 170, y = 7},
         handle = add,
         parent = bk
-    }
-    
-    local hud = cc.Director:getInstance():getRunningScene().hud
+    }    
 
     local function onHDTouched(sender, event)
+        local hud = cc.Director:getInstance():getRunningScene().hud
         hud:openUI("UISign")
     end
     self.createButton{icon = "UI/main/hd.png",
@@ -318,45 +503,58 @@ function UIMainLayer:createLeftTop()
     }
     self.createSprite("UI/main/hdd.png", {x = 255, y = -120}, {nodeLeftTop})
     
-    local function onOnlineTouched(sender, event)
-        --hud:openUI("UISign")
-    end
-    self.createButton{icon = "UI/main/online.png",
-        pos = {x = 350, y = -120},
-        handle = onOnlineTouched,
-        parent = nodeLeftTop
-    }
-    self.createSprite("UI/main/zx.png", {x = 380, y = -120}, {nodeLeftTop})
-    
     local function onFirstTouched(sender, event)
     --hud:openUI("UISign")
     end
     self.createButton{icon = "UI/main/first.png",
-        pos = {x = 480, y = -120},
+        pos = {x = 350, y = -120},
         handle = onFirstTouched,
         parent = nodeLeftTop
     }
-    self.createSprite("UI/main/sc.png", {x = 510, y = -120}, {nodeLeftTop})
+    self.createSprite("UI/main/sc.png", {x = 380, y = -120}, {nodeLeftTop})
     
     local function onGiftTouched(sender, event)
-    --hud:openUI("UISign")
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        hud:openUI("UIGetGift")
     end
     self.createButton{icon = "UI/main/gift.png",
-        pos = {x = 600, y = -120},
+        pos = {x = 480, y = -120},
         handle = onGiftTouched,
         parent = nodeLeftTop
     }    
-    self.createSprite("UI/main/lw.png", {x = 625, y = -120}, {nodeLeftTop})
+    self.createSprite("UI/main/lw.png", {x = 505, y = -120}, {nodeLeftTop})
     
     local function onMailTouched(sender, event)
-        hud:openUI("UISign")
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        hud:openUI("UIMail")
     end
     self.createButton{icon = "UI/main/yj.png",
-        pos = {x = 720, y = -120},
+        pos = {x = 600, y = -120},
         handle = onMailTouched,
         parent = nodeLeftTop
     }
-    self.createSprite("UI/main/mail.png", {x = 755, y = -120}, {nodeLeftTop})
+    self.createSprite("UI/main/mail.png", {x = 635, y = -120}, {nodeLeftTop})    
+
+    local function onOnlineTouched(sender, event)
+        local t = math.ceil(os.clock() - BeginTime.localtime)
+        local st = maincha.attr.online_award - BeginTime.servertime
+        local rt = t - st 
+
+        local maxTime, achieveID = getOnlineInfo()
+
+        if rt >= maxTime then
+            CMD_ACHIEVE_AWARD(achieveID)
+        end
+    end
+    self.btnOnline = self.createButton{icon = "UI/main/online.png",
+        pos = {x = 720, y = -120},
+        handle = onOnlineTouched,
+        parent = nodeLeftTop
+    }
+    self.iconOnline = self.createSprite("UI/main/zx.png", {x = 750, y = -120}, {nodeLeftTop})
+    self.lblOnline = self.createBMLabel("fonts/zaixianjiangli.fnt", "00:00",
+        {x = 750, y = -60}, {nodeLeftTop})
+    self.lblOnline:setAdditionalKerning(4) 
 end
 
 function UIMainLayer:createRightTop()
@@ -388,7 +586,7 @@ function UIMainLayer:createRightBottom()
     funcNodeV:setPositionY(10)
     nodeRightButtom:addChild(funcNodeV)
     
-    local function toggleHide(sender, event)
+    local function toggleHide(...)
         local posX, posY = funcNodeH:getPosition()
         local moveAc = nil
         if posX == 0 then
@@ -405,6 +603,13 @@ function UIMainLayer:createRightBottom()
             moveAc = cc.MoveTo:create(0.3, {x = posX, y = -400})
         end
         funcNodeV:runAction(cc.EaseOut:create(moveAc, 5))
+    end
+
+    self.showMenu = function ()
+        local posX, posY = funcNodeH:getPosition()
+        if posX ~= 0 then
+            toggleHide(nil, nil)
+        end
     end
 
     local function onBagTouched( ... )
@@ -432,30 +637,40 @@ function UIMainLayer:createRightBottom()
     expback:setScaleX(self.visibleSize.width/DesignSize.width)
     self.createSprite("UI/main/exp.png", {x = -5, y = 0}, {self, {x = 0, y = 0}})
 
-    local toggleBtn = self.createButton{icon = "UI/main/bag.png",
+    self.btnBag = self.createButton{icon = "UI/main/bag.png",
         pos = {x = -168, y = 0},
         handle = onBagTouched,
         parent = funcNodeH
     }
 
-    local toggleBtn = self.createButton{icon = "UI/main/wax.png",
+    self.btnEquip = self.createButton{icon = "UI/main/wax.png",
         pos = {x = -258, y = 0},
         handle = onEquipTouched,
         parent = funcNodeH
     }
+    
+    local function onSynthesisTouched(sender, event)
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        hud:openUI("UISynthesis")
+    end
     local toggleBtn = self.createButton{icon = "UI/main/others.png",
         pos = {x = -348, y = 0},
-        handle = toggleHide,
+        handle = onSynthesisTouched,
         parent = funcNodeH
     }
-    local toggleBtn = self.createButton{icon = "UI/main/skill.png",
+    self.btnSkill = self.createButton{icon = "UI/main/skill.png",
         pos = {x = -438, y = 0},
         handle = onSkillTouched,
         parent = funcNodeH
     }
+    
+    local function onFirendTouched(...)
+        local runScene = cc.Director:getInstance():getRunningScene()
+        runScene.hud:openUI("UIFriend")
+    end
     local toggleBtn = self.createButton{icon = "UI/main/friend.png",
         pos = {x = -535, y = 0},
-        handle = toggleHide,
+        handle = onFirendTouched,
         parent = funcNodeH
     }
 
@@ -468,26 +683,33 @@ function UIMainLayer:createRightBottom()
         handle = onSettingTouched,
         parent = funcNodeH
     }
+
+    local function onAchieveTouched( ... )
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        hud:openUI("UIAchieve")
+    end
+    self.btnAchieve = self.createButton{icon = "UI/main/xs.png",
+        pos = {x = -91, y = 120},
+        handle = onAchieveTouched,
+        parent = funcNodeV
+    }
+    self.btnAchieve:setVisible(MgrGuideStep > 6)
     
     local function onDayMissionTouched( ... )
         local hud = cc.Director:getInstance():getRunningScene().hud
         hud:openUI("UIDayMission")
+        
+        if MgrGuideStep == 24 then
+            CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
+            hud:closeUI("UIGuide")
+        end
     end
-    local toggleBtn = self.createButton{icon = "UI/main/mrrw.png",
-        pos = {x = -91, y = 120},
+    self.btnDayMission = self.createButton{icon = "UI/main/mrrw.png",
+        pos = {x = -91, y = 210},
         handle = onDayMissionTouched,
         parent = funcNodeV
     }
-    
-    local function onNewTouched( ... )
-        local hud = cc.Director:getInstance():getRunningScene().hud
-        hud:openUI("UIDayMission")
-    end
-    local toggleBtn = self.createButton{icon = "UI/main/xs.png",
-        pos = {x = -91, y = 210},
-        handle = onNewTouched,
-        parent = funcNodeV
-    }
+    self.btnDayMission:setVisible(MgrGuideStep > 20)
     
     local barSprite = cc.Sprite:create("UI/main/exppro.png")
     local exppro = cc.ProgressTimer:create(barSprite)
@@ -512,18 +734,36 @@ function UIMainLayer:createLeftBottom()
     self:addChild(nodeLeftBottom)
     
     self.createSprite("UI/main/ltk.png", {x = 0, y = 0}, {nodeLeftBottom,{x = 0, y = 0}})
-    self.createSprite("UI/main/lt.png", {x = 0, y = 0}, {nodeLeftBottom,{x = 0, y = 0}})
+    
+    local function onChatTouched(sender, event)
+        local hud = cc.Director:getInstance():getRunningScene().hud
+        hud:openUI("UIChat")
+    end    
+
+    self.createButton{
+        icon = "UI/main/lt.png",
+        pos = {x = 0, y = 0},
+        handle = onChatTouched,
+        parent = nodeLeftBottom
+    }    
+    --self.createSprite("UI/main/lt.png", {x = 0, y = 0}, {nodeLeftBottom,{x = 0, y = 0}})
     
     local red = {r = 242, g = 154, b = 117}
     local blue = {r = 126, g = 206, b = 244}
     local lbl = self.createLabel("[世界]", 14, {x = 100, y = 60}, nil, {nodeLeftBottom})
     lbl:setColor(red)
-    lbl = self.createLabel("卡杰尔：", 14, {x = 150, y = 60}, nil, {nodeLeftBottom})
+    self.lblWorld = self.createLabel("", 14, {x = 130, y = 60}, nil, {nodeLeftBottom,{x = 0, y = 0.5}})
+    self.lblWorld:setColor(red)
+    --lbl = self.createLabel("5v5缺个剑，35以上的来", 14, {x = 175, y = 60}, nil, {nodeLeftBottom, {x = 0, y = 0.5}})
+    lbl = self.createLabel("[私聊]", 14, {x = 80, y = 40}, 
+        nil, {nodeLeftBottom,{x = 0, y = 0.5}})
     lbl:setColor(blue)
-    lbl = self.createLabel("5v5缺个剑，35以上的来", 14, {x = 175, y = 60}, nil, {nodeLeftBottom, {x = 0, y = 0.5}})
-    lbl = self.createLabel("[私聊]jeenza：你今天飞车岛刷了没", 14, {x = 80, y = 40}, nil, {nodeLeftBottom,{x = 0, y = 0.5}})
-    lbl:setColor(red)
+    
+    self.lblPrivate = self.createLabel("", 14, {x = 130, y = 40}, nil, {nodeLeftBottom,{x = 0, y = 0.5}})
+    self.lblPrivate:setColor(blue)
 
+
+--[[
     local function onTextHandle(typestr)
         if typestr == "began" then
         elseif typestr == "changed" then
@@ -543,6 +783,23 @@ function UIMainLayer:createLeftBottom()
     self.txtInput:setAnchorPoint(0, 0.5)
     self.txtInput:registerScriptEditBoxHandler(onTextHandle)
     nodeLeftBottom:addChild(self.txtInput)
+    ]]
+end
+
+function UIMainLayer:onUpdateChat()
+    if #MgrChat.World > 0 then
+        local  chatInfo = MgrChat.World[#MgrChat.World]
+        self.lblWorld:setString(string.format("%s:%s", chatInfo.sender, chatInfo.content))
+    else
+        self.lblWorld:setString("")
+    end
+
+    if #MgrChat.Private > 0 then
+        local  chatInfo = MgrChat.Private[#MgrChat.Private]
+        self.lblPrivate:setString(string.format("%s:%s", chatInfo.sender, chatInfo.content))
+    else
+        self.lblPrivate:setString("")
+    end
 end
 
 return UIMainLayer

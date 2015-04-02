@@ -34,10 +34,21 @@ require "table.TablePractice"
 require "table.TableStone_Synthesis"
 require "table.TableSign"
 require "table.TableDay_Task"
+require "table.TableNew_Achieve"
+require "table.TableNewbie_Guide"
+require "table.TableNewbie_Reward"
+require "table.TableSingle_Copy_Balance"
+require "table.Tablename"
+require "table.TableShop"
+require "table.TableSound"
+require "table.TableSynthesis"
 --require "ExtensionConstants"
+
 require "src.common.Enum"
 require "src.common.CommonFun"
 require "src.MgrSkill"
+
+math.randomseed(tostring(os.time()):reverse():sub(1, 6))  
 
 -- cclog
 local cclog = function(...)
@@ -60,19 +71,21 @@ local function main()
     -- avoid memory leak
     collectgarbage("setpause", 100)
     collectgarbage("setstepmul", 5000)
-    MgrSetting.bPlayMusic = cc.UserDefault:getInstance():getBoolForKey("bPlayMusic", true)
-    MgrSetting.bPlayEffect = cc.UserDefault:getInstance():getBoolForKey("bPlayEffect", true)
+    local userData = cc.UserDefault:getInstance()
+    MgrSetting.bPlayMusic = userData:getBoolForKey("bPlayMusic", true)
+    MgrSetting.bPlayEffect = userData:getBoolForKey("bPlayEffect", true)
     
     -- initialize director
     local director = cc.Director:getInstance()
 
     --turn on display FPS
-    director:setDisplayStats(true)
+    director:setDisplayStats(false)
 
     --set FPS. the default value is 1.0/60 if you don't call this
     director:setAnimationInterval(1.0 / 60)
     
-    cc.Director:getInstance():getOpenGLView():setDesignResolutionSize(960, 640, cc.ResolutionPolicy.FIXED_HEIGHT)
+    local glView = cc.Director:getInstance():getOpenGLView() 
+    glView:setDesignResolutionSize(960, 640, cc.ResolutionPolicy.FIXED_HEIGHT)
     
     --create scene 
     Lang = require "LangCh"
@@ -86,6 +99,24 @@ local function main()
     else
         cc.Director:getInstance():runWithScene(gameScene)
     end
+    
+    local loadImages = {}
+    local tableEff = TableSpecial_Effects 
+    for _, value in pairs(tableEff) do
+        local path = "effect/"..value.Resource_Path..".png"
+        table.insert(loadImages, path)
+    end
+    
+    local totalCount = #loadImages
+    local function onLoad()
+        if #loadImages > 0 then
+            local image = loadImages[1]
+            table.remove(loadImages, 1)
+            local cache = cc.Director:getInstance():getTextureCache()
+            cache:addImageAsync(image, onLoad) 
+        end
+    end
+    onLoad()
 end
 
 

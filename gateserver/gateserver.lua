@@ -104,7 +104,7 @@ if ret then
 				if name2game[name] and name2game[name].sock then
 					return
 				end		
-				local sock = Socket.New(CSocket.AF_INET,CSocket.SOCK_STREAM,CSocket.IPPROTO_TCP)
+				local sock = Socket.Stream.New(CSocket.AF_INET)
 				--print("connect_to_game",name,ip,port)
 				if not sock:Connect(ip,port) then
 					sock:Establish(CSocket.rpkdecoder(65535))				
@@ -235,7 +235,7 @@ if ret then
 		togroup = nil
 		Sche.Spawn(function ()
 			while true do
-				local sock = Socket.New(CSocket.AF_INET,CSocket.SOCK_STREAM,CSocket.IPPROTO_TCP)
+				local sock = Socket.Stream.New(CSocket.AF_INET)
 				if not sock:Connect(group_ip,group_port) then
 					sock:Establish(CSocket.rpkdecoder(65535))
 					toinner:Add(sock,OnInnerMsg,connect_to_group)								

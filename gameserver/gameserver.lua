@@ -35,7 +35,7 @@ if ret then
 		togroup = nil
 		Sche.Spawn(function ()
 			while true do
-				local sock = Socket.New(CSocket.AF_INET,CSocket.SOCK_STREAM,CSocket.IPPROTO_TCP)
+				local sock = Socket.Stream.New(CSocket.AF_INET)
 				if not sock:Connect(group_ip,group_port) then
 					sock:Establish(CSocket.rpkdecoder(65535))
 					gameApp:Add(sock,MsgHandler.OnMsg,connect_to_group)				

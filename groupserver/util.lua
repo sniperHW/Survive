@@ -1,3 +1,4 @@
+
 require "Survive.common.TableItem"
 require "Survive.common.TableEquipment"
 local Item = require "Survive.groupserver.item"

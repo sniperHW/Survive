@@ -116,7 +116,7 @@ if ret then
 									connect_to_game(name,ip,port)
 								end)
 					local rpccaller = RPC.MakeRPC(sock,"Login")
-					local err,ret = rpccaller:Call("gate1")
+					local err,ret = rpccaller:CallSync("gate1")
 					if err or ret == "Login failed" then
 						if err then
 							log_gateserver:Log(CLog.LOG_INFO,string.format("login to gameserver %s failed:%s",name,err))
@@ -191,7 +191,7 @@ if ret then
 			--验证通过,登录到group
 			local rpccaller = RPC.MakeRPC(togroup,"PlayerLogin")
 			player.status = Player.login2group
-			local err,ret = rpccaller:Call(actname,chaid,player.sessionid)			
+			local err,ret = rpccaller:CallSync(actname,chaid,player.sessionid)			
 			if err then
 				log_gateserver:Log(CLog.LOG_INFO,string.format("CMD_CA_LOGIN %s PlayerLogin rpc error %s",actname,err))
 				player.status = nil
@@ -241,7 +241,7 @@ if ret then
 					toinner:Add(sock,OnInnerMsg,connect_to_group)								
 					--登录到groupserver
 					local rpccaller = RPC.MakeRPC(sock,"GateLogin")
-					local err,ret = rpccaller:Call("gate1")
+					local err,ret = rpccaller:CallSync("gate1")
 					if err or ret == "Login failed" then
 						if err then
 							log_gateserver:Log(CLog.LOG_INFO,string.format("login group failed:%s",err))

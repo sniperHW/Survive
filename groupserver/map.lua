@@ -103,7 +103,7 @@ local function EnterMapOpen(ply,maptype,mapdef)
 		instance:AddPlyCount(1)
 	end
 	local rpccaller = RPC.MakeRPC(game.sock,"EnterMap")	
-	local err,ret = rpccaller:Call(mapid,maptype,plys)
+	local err,ret = rpccaller:CallSync(mapid,maptype,plys)
 	if err or not ret[1] then
 		if instance then
 			instance:SubPlyCount(1)
@@ -184,7 +184,7 @@ function ReqQue:ProcessEnter()
 	local err,ret
 	if game then
 		local rpccaller = RPC.MakeRPC(game.sock,"EnterMap")	
-		err,ret = rpccaller:Call(0,self.maptype,plys)
+		err,ret = rpccaller:CallSync(0,self.maptype,plys)
 	end
 	if not game or err or not ret[1] then
 		if err then

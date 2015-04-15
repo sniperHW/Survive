@@ -128,7 +128,7 @@ local function Transfer(ply,item)
 			item = {id=item.id,count=item.count,attr = item.attr}
 		end
 
-		local err,ret = rpccaller:Call(PackPlayer(ply,item),survive.nextTime + 5*60,os.time())
+		local err,ret = rpccaller:CallSync(PackPlayer(ply,item),survive.nextTime + 5*60,os.time())
 		if not err and ret[1] then
 			Game.Bind(survive.GameServer,ply,ret[2])
 			ply.mapinstance = 206

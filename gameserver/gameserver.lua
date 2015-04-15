@@ -41,7 +41,7 @@ if ret then
 					gameApp:Add(sock,MsgHandler.OnMsg,connect_to_group)				
 					--登录到groupserver
 					local rpccaller = RPC.MakeRPC(sock,"GameLogin")
-					local err,ret = rpccaller:Call("game1",ip,port)
+					local err,ret = rpccaller:CallSync("game1",ip,port)
 					if err or ret == "Login failed" then
 						if err then
 							log_gameserver:Log(CLog.LOG_INFO,string.format("GameLogin RPC error:%s",err))

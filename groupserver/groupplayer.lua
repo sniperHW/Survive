@@ -661,7 +661,7 @@ local function RegRpcService(app)
 								--通知gameserver断线重连
 								local rpccaller = RPC.MakeRPC(ply.gamesession.game.sock,"CliReConn")
 								print("reconnect",ply.gatesession.gate.name)	
-								local err,ret = rpccaller:Call(ply.gamesession.sessionid,
+								local err,ret = rpccaller:CallSync(ply.gamesession.sessionid,
 											      {name=ply.gatesession.gate.name,id=ply.gatesession.sessionid})
 								if err or not ret then
 									Game.UnBind(ply)

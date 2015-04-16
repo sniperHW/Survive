@@ -276,7 +276,7 @@ end
 local function LeaveMap(ply)
 	local err,ret
 	local rpccaller = RPC.MakeRPC(ply.gamesession.game.sock,"LeaveMap")	
-	err,ret = rpccaller:Call(ply.gamesession.sessionid)
+	err,ret = rpccaller:CallSync(ply.gamesession.sessionid)
 	if not err then
 		if type(ply.mapinstance) ~= "number" then
 			ply.mapinstance:SubPlyCount(1)

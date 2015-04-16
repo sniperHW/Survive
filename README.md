@@ -22,9 +22,9 @@ Survive的逻辑服务采用单进程单线程的方式,目前Survive的服务�
 
 ##获取
 
-Survive依赖distri.lua所以首先需要获得distri.lua
+Survive依赖distri.lua所以首先需要获得distri.lua(注意,请不要使用https://github.com/sniperHW/distri.lua.git,因为本示例不再维护,最新版本的distri.lua可能会与此不兼容)
 
-	git clone https://github.com/sniperHW/distri.lua.git 
+	git clone https://git.oschina.net/sniperHW/distri.lua.git
 
 进入distri.lua目录
 

@@ -1,4 +1,4 @@
-local Util = require "Survive.gameserver.util"
+local Util = require "gameserver.util"
 local TriggerFunc = {
 	TransferTo = function (self,avatar)
 		--if self.disable then

@@ -1,12 +1,12 @@
-local NetCmd = require "Survive.netcmd.netcmd"
-local Util = require "Survive.groupserver.util"
-local MsgHandler = require "Survive.netcmd.msghandler"
-local Name2idx = require "Survive.common.name2idx"
-require "Survive.common.TableFish"
-require "Survive.common.TableGather"
-require "Survive.common.TablePractice"
-local Achi = require "Survive.groupserver.achievement"
-local Task = require "Survive.groupserver.everydaytask"
+local NetCmd = require "netcmd.netcmd"
+local Util = require "groupserver.util"
+local MsgHandler = require "netcmd.msghandler"
+local Name2idx = require "common.name2idx"
+require "common.TableFish"
+require "common.TableGather"
+require "common.TablePractice"
+local Achi = require "groupserver.achievement"
+local Task = require "groupserver.everydaytask"
 
 --[25] = { ["Jism"] = 3719, ["Drugs"] = "5501:60:34"}, gather
 --[15] = { ["Shell"] = 1000, ["Pearl"] = "4002:5:1"},fish

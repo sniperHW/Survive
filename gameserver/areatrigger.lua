@@ -1,11 +1,11 @@
-package.cpath = "Survive/?.so"
-local Avatar = require "Survive.gameserver.avatar"
-local NetCmd = require "Survive.netcmd.netcmd"
+package.cpath = "./?.so"
+local Avatar = require "gameserver.avatar"
+local NetCmd = require "netcmd.netcmd"
 local Aoi = require "aoi"
-local Util = require "Survive.gameserver.util"
-local TriggerFunc = require "Survive.gameserver.triggerfunction"
+local Util = require "gameserver.util"
+local TriggerFunc = require "gameserver.triggerfunction"
 local Timer = require "lua.timer"
-require "Survive.common.TableTrigger"
+require "common.TableTrigger"
 
 local areaTrigger = Avatar.New()
 

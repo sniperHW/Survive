@@ -18,25 +18,6 @@ Survive的逻辑服务采用单进程单线程的方式,目前Survive的服务�
 * groupserver:负责帐号验证,角色创建,角色数据的保存,基本游戏逻辑以及副本的管理
 * gameserver:服务服务,运行具体的副本实例,实现战斗及AI处理
 
-#获取与构建Survive
-
-##获取
-
-Survive依赖distri.lua所以首先需要获得distri.lua(注意,请不要使用https://github.com/sniperHW/distri.lua.git,因为本示例不再维护,最新版本的distri.lua可能会与此不兼容)
-
-	git clone https://git.oschina.net/sniperHW/distri.lua.git
-
-进入distri.lua目录
-
-	git clone https://github.com/sniperHW/Survive.git 
-
-##构建
-
-首先确保你的机器上已经安装libcurl和libreadline
-
-然后在distri.lua目录执行以下命令:
-
-	make survive
     
 #运行Survive服务
 
@@ -44,11 +25,11 @@ Survive依赖distri.lua所以首先需要获得distri.lua(注意,请不要使用
 
 启动ssdb/redis
 
-修改gateserver的对外服务ip/端口,打开`Survive/setconfig.lua`,将`["gate1"] = {"192.168.0.87",8010}`改成你希望的ip和端口.
+修改gateserver的对外服务ip/端口,打开`setconfig.lua`,将`["gate1"] = {"192.168.0.87",8010}`改成你希望的ip和端口.
 
 在distri.lua目录执行以下命令:
 
-	./distrilua Survive/setconfig.lua
+	./distrilua setconfig.lua
     
 之后根据使用命令行还是使用管理工具分成两种不同的启动方式
 
@@ -56,11 +37,11 @@ Survive依赖distri.lua所以首先需要获得distri.lua(注意,请不要使用
 
 执行如下命令:
 
-	./distrilua Survive/groupserver/groupserver.lua 
+	./distrilua groupserver/groupserver.lua 
 	
-    ./distrilua Survive/gameserver/gameserver.lua
+    ./distrilua gameserver/gameserver.lua
     
-    ./distrilua Survive/gateserver/gateserver.lua
+    ./distrilua gateserver/gateserver.lua
     
 完成后游戏服务便启动完成,可以跳到客户端的启动章节
 
@@ -69,7 +50,7 @@ Survive依赖distri.lua所以首先需要获得distri.lua(注意,请不要使用
 
 Survive提供了一套基于web的管理工具,在配置之前请确保你的机器上已经安装了php和apache.除此之外,还要安装php的redis客户端库[phpredis](https://github.com/phpredis/phpredis).
 
-上面的所有要求都满足之后,打开examples/daemon.lua文件.
+上面的所有要求都满足之后,打开daemon.lua文件.
 
 1) 将serverip修改为你期望的值
 
@@ -79,7 +60,7 @@ Survive提供了一套基于web的管理工具,在配置之前请确保你的机
 
 4) 执行:
 
-	./distrilua examples/daemon.lua -d
+	./distrilua daemon.lua -d
     
 这行命令会在你的机器上启动一个daemon进程用于启动/关闭和监控服务
 

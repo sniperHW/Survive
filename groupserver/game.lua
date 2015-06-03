@@ -1,4 +1,4 @@
-local NetCmd = require "Survive.netcmd.netcmd"
+local NetCmd = require "netcmd.netcmd"
 
 local sock2game = {}
 local name2game = {}
@@ -52,7 +52,7 @@ local function OnGameDisconnected(sock,errno)
 		end
 
 		if game.survive then
-			game.survive.OnGameDisconnected()
+			game.OnGameDisconnected()
 			game.survive = nil
 		end
 		sock2game[sock] = nil

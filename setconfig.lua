@@ -1,5 +1,5 @@
 --package.cpath = "Survive/?.so"
-local Db = require "Survive.common.db"
+local Db = require "common.db"
 local Cjson = require "cjson"
 local Sche = require "lua.sche"
 --local Base64 = require "base64"
@@ -12,7 +12,7 @@ end
 local deployment = {
 	["db"] = {"127.0.0.1",6379},
 	["group"] = {"127.0.0.1",9001},
-	["gate1"] = {"192.168.75.139",8010},
+	["gate1"] = {"192.168.0.108",8010},
 	["game1"] = {"127.0.0.1",9002}
 }
 

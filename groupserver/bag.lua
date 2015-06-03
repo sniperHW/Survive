@@ -1,11 +1,11 @@
 local Cjson = require "cjson"
-local Name2idx = require "Survive.common.name2idx"
-local NetCmd = require "Survive.netcmd.netcmd"
-local Db = require "Survive.common.db"
-local Item = require "Survive.groupserver.item"
-local MsgHandler = require "Survive.netcmd.msghandler"
+local Name2idx = require "common.name2idx"
+local NetCmd = require "netcmd.netcmd"
+local Db = require "common.db"
+local Item = require "groupserver.item"
+local MsgHandler = require "netcmd.msghandler"
 local bag = {}
-require "Survive.common.TableItem"
+require "common.TableItem"
 
 function bag:new()
   local o = {}   

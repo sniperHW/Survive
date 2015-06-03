@@ -1,8 +1,8 @@
 local Cjson = require "cjson"
-local Name2idx = require "Survive.common.name2idx"
-local NetCmd = require "Survive.netcmd.netcmd"
---local Db = require "Survive.common.db"
---local MsgHandler = require "Survive.netcmd.msghandler"
+local Name2idx = require "common.name2idx"
+local NetCmd = require "netcmd.netcmd"
+--local Db = require "common.db"
+--local MsgHandler = require "netcmd.msghandler"
 local bag = {}
 
 

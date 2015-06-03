@@ -1,7 +1,7 @@
 local Cjson = require "cjson"
-local Db = require "Survive.common.db"
-local NetCmd = require "Survive.netcmd.netcmd"
-local MsgHandler = require "Survive.netcmd.msghandler"
+local Db = require "common.db"
+local NetCmd = require "netcmd.netcmd"
+local MsgHandler = require "netcmd.msghandler"
 local friends = {}
 local maxfirends = 50
 

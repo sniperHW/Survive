@@ -1,23 +1,23 @@
-package.cpath = "Survive/?.so"
-local Avatar = require "Survive.gameserver.avatar"
-local Player = require "Survive.gameserver.gameplayer"
+package.cpath = "./?.so"
+local Avatar = require "gameserver.avatar"
+local Player = require "gameserver.gameplayer"
 local LinkQue = require "lua.linkque"
 local Cjson = require "cjson"
-local Gate = require "Survive.gameserver.gate"
-local Attr = require "Survive.gameserver.attr"
-local Skill = require "Survive.gameserver.skill"
+local Gate = require "gameserver.gate"
+local Attr = require "gameserver.attr"
+local Skill = require "gameserver.skill"
 local Aoi = require "aoi"
 local Astar = require "astar"
 local Timer = require "lua.timer"
-local NetCmd = require "Survive.netcmd.netcmd"
-local MsgHandler = require "Survive.netcmd.msghandler"
-local IdMgr = require "Survive.common.idmgr"
+local NetCmd = require "netcmd.netcmd"
+local MsgHandler = require "netcmd.msghandler"
+local IdMgr = require "common.idmgr"
 local Sche = require "lua.sche"
-local MapLogic = require "Survive.gameserver.maplogic"
-local Util = require "Survive.gameserver.util"
-require "Survive.common.TableMap"
-require "Survive.common.TableItem"
-require "Survive.common.TableAvatar"
+local MapLogic = require "gameserver.maplogic"
+local Util = require "gameserver.util"
+require "common.TableMap"
+require "common.TableItem"
+require "common.TableAvatar"
 
 --local mapdef = {
 --	[1] = {
@@ -32,7 +32,7 @@ require "Survive.common.TableAvatar"
 
 for k,v in pairs(TableMap) do
 	if k ~= 205 then
-		v.astar,v.xcount,v.ycount = Astar.create("./Survive/gameserver/" .. v.Colision)
+		v.astar,v.xcount,v.ycount = Astar.create("./gameserver/" .. v.Colision)
 		if not v.astar then
 			log_gameserver:Log(CLog.LOG_ERROR,"astar init error:" .. v.Colision)
 		else
@@ -145,9 +145,9 @@ local function RegRpcService(app)
 			end
 			g_survive = map:new(mapid,206)
 			local now = os.time()
-			g_survive.logic.start_tick = starttime + (now - grouptime)			
+			g_logic.start_tick = starttime + (now - grouptime)			
 		end
-		local gameid = g_survive.logic:entermap(ply)
+		local gameid = g_logic:entermap(ply)
 		if not gameid then
 			return {false,0}
 		else

@@ -1,7 +1,7 @@
-require "Survive.common.TableBuff"
-require "Survive.common.TableBuff_Nexus"
-local NetCmd = require "Survive.netcmd.netcmd"
-local BuffFunc = require "Survive.gameserver.bufffunction"
+require "common.TableBuff"
+require "common.TableBuff_Nexus"
+local NetCmd = require "netcmd.netcmd"
+local BuffFunc = require "gameserver.bufffunction"
 
 local buffExclusion = TableBuff_Nexus
 local buff = {}

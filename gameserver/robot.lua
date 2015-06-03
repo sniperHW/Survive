@@ -1,5 +1,5 @@
 local Sche = require "lua.sche"
-local Util = require "Survive.gameserver.util"
+local Util = require "gameserver.util"
 
 local stat_partol = 1
 local stat_trace = 2

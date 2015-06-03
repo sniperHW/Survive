@@ -1,13 +1,13 @@
-local Game = require "Survive.groupserver.game"
+local Game = require "groupserver.game"
 local RPC = require "lua.rpc"
 local LinkQue = require "lua.linkque"
 local Sche = require "lua.sche"
-local NetCmd = require "Survive.netcmd.netcmd"
-local Bag = require "Survive.groupserver.bag"
-local Achi = require "Survive.groupserver.achievement"
-local Task = require "Survive.groupserver.everydaytask"
-local Survive = require "Survive.groupserver.survive"
-require "Survive.common.TableMap"
+local NetCmd = require "netcmd.netcmd"
+local Bag = require "groupserver.bag"
+local Achi = require "groupserver.achievement"
+local Task = require "groupserver.everydaytask"
+local Survive = require "groupserver.survive"
+require "common.TableMap"
 
 
 --地图实例
@@ -260,7 +260,7 @@ local function EnterMap(ply,type)
 	--print("EnterMap3",mapdef.type)
 	local playtype = mapdef["PlayType"]
 	if type == 206 then
-		Survive.Transfer(ply,nil,nil)
+		Transfer(ply,nil,nil)
 	elseif playtype == "open" then
 		return 	EnterMapOpen(ply,type,mapdef)
 	elseif playtype == "personal"  then

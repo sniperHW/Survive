@@ -1,10 +1,10 @@
 local Cjson = require "cjson"
-local Db = require "Survive.common.db"
-local NetCmd = require "Survive.netcmd.netcmd"
-local MsgHandler = require "Survive.netcmd.msghandler"
-local Task = require "Survive.groupserver.everydaytask"
-require "Survive.common.TableSkill"
-require "Survive.common.Tableskill_Upgrade"
+local Db = require "common.db"
+local NetCmd = require "netcmd.netcmd"
+local MsgHandler = require "netcmd.msghandler"
+local Task = require "groupserver.everydaytask"
+require "common.TableSkill"
+require "common.Tableskill_Upgrade"
 
 local skills = {}
 

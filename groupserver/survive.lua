@@ -1,14 +1,14 @@
 local Timer = require "lua.timer"
-local NetCmd = require "Survive.netcmd.netcmd"
-local MsgHandler = require "Survive.netcmd.msghandler"
-local Item = require "Survive.groupserver.item"
-local Game = require "Survive.groupserver.game"
+local NetCmd = require "netcmd.netcmd"
+local MsgHandler = require "netcmd.msghandler"
+local Item = require "groupserver.item"
+local Game = require "groupserver.game"
 local RPC = require "lua.rpc"
-local Bag = require "Survive.groupserver.bag"
-local Util = require "Survive.groupserver.util"
+local Bag = require "groupserver.bag"
+local Util = require "groupserver.util"
 local AlarmClock = require "lua.alarmclock"
-require "Survive.common.TablePond"
-require "Survive.common.TableLive_Reward"
+require "common.TablePond"
+require "common.TableLive_Reward"
 
 
 
@@ -60,30 +60,30 @@ local survive = {
 local waitForTransfer = {}
 
 
-function survive.OnGameDisconnected()
-	print("survive.OnGameDisconnected")
-	survive.GameServer = nil
-	survive.applyers = {}
+function OnGameDisconnected()
+	print("OnGameDisconnected")
+	GameServer = nil
+	applyers = {}
 	waitForTransfer = {}
 end
 
 --报名
 local function Apply(ply)
 	local now = os.time()
-	if now < survive.nextTime then
+	if now < nextTime then
 		return "生存挑战未开启"
 	end 
 
-	if now > survive.applyDeadLine then
+	if now > applyDeadLine then
 		return "生存挑战未开启"
 	end
 
-	if survive.applyers[ply.chaid] then
+	if applyers[ply.chaid] then
 		return "你已经参加过本轮游戏"
 	end
 
 	--[[
-	if survive.ticketRemain == 0 then
+	if ticketRemain == 0 then
 		return "人数已满"
 	end
 	]]--	
@@ -114,23 +114,23 @@ local function PackPlayer(ply,item)
 end
 
 local function Transfer(ply,item)
-	if not survive.GameServer then
-		survive.GameServer = Game.GetMinGame()
-		if survive.GameServer  then
-			survive.GameServer.survive = survive
+	if not GameServer then
+		GameServer = Game.GetMinGame()
+		if GameServer  then
+			GameServer.survive = survive
 		end
 	end
-	if survive.GameServer then
+	if GameServer then
 		ply.status = entermap
-		local rpccaller = RPC.MakeRPC(survive.GameServer.sock,"EnterSurvive")	
+		local rpccaller = RPC.MakeRPC(GameServer.sock,"EnterSurvive")	
 			
 		if item then
 			item = {id=item.id,count=item.count,attr = item.attr}
 		end
 
-		local err,ret = rpccaller:CallSync(PackPlayer(ply,item),survive.nextTime + 5*60,os.time())
+		local err,ret = rpccaller:CallSync(PackPlayer(ply,item),nextTime + 5*60,os.time())
 		if not err and ret[1] then
-			Game.Bind(survive.GameServer,ply,ret[2])
+			Game.Bind(GameServer,ply,ret[2])
 			ply.mapinstance = 206
 		end
 	else
@@ -149,8 +149,8 @@ local function TransferTimerTick()
 	for k,v in pairs(waitForTransfer) do
 		if now >= v.TransferTick then
 			Transfer(v.ply,v.item)
-			if not survive.GameServer then
-				survive.OnGameDisconnected()
+			if not GameServer then
+				OnGameDisconnected()
 			end
 			waitForTransfer[k] = nil
 		end 
@@ -173,22 +173,22 @@ end
 --确认
 local function Confirm(ply,itemno)
 	local now = os.time()
-	if now < survive.nextTime then
+	if now < nextTime then
 		return false
 	end
 
-	if now > survive.applyDeadLine then
+	if now > applyDeadLine then
 		return false
 	end
 
 	local item = GenerateItem(selectVipItem)
-	if not survive.TransferTimer then
-		survive.TransferTimer = Timer.New("runImmediate"):Register(TransferTimerTick,100)
+	if not TransferTimer then
+		TransferTimer = Timer.New("runImmediate"):Register(TransferTimerTick,100)
 	end
 
 	table.insert(waitForTransfer,{TransferTick=C.GetSysTick()+1500,ply=ply,item=item})
 	ply.status = queueing
-	survive.applyers[ply.chaid] = ply
+	applyers[ply.chaid] = ply
 
 	return true,item
 end
@@ -261,32 +261,32 @@ MsgHandler.RegHandler(NetCmd.CMD_GAMEG_SURVIVE_FINISH,function (sock,rpk)
 			end				
 		end
 	end
-	survive.applyers = {}
+	applyers = {}
 end)
 
 local twTime = CTimeUtil.GetTSWeeHour()
 local year,mon,day,hour,min = CTimeUtil.GetYearMonDayHourMin(os.time())
-survive.nextTime = twTime + (hour+1) * 3600
-survive.applyDeadLine = survive.nextTime + 60*4 + 30
+nextTime = twTime + (hour+1) * 3600
+applyDeadLine = nextTime + 60*4 + 30
 
 local t = Timer.New("runImmediate"):Register(function ()
 		local now = os.time()
-		if now > survive.applyDeadLine + 30 then
-			survive.nextTime = survive.nextTime + 3600
-			survive.applyDeadLine = survive.applyDeadLine + 3600
+		if now > applyDeadLine + 30 then
+			nextTime = nextTime + 3600
+			applyDeadLine = applyDeadLine + 3600
 		end
 	end,1000) 
 
 
 --[[
-survive.nextTime = os.time()
-survive.applyDeadLine = survive.nextTime + 60*4 + 30
+nextTime = os.time()
+applyDeadLine = nextTime + 60*4 + 30
 
 local t = Timer.New("runImmediate"):Register(function ()
 		local now = os.time()
-		if now > survive.applyDeadLine + 30 then
-			survive.nextTime = survive.nextTime + 600
-			survive.applyDeadLine = survive.applyDeadLine + 600
+		if now > applyDeadLine + 30 then
+			nextTime = nextTime + 600
+			applyDeadLine = applyDeadLine + 600
 		end
 	end,1000) 
 

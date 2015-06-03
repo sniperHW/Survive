@@ -1,10 +1,10 @@
 local Cjson = require "cjson"
-local NetCmd = require "Survive.netcmd.netcmd"
-local Db = require "Survive.common.db"
-local MsgHandler = require "Survive.netcmd.msghandler"
-local Util = require "Survive.groupserver.util"
-local GM = require "Survive.groupserver.gm"
-require "Survive.common.TableNew_Achieve"
+local NetCmd = require "netcmd.netcmd"
+local Db = require "common.db"
+local MsgHandler = require "netcmd.msghandler"
+local Util = require "groupserver.util"
+local GM = require "groupserver.gm"
+require "common.TableNew_Achieve"
 
 --achievement's achieve type
 local achi_type = {

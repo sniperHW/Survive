@@ -1,4 +1,4 @@
-local Game = require "Survive.groupserver.game"
+local Game = require "groupserver.game"
 
 local sock2gate = {}
 local name2gate = {}

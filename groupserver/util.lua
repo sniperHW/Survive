@@ -1,7 +1,7 @@
 
-require "Survive.common.TableItem"
-require "Survive.common.TableEquipment"
-local Item = require "Survive.groupserver.item"
+require "common.TableItem"
+require "common.TableEquipment"
+local Item = require "groupserver.item"
 
 local function SplitString(s,separator)
 	local ret = {}

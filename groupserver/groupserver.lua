@@ -13,14 +13,14 @@ queueing = 8
 local TcpServer = require "lua.tcpserver"
 local App = require "lua.application"
 local RPC = require "lua.rpc"
-local Player = require "Survive.groupserver.groupplayer"
-local NetCmd = require "Survive.netcmd.netcmd"
-local MsgHandler = require "Survive.netcmd.msghandler"
-local Db = require "Survive.common.db"
+local Player = require "groupserver.groupplayer"
+local NetCmd = require "netcmd.netcmd"
+local MsgHandler = require "netcmd.msghandler"
+local Db = require "common.db"
 local Sche = require "lua.sche"
-local Gate = require "Survive.groupserver.gate"
-local Game = require "Survive.groupserver.game"
-local Config = require "Survive.common.config"
+local Gate = require "groupserver.gate"
+local Game = require "groupserver.game"
+local Config = require "common.config"
 
 
 --App.SetMaxRecverPerSocket(65535)

@@ -1,9 +1,9 @@
-local MsgHandler = require "Survive.netcmd.msghandler"
-local Db = require "Survive.common.db"
-local NetCmd = require "Survive.netcmd.netcmd"
-local Bag = require "Survive.groupserver.bag"
-local Util = require "Survive.groupserver.util"
-require "Survive.common.TableDay_Task"
+local MsgHandler = require "netcmd.msghandler"
+local Db = require "common.db"
+local NetCmd = require "netcmd.netcmd"
+local Bag = require "groupserver.bag"
+local Util = require "groupserver.util"
+require "common.TableDay_Task"
 local Cjson = require "cjson"
 local everydaytask = {}
 

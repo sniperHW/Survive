@@ -16,9 +16,9 @@ local function checkTick(detal)
     WriteUint32(wpk, 0xABABCBCB)
     SendWPacket(wpk)
 
-    if os.clock() - lastConnectTime >= 10 then
-        Close()
-    end
+    --if os.clock() - lastConnectTime >= 10 then
+    --    Close()
+    --end
 end
 
 function UILogin:ctor()

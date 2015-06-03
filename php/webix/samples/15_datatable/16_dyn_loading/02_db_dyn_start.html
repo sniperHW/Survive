@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Setting loading position</title>
+		<link rel="stylesheet" href="../../../codebase/webix.css" type="text/css" charset="utf-8">
+		<script src="../../../codebase/webix.js" type="text/javascript" charset="utf-8"></script>
+
+		<link rel="stylesheet" type="text/css" href="../common/samples.css">
+		<script src="../common/testdata.js" type="text/javascript" charset="utf-8"></script>
+	</head>
+	<body>
+		<div class='header_comment'>Setting loading position</div>
+		<div class='sample_comment'>The sample shows the use of parameter 'datafetch'. The parameter allows you to set the start position DataTable data will load from.</div>
+		<div class='sample_comment'>Dynamic loading from DB (sqllite + php).</div>
+		</br>
+		<div class='sample_comment'>Data is loaded from the first record.</div>
+		<div id="testA" style='height:200px'></div>
+		<hr>
+		<div class='sample_comment'>Data is loaded from the fiftieth record.</div>
+		<div id="testB" style='height:200px'></div>
+		<hr>
+		<div class='sample_comment'>Data is loaded from the fiftieth record.</div>
+		<div id="testC" style='height:200px'></div>
+		<hr>
+		
+		<script type="text/javascript" charset="utf-8">
+
+		webix.ready(function(){
+			grida = new webix.ui({
+				container:"testA",
+				view:"datatable",
+				columns:[
+					{ id:"package",	header:"Name", 			width:200 },
+					{ id:"section",	header:"Section",		width:120 },
+					{ id:"size",	header:"Size" , 		width:80  },
+					{ id:"architecture",	header:"PC", 	width:60  }
+				],
+
+				datafetch:50,
+				autowidth:true,
+				url:"data/data_dyn.php"
+			});	
+		});
+
+		webix.ready(function(){
+			gridb = new webix.ui({
+				container:"testB",
+				view:"datatable",
+				columns:[
+					{ id:"package",	header:"Name", 			width:200 },
+					{ id:"section",	header:"Section",		width:120 },
+					{ id:"size",	header:"Size" , 		width:80  },
+					{ id:"architecture",	header:"PC", 	width:60  }
+				],
+
+				datafetch:50,
+				autowidth:true,
+				ready:function(){
+					this.showItemByIndex(900);
+				}
+			});	
+			gridb.loadNext(50,900,null,"data/data_dyn.php");
+				
+		});
+		
+		webix.ready(function(){
+			gridc = new webix.ui({
+				container:"testC",
+				view:"datatable",
+				columns:[
+					{ id:"package",	header:"Name", 			width:200 },
+					{ id:"section",	header:"Section",		width:120 },
+					{ id:"size",	header:"Size" , 		width:80  },
+					{ id:"architecture",	header:"PC", 	width:60  }
+				],
+				
+				datafetch:50,
+				autowidth:true,
+				url:"data/data_dyn.php",
+				ready:function(){
+					this.showItemByIndex(500);
+				}
+			});	
+		});				
+		</script>
+	</body>
+</html>

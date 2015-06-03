@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="../../codebase/webix.css" type="text/css" media="screen" charset="utf-8">
+		<script src="../../codebase/webix.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../common/chartdata.js"></script>
+		<script src="./data/charts.js"></script>
+		<title>Carousel</title>
+		<style>
+			.carousel{
+				background-color: #d5d5d5;
+			}
+			.carousel .webix_chart{
+				background-color: #fff;
+			}
+		</style>
+	</head>
+	<body>
+		<div id='layout_div' style='width:600px; height:300px; margin:20px;'></div>
+		<script type="text/javascript" charset="utf-8">
+			webix.ui({
+				container:"layout_div",
+				css: "carousel",
+				borderless: true,
+				margin: 4,
+				paddingY: 40,
+				paddingX: 2,
+				view:"carousel", id:"parts",type: "line", cols:[
+					achart, bchart, cchart
+				]
+			});
+		</script>
+	</body>
+</html>

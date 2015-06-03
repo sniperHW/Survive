@@ -1,0 +1,109 @@
+服务器获取的json数据
+
+{deployment:[
+		{"service":[{"ip":"192.168.0.87","conf":"ssdb.conf","type":"ssdb-server","logicname":"ssdb-server"}],"groupname":"central"},
+		{"service":[{"ip":"192.168.0.87","port":"8010","type":"groupserver","logicname":"groupserver"},
+					{"ip":"192.168.0.87","port":"8011","type":"gameserver","logicname":"gameserver"},
+					{"ip":"192.168.0.87","port":"8012","type":"gateserver","logicname":"gateserver"}],
+					"groupname":"group1"},
+		{"service":[{"ip":"192.168.0.88","port":"8010","type":"groupserver","logicname":"groupserver"},
+					{"ip":"192.168.0.88","port":"8011","type":"gameserver","logicname":"gameserver"},
+					{"ip":"192.168.0.88","port":"8012","type":"gateserver","logicname":"gateserver"}],
+					"groupname":"group2"}
+	],
+	machine_status:[
+		{ip:192.168.0.87,status:[
+			["top - 10:39:07 up 23 min, 3 users, load average: 0.10, 0.13, 0.14",
+			 "Tasks: 221 total, 2 running, 219 sleeping, 0 stopped, 0 zombie",
+			 "Cpu0 : 0.0% us, 0.0% sy, 0.0% ni,100.0% id, 0.0% wa, 0.0% hi, 0.0% si, 0.0% st",
+			 "Cpu1 : 0.0% us, 0.0% sy, 0.0% ni,100.0% id, 0.0% wa, 0.0% hi, 0.0% si, 0.0% st",
+			 "Cpu2 : 1.0% us, 1.0% sy, 0.0% ni, 93.9% id, 4.0% wa, 0.0% hi, 0.0% si, 0.0% st",
+			 "Cpu3 : 0.0% us, 0.0% sy, 0.0% ni,100.0% id, 0.0% wa, 0.0% hi, 0.0% si, 0.0% st",
+			 "Mem: 8123524k total, 2187544k used, 5935980k free, 115636k buffers",
+			 "Swap: 0k total, 0k used, 0k free, 729764k cached"],
+			 [
+				{"pid":"2765","mem":"6.29MB","cpu":"2.97","usr":"sniper","cmd":".\/distrilua SurviveServer\/gateserver\/gateserver.lua"},
+				{"pid":"2799","mem":"70.92MB","cpu":"2.97","usr":"sniper","cmd":".\/distrilua SurviveServer\/gameserver\/gameserver.lua"},
+				{"pid":"3503","mem":"2.18MB","cpu":"1.98","usr":"sniper","cmd":".\/distrilua examples\/top.lua"},
+				{"pid":"2730","mem":"37.85MB","cpu":"0.00","usr":"sniper","cmd":".\/ssdb-server ssdb.conf"},
+				{"pid":"2782","mem":"55.42MB","cpu":"0.00","usr":"sniper","cmd":".\/distrilua SurviveServer\/groupserver\/groupserver.lua"}
+			 ]
+		 ]
+		}]}
+
+
+
+
+客户端根据服务器数据构造的数据结构
+		
+PhysicalTree = {
+		"192.168.0.87":{	machine:["top - 10:39:07 up 23 min, 3 users, load average: 0.10, 0.13, 0.14",
+							 "Tasks: 221 total, 2 running, 219 sleeping, 0 stopped, 0 zombie",
+							 "Cpu0 : 0.0% us, 0.0% sy, 0.0% ni,100.0% id, 0.0% wa, 0.0% hi, 0.0% si, 0.0% st",
+							 "Cpu1 : 0.0% us, 0.0% sy, 0.0% ni,100.0% id, 0.0% wa, 0.0% hi, 0.0% si, 0.0% st",
+							 "Cpu2 : 1.0% us, 1.0% sy, 0.0% ni, 93.9% id, 4.0% wa, 0.0% hi, 0.0% si, 0.0% st",
+							 "Cpu3 : 0.0% us, 0.0% sy, 0.0% ni,100.0% id, 0.0% wa, 0.0% hi, 0.0% si, 0.0% st",
+							 "Mem: 8123524k total, 2187544k used, 5935980k free, 115636k buffers",
+							 "Swap: 0k total, 0k used, 0k free, 729764k cached"],
+							 process:{
+								ssdb-central:{"pid":"2730","mem":"37.85MB","cpu":"0.00","usr":"sniper","cmd":".\/ssdb-server ssdb.conf"},
+								gameserver:{"pid":"2799","mem":"70.92MB","cpu":"2.97","usr":"sniper","cmd":".\/distrilua SurviveServer\/gameserver\/gameserver.lua"},
+								groupserver:{"pid":"2782","mem":"55.42MB","cpu":"0.00","usr":"sniper","cmd":".\/distrilua SurviveServer\/groupserver\/groupserver.lua"},
+								gateserver:{"pid":"2765","mem":"6.29MB","cpu":"2.97","usr":"sniper","cmd":".\/distrilua SurviveServer\/gateserver\/gateserver.lua"}
+							 }
+						},
+}
+
+DeployPhyTree = {
+	"192.168.0.87":["ssdb-central","gameserver","groupserver","gateserver"],
+	"192.168.0.88":["gameserver","groupserver","gateserver"]
+}		
+
+LogicalTree = {
+	"central":{ssdb-central:{"pid":"2730","mem":"37.85MB","cpu":"0.00","usr":"sniper","cmd":".\/ssdb-server ssdb.conf"}},
+	"group1":{
+			  gameserver:{"pid":"2799","mem":"70.92MB","cpu":"2.97","usr":"sniper","cmd":".\/distrilua SurviveServer\/gameserver\/gameserver.lua"},
+			  groupserver:{"pid":"2782","mem":"55.42MB","cpu":"0.00","usr":"sniper","cmd":".\/distrilua SurviveServer\/groupserver\/groupserver.lua"},
+			  gateserver:{"pid":"2765","mem":"6.29MB","cpu":"2.97","usr":"sniper","cmd":".\/distrilua SurviveServer\/gateserver\/gateserver.lua"}
+			 }    
+}
+
+DeployLogTree = {
+	"central":["ssdb-central"],
+	"group1":["gameserver","groupserver","gateserver"],
+	"group2":["gameserver","groupserver","gateserver"]	
+}
+		
+DeployPhyTree,DeployLogTree用于构造左侧的树状视图
+
+
+启动单一进程: 
+start ip logicname
+start group logicname
+
+启动一组进程:
+start ip
+start group
+
+
+关闭单一进程:
+stop ip logicname
+kill ip logicname
+stop group logicname
+kill group logicname
+
+关闭一组进程:
+stop ip
+kill ip
+
+stop group
+kill group
+ 
+{
+deployment:
+[{"service":[{"logicname":"ssdb-server","type":"ssdb-server","ip":"192.168.0.87","conf":"ssdb.conf"}],"groupname":"central"},
+ {"service":[{"logicname":"groupserver","type":"groupserver","port":"8010","ip":"192.168.0.87"},{"logicname":"gameserver","type":"gameserver","port":"8011","ip":"192.168.0.87"},{"logicname":"gateserver","type":"gateserver","port":"8012","ip":"192.168.0.87"}],"groupname":"group1"},
+ {"service":[{"logicname":"groupserver","type":"groupserver","port":"8010","ip":"192.168.0.88"},{"logicname":"gameserver","type":"gameserver","port":"8011","ip":"192.168.0.88"},{"logicname":"gateserver","type":"gateserver","port":"8012","ip":"192.168.0.88"}],"groupname":"group2"}
+]
+} 
+		

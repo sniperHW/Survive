@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="../../../codebase/webix.css" type="text/css" media="screen" charset="utf-8">
+		<script src="../../../codebase/webix.js" type="text/javascript" charset="utf-8"></script>
+		<style>
+			#areaA{
+				margin: 30px;
+			}
+		</style>
+		<title>Panel with Clickable Items ('tabbar')</title>
+	</head>
+	<body>
+
+		<div id="areaA"></div>
+	
+
+		<script type="text/javascript" charset="utf-8">
+		var form1 = [
+			{ view:"tabbar", type:"bottom", value:"one", options:[
+				{ id:"one", value:"One" },
+				{ id:"two", value:"Two"},
+				{ id:"three", value:"Three"}
+			]},
+			{ view:"tabbar", type:"bottom", value:"two", options:[
+				{ id:"one", value:"One", width:160 },
+				{ id:"two", value:"Two"},
+				{ id:"three", value:"Three"}
+			]},
+			{ view:"tabbar", type:"bottom", value:"three", options:[
+				{ id:"one", value:"One" },
+				{ id:"two", value:"Two"},
+				{ id:"three", value:"Three"}
+			]},
+			{ view:"button", value:"Confirm", width:200, align:"center" }
+		];
+
+
+		webix.ui({
+			container:"areaA",
+			margin:30, cols:[
+				{ view:"form", scroll:false, margin: 3,width:300, elements: form1 }
+			]
+		});
+		</script>
+	</body>
+</html>

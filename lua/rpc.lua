@@ -58,7 +58,7 @@ local function RPC_Process_Call(app,s,rpk)
 							  function (err)
 							  	errmsg = err
 							  	stack  = debug.traceback() 
-							  end,s,table.unpack(request.arg)) then
+							  end,table.unpack(request.arg)) then
 					CLog.SysLog(CLog.LOG_ERROR,string.format("rpc process error:%s\n%s",errmsg,stack))
 
 				end
@@ -73,7 +73,7 @@ local function RPC_Process_Call(app,s,rpk)
 											  function (err)
 											  	errmsg = err
 											  	stack  = debug.traceback()
-											  end,s,table.unpack(request.arg)))
+											  end,table.unpack(request.arg)))
 				if ret[1] then
 					table.remove(ret,1)			
 					response.ret = ret

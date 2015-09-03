@@ -153,6 +153,7 @@ if ret then
 	end)
 
 	MsgHandler.RegHandler(NetCmd.CMD_CA_LOGIN,function (sock,rpk)
+		print("NetCmd.CMD_CA_LOGIN")
 		local type = rpk:Read_uint8()
 		local actname = rpk:Read_string()
 		local player = Player.GetPlayerBySock(sock) or Player.NewGatePly(sock)
@@ -180,6 +181,7 @@ if ret then
 			sock:Close()
 			return	
 		end
+		print(result)
 		local chaid = result or 0
 		chaid = tonumber(chaid)
 		if not togroup then
@@ -275,6 +277,7 @@ if ret then
 	--在连接上groupserver和db初始化完成后才启动对客户端的监听
 
 	if TcpServer.Listen(ip,port,function (sock)
+			print("new client")
 			sock:Establish(CSocket.rpkdecoder(4096),1024)
 			toclient:Add(sock,OnClientMsg,Player.OnPlayerDisconnected,60000)		
 		end) then

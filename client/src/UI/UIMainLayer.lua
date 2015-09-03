@@ -244,7 +244,7 @@ function UIMainLayer:ctor()
     local eventDispatcher = self:getEventDispatcher()
     eventDispatcher:addEventListenerWithSceneGraphPriority(listener, self)
     
-    MgrGuideStep = maincha.attr.introduce_step
+    --[[MgrGuideStep = maincha.attr.introduce_step
     local function onTalkEnd()
         local hud = cc.Director:getInstance():getRunningScene().hud
         if MgrGuideStep > maincha.attr.introduce_step then
@@ -342,6 +342,7 @@ function UIMainLayer:ctor()
     end
     
     self.UpdateGuide = onTalkEnd
+    --]]
     
     local function onNodeEvent(event)
         if "enter" == event then

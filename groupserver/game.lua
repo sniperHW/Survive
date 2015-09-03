@@ -9,7 +9,7 @@ end
 
 local function RegRpcService(app)
 	--gameserver登录到groupserver
-	app:RPCService("GameLogin",function (sock,name,ip,port)
+	app:RPCService("GameLogin",function (name,ip,port,sock)
 		if sock2game[sock] == nil and name2game[name] == nil then
 			local game = {sock = sock,name = name,players={},plycount=0,ip=ip,port=port}
 			sock.type = "game"

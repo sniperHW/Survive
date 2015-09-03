@@ -683,6 +683,7 @@ local function RegRpcService(app)
 				return {false,"group busy"}
 		    	    end
 			    Gate.Bind(Gate.GetGateBySock(sock),ply,sessionid)
+			    print("-----",chaid)
 			    ply.chaid = ply.chaid or chaid
 			    if ply.chaid == 0 then
 					return ply:NotifyCreate()
@@ -740,7 +741,8 @@ local function RegRpcService(app)
 		end	
 	end
 	app:RPCService("PlayerLogin",
-			 function (sock,actname,chaid,sessionid)
+			 function (actname,chaid,sessionid,sock)
+			 	print(chaid,sessionid)
 				local status,ret = pcall(PlayerLogin,sock,actname,chaid,sessionid)
 				if status then
 					return ret

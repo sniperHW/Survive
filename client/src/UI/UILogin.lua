@@ -36,7 +36,7 @@ function UILogin:ctor()
     
     local function btnHandle(sender, event)
         print("pre connect")
-        Connect("192.168.75.139", 8010)
+        Connect("192.168.52.128", 8010)
         --Connect("121.41.37.227", 8010)
         --cc.Director:getInstance():replaceScene(require("SceneLoading.lua").create())
     end

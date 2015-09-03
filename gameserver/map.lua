@@ -136,7 +136,7 @@ g_survive = nil
 --注册RPC服务
 local function RegRpcService(app)
 
-	app:RPCService("EnterSurvive",function (sock,ply,starttime,grouptime)
+	app:RPCService("EnterSurvive",function (ply,starttime,grouptime)
 		if not g_survive then
 			mapid = mapidx:Get()
 			if not mapid then
@@ -155,7 +155,7 @@ local function RegRpcService(app)
 		end
 	end)
 
-	app:RPCService("EnterMap",function (sock,mapid,type,plys)
+	app:RPCService("EnterMap",function (mapid,type,plys)
 		local m = nil
 		local status,ret = pcall(function ()
 			local plyids
@@ -192,7 +192,7 @@ local function RegRpcService(app)
 		end		 			
 	end)
 	
-	app:RPCService("LeaveMap",function (sock,id)
+	app:RPCService("LeaveMap",function (id)
 		local m = GetMapById(id)
 		if m then 
 			return m.logic:leavemap(id)
@@ -200,7 +200,7 @@ local function RegRpcService(app)
 		return false
 	end)
 	--客户端连接重新建立 
-	app:RPCService("CliReConn",function (sock,id,gatesession)
+	app:RPCService("CliReConn",function (id,gatesession)
 		local ply = GetPlayerById(id)
 		if not ply or ply.gatesession then
 			return false

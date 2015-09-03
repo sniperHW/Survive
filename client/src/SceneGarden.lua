@@ -95,11 +95,11 @@ function SceneGarden:ctor()
                 curState = statePVE
                 self:walkTo({x = 55, y = 105})    
                 
-                if MgrGuideStep == 19 then
+                --[[if MgrGuideStep == 19 then
                     hud:closeUI("UIGuide")
                     local ui = hud:openUI("UIGuide")
                     ui:createClipNode()
-                end
+                end]]--
             end
             
             local function onDone()
@@ -109,12 +109,12 @@ function SceneGarden:ctor()
                 ui:createClipNode(sender)
             end
             
-            if MgrGuideStep >= 10 and MgrGuideStep <= 12 then
+            --[[if MgrGuideStep >= 10 and MgrGuideStep <= 12 then
                 hud:closeUI("UIGuide")
                 local ui = hud:openUI("UIGuide")
                 ui:createClipNode()
                 self.guideSchID = cc.Director:getInstance():getScheduler():scheduleScriptFunc(onDone, 10, false)
-            end            
+            end]]--            
         else
             local hud = cc.Director:getInstance():getRunningScene().hud
             hud:closeUI("UIGuide")
@@ -267,7 +267,7 @@ function SceneGarden:ctor()
     local function onNodeEvent(event)
         local hud = cc.Director:getInstance():getRunningScene().hud
         if "enter" == event then
-            if MgrGuideStep == 10 then
+            --[[if MgrGuideStep == 10 then
                 local ui = hud:openUI("UIGuide")
                 ui:createClipNode(self.btnFish)
             elseif MgrGuideStep == 11 then
@@ -279,7 +279,7 @@ function SceneGarden:ctor()
             elseif MgrGuideStep == 19 then
                 local ui = hud:openUI("UIGuide")
                 ui:createClipNode(self.btnPVE)
-            end
+            end]]--
         end
         
         if "exit" == event then

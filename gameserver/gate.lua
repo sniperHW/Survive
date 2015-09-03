@@ -3,7 +3,7 @@ local name2gate = {}
 
 local function RegRpcService(app)
 	--gateserver登录到gameserver
-	app:RPCService("Login",function (sock,name)
+	app:RPCService("Login",function (name,sock)
 		if sock2gate[sock] == nil and name2gate[name] == nil then
 			local gate = {sock = sock,name = name,players={}}
 			sock.type = "gate"

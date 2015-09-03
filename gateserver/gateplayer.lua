@@ -87,6 +87,7 @@ local function ReleasePlayer(ply)
 end
 
 local function OnPlayerDisconnected(sock,errno)
+	print("OnPlayerDisconnected",errno)
 	local ply = GetPlayerBySock(sock)
 	if not ply then
 		return

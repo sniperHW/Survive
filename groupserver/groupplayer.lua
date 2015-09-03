@@ -655,8 +655,8 @@ local function RegRpcService(app)
 				elseif ply.status == playing or ply.status == queueing or ply.status == entermap then
 					Gate.Bind(Gate.GetGateBySock(sock),ply,sessionid)
 					Sche.Spawn(function ()
-						if ply.gatesession then
-							ply:NotifyBeginPlay()					
+						if ply.gatesession then				
+							ply:NotifyBeginPlay()
 							if ply.gamesession then
 								--通知gameserver断线重连
 								local rpccaller = RPC.MakeRPC(ply.gamesession.game.sock,"CliReConn")
@@ -666,7 +666,7 @@ local function RegRpcService(app)
 								if err or not ret then
 									Game.UnBind(ply)
 									log_groupserver:Log(CLog.LOG_ERROR,string.format("game reconnect error %s",actname))
-								end							   						
+								end								   						
 							end
 						end
 					end)					

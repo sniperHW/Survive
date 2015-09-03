@@ -34,6 +34,7 @@ function stream.Listen(self,ip,port)
 end
 
 function stream.cb_connect (self,err)
+	print("cb_connect",err)
 	if err ~= 0 then
 		self.errno = err
 	else

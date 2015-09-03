@@ -102,9 +102,10 @@ function maplogic:entermap(plys)
 			local ply = Player.New(bit32.lshift(map.mapid,16) + id,avatid,
 					             map,v.nickname,
 					             v.actname,v.groupsession,
-					             v.attr,Skill.New(v.skills),{60,60},5,nil,v.battleitem)
+					             v.attr,Skill.New(v.skills),{90,50},5,nil,v.battleitem)
 			ply.fashion = v.fashion
 			ply.weapon = v.weapon
+			ply.canUseSkill = true
 			if gate then 
 				Gate.Bind(gate,ply,v.gatesession.id)
 			end		

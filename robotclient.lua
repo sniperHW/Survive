@@ -32,29 +32,57 @@ MsgHandler.RegHandler(NetCmd.CMD_GC_BACK2MAIN,function (sock,rpk)
 end)
 
 
-MsgHandler.RegHandler(NetCmd.CMD_SC_ENTERMAP,function (sock,rpk)
-	local ply = sock.ply
-	if ply then
-		ply.map = rpk:Read_uint16()
-		--角色基本属性
-		ply.attr = ReadAttr(rpk)		
-
-		ply.battleitems = {}
-		local size = rpk:Read_uint8()
-		for i=1,size do
-			local pos = rpk:Read_uint8()
-			local item = {}
-			item.id = rpk:Read_uint16()
-			item.count = rpk:Read_uint16()
-			ply.battleitems[pos] = item
-		end
-		ply.id  = rpk:Read_uint32()
+--[[
+SuperReg(function (rpk)
+	--print("CMD_SC_ENTERMAP begin")
+	local packet = {}
+	packet.maptype = ReadUint16(rpk)	
+	--属性
+	packet.attr = ReadAttr(rpk)
+	packet.battleitems = {}
+	local size = ReadUint8(rpk)
+	for i=1,size do
+		local pos = ReadUint8(rpk)
+		local item = {}
+		item.id = ReadUint16(rpk)
+		item.count = ReadUint16(rpk)
+		--print(pos,item.id,item.count)
+		packet.battleitems[pos] = item
 	end
+	packet.tick_remain = ReadUint32(rpk)		
+	packet.selfid = ReadUint32(rpk)		
+	--print("CMD_SC_ENTERMAP end")
+	--print("CMD_SC_ENTERMAP",packet)
+	
+    NetHandler[netCmd.CMD_SC_ENTERMAP](packet)
+end,netCmd.CMD_SC_ENTERMAP)
+]]
+
+MsgHandler.RegHandler(NetCmd.CMD_SC_ENTERMAP,function (sock,rpk)
+	local ply = sock.ply or {}
+	if not sock.ply then 
+		sock.ply = ply 
+	end
+	ply.map = rpk:Read_uint16()
+	--角色基本属性
+	ply.attr = ReadAttr(rpk)		
+	ply.battleitems = {}
+	local size = rpk:Read_uint8()
+	for i=1,size do
+		local pos = rpk:Read_uint8()
+		local item = {}
+		item.id = rpk:Read_uint16()
+		item.count = rpk:Read_uint16()
+		ply.battleitems[pos] = item
+	end
+	rpk:Read_uint32()
+	ply.id  = rpk:Read_uint32()
+
 end)
 
 local function Mov(sock)
-	local x = math.random(10,400)--math.random(10,400)
-	local y = math.random(10,200)--math.random(10,200)
+	local x = math.random(10,180)--math.random(10,400)
+	local y = math.random(10,100)--math.random(10,200)
 	local wpk = CPacket.NewWPacket(64)
 	wpk:Write_uint16(NetCmd.CMD_CS_MOV)
 	wpk:Write_uint16(x)
@@ -69,10 +97,12 @@ local function LeaveMap(sock)
 end
 
 MsgHandler.RegHandler(NetCmd.CMD_SC_ENTERSEE,function (sock,rpk)
+	print("CMD_SC_ENTERSEE",sock.ply)
 	local ply = sock.ply
 	if ply then
 		local id = rpk:Read_uint32(rpk)
 		if id == ply.id then
+			print("self enter see")
 			rpk:Read_uint8()
 			rpk:Read_uint16()
 			local nickname = rpk:Read_string()
@@ -85,8 +115,7 @@ MsgHandler.RegHandler(NetCmd.CMD_SC_ENTERSEE,function (sock,rpk)
 			for k,v in pairs(attr) do
 				print(k,v)
 			end
-			Mov(sock)
-			--LeaveMap(sock)				
+			Mov(sock)				
 		end
 	end
 end)
@@ -110,8 +139,9 @@ end)
 
 MsgHandler.RegHandler(NetCmd.CMD_GC_BEGINPLY,function (sock,rpk)
 	print("CMD_GC_BEGINPLY")
-	local ply = {}
-	
+	local ply = sock.ply or {}
+	ply.uniqueid = rpk:Read_uint32()
+	print(ply.uniqueid)
 	ply.avatarid = rpk:Read_uint16()
 	ply.nickname = rpk:Read_string()
 	--角色基本属性
@@ -169,13 +199,13 @@ end)
 
 
 function ConnectAndLogin(name)
-	local client = socket.New(CSocket.AF_INET,CSocket.SOCK_STREAM,CSocket.IPPROTO_TCP)
+	local client = socket.Stream.New(CSocket.AF_INET)
 	--if client:Connect("121.41.37.227",8010) then
-	if client:Connect("192.168.0.87",8010) then
-		print("connect to 127.0.0.1:8810 error")
+	if client:Connect("192.168.52.128",8010) then
+		print("connect to server error")
 		return
 	end
-	client:Establish(CSocket.rpkdecoder())
+	client:Establish(CSocket.rpkdecoder(65535))
 	Robot:Add(client,MsgHandler.OnMsg,
 		      function () 
 		      	sche.Spawn(ConnectAndLogin,name)

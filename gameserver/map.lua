@@ -221,6 +221,7 @@ local function RegRpcService(app)
 end
 
 MsgHandler.RegHandler(NetCmd.CMD_CS_MOV,function (sock,rpk)
+	print("CMD_CS_MOV")
 	local id = rpk:Reverse_read_uint32()
 	local ply = GetPlayerById(id)
 	if ply then
@@ -231,6 +232,7 @@ MsgHandler.RegHandler(NetCmd.CMD_CS_MOV,function (sock,rpk)
 end)
 
 MsgHandler.RegHandler(NetCmd.CMD_CS_USESKILL,function (sock,rpk)
+	print("CMD_CS_USESKILL")
 	local id = rpk:Reverse_read_uint32()
 	local ply = GetPlayerById(id)
 	if ply then

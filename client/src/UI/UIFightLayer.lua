@@ -168,12 +168,12 @@ function UIFightLayer:createLeftTop()
                 cc.CONTROL_STATE_NORMAL)
         end
         
-        if MgrGuideStep == 4 then
+        --if MgrGuideStep == 4 then
             --local scene = cc.Director:getInstance():getRunningScene()
             --local hud = scene.hud
             --hud:closeUI("UIGuide")
             self:createGuideRocker()
-        end
+        --end
     end
     
     local icon = nil
@@ -378,21 +378,21 @@ function UIFightLayer:createSkillNode()
         	   useSkill(skillID)
            end
            
-           if MgrGuideStep == 4 then
+           --[[if MgrGuideStep == 4 then
                 local hud = cc.Director:getInstance():getRunningScene().hud
                 hud:closeUI("UIGuide")
                 local ui = hud:openUI("UIGuide")
-           end
+           end]]--
             
     	   return 
     	end
     	
     	for key, value in pairs(self.btnSkill) do
     		if value == sender then
-    		    if MgrGuideStep == 4 then
+    		    --[[if MgrGuideStep == 4 then
                     local hud = cc.Director:getInstance():getRunningScene().hud
                     hud:closeUI("UIGuide")
-                end
+                end]]--
     		    
                 local skillID = MgrSkill.EquipedSkill[key]
                 useSkill(skillID)
@@ -562,7 +562,7 @@ function UIFightLayer:createGuideUseItem()
 end
 
 function UIFightLayer:createGuideJoyStick()
-    if self.guideJoyStick then
+    --[[if self.guideJoyStick then
         return
     end
     self.guideJoyStick = true
@@ -571,11 +571,11 @@ function UIFightLayer:createGuideJoyStick()
     hud:closeUI("UIGuide")
     local ui = hud:openUI("UIGuide")
 
-    ui:createWidgetGuide(self.btnSwitch, "UI/fight/ygaoganmoshi.png", true)
+    ui:createWidgetGuide(self.btnSwitch, "UI/fight/ygaoganmoshi.png", true)]]--
 end
 
 function UIFightLayer:createGuideRocker()
-    if self.guideRocker then
+    --[[if self.guideRocker then
         return
     end
     self.guideRocker = true
@@ -585,11 +585,11 @@ function UIFightLayer:createGuideRocker()
     hud:closeUI("UIGuide")
     local ui = hud:openUI("UIGuide")
 
-    ui:createClipNode(self.plate, "操控摇杆行走", {x = 150, y = 300})
+    ui:createClipNode(self.plate, "操控摇杆行走", {x = 150, y = 300})]]--
 end
 
 function UIFightLayer:createGuideBaseSkill()
-    if self.guideBaseSkill then
+    --[[if self.guideBaseSkill then
         return
     end
     self.guideBaseSkill = true
@@ -602,7 +602,7 @@ function UIFightLayer:createGuideBaseSkill()
     local posX, posY = self.btnBaseSkill:getPosition()
     local pos = self.btnBaseSkill:getParent():convertToWorldSpace({x = posX, y = posY})
     ui:createWidgetGuide(self.btnBaseSkill, "UI/fight/putonggongji.png", true, 
-        "点击按钮击杀怪物", pos)
+        "点击按钮击杀怪物", pos)]]--
 end
 
 function UIFightLayer:UpdateLife()
@@ -794,9 +794,9 @@ function UIFightLayer:CreateJoyStick()
             self.moveSchID = scheduler:scheduleScriptFunc(moveTick, 0, false)
             MgrControl.bTouchJoyStick = true
             
-            if MgrGuideStep == 4 then
+            --[[if MgrGuideStep == 4 then
                 self:createGuideBaseSkill()
-            end
+            end]]--
             
             return true
         end 

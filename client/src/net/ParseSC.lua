@@ -496,24 +496,24 @@ SuperReg(function (rpk)
     
     local scheduleID = nil
     local function openPVE()
-        if MgrGuideStep == 19 then
+        --[[if MgrGuideStep == 19 then
             local scene = require("SceneLogin").create()
             cc.Director:getInstance():replaceScene(scene)
             scene:setOpenUI("UIMainLayer")
             MgrPlayer = {}
-        else
+        else]]
             hud:closeUI("UIPVEResult")
             hud:openUI("UIPVE")
-        end
+        --end
         local scheduler = cc.Director:getInstance():getScheduler()
         scheduler:unscheduleScriptEntry(scheduleID)
     end
     local scheduler = cc.Director:getInstance():getScheduler()
     scheduleID = scheduler:scheduleScriptFunc(openPVE, 3, false)
     
-    if MgrGuideStep == 19 then
-        CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
-    end
+    --if MgrGuideStep == 19 then
+     --   CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
+    --end
     
     for idx = 1, #scene.stars do
         scene.stars[idx]:removeFromParent()

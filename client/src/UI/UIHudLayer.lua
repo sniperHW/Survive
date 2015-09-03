@@ -115,7 +115,7 @@ function UIHudLayer:showHint(type, bagIdx, pos)
         
         hint:setPositionX(visibleSize.width/2 - 200)
         hint:setPositionY(visibleSize.height/2 + height/2)
-        hint:UpdateGuide()
+        --hint:UpdateGuide()
         --[[
         if visibleSize.width - width > pos.x then
             hint:setPositionX(pos.x)

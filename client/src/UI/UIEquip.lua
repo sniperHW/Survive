@@ -54,18 +54,18 @@ function UIEquip:ctor()
     local function onNodeEvent(event)
         local hud = cc.Director:getInstance():getRunningScene().hud
         if "enter" == event then
-            if MgrGuideStep == 23 then
+            --[[if MgrGuideStep == 23 then
                 hud:closeUI("UIGuide")
                 local ui = hud:openUI("UIGuide")
                 ui:createWidgetGuide(self.btnIntensifyBack, 
                     "UI/equip/btnback0.png", true)
-            end
+            end]]
         elseif "exit" == event then
-            if MgrGuideStep == 23 then
+            --[[if MgrGuideStep == 23 then
                 hud:closeUI("UIGuide")
                 local main = hud:getUI("UIMainLayer")  
                 main.UpdateGuide()    
-            end
+            end]]
         end
     end
     self:registerScriptHandler(onNodeEvent)
@@ -380,13 +380,13 @@ function UIEquip:createUpgrade()
     end
 
     local function onUpgradeTouched(sender, event)
-        if MgrGuideStep == 23 then
+        --[[if MgrGuideStep == 23 then
             local hud = cc.Director:getInstance():getRunningScene().hud
             hud:closeUI("UIGuide")
             local ui = hud:openUI("UIGuide")
             ui:createWidgetGuide(self.btnClose, 
                 "UI/common/close.png", false)
-        end
+        end]]--
         
         local equip = maincha.equip[self.selectedBagPos]
         if equip then

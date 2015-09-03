@@ -74,14 +74,14 @@ function UIHintLayer:ctor()
         end
 
         if "exit" == event then
-            if MgrGuideStep == 6 then         
+            --[[if MgrGuideStep == 6 then         
                 CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)       
                 local hud = cc.Director:getInstance():getRunningScene().hud        
                 hud:closeUI("UIGuide")              
                 local ui = hud:openUI("UIGuide")
                 local bag = hud:getUI("UIBag")    
                 ui:createWidgetGuide(bag.btnClose, "UI/common/close.png", false)
-            end
+            end]]--
         end
     end
     self:registerScriptHandler(onNodeEvent)

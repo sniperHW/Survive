@@ -223,7 +223,8 @@ function UIMainLayer:ctor()
             elseif tag > 0 then
                 CMD_ENTERMAP(tag)
             elseif tag == 0 then
-                UIMessage.showMessage(Lang.LandNotOpen) 
+                CMD_ENTERMAP(201)
+                --UIMessage.showMessage(Lang.LandNotOpen) 
             end
             
             if tag == 203 then               
@@ -346,7 +347,7 @@ function UIMainLayer:ctor()
     
     local function onNodeEvent(event)
         if "enter" == event then
-            onTalkEnd()
+            --onTalkEnd()
         elseif "exit" == event then
             --cc.Director:getInstance():getScheduler():unscheduleScriptEntry(self.schedulerID)
             cc.SimpleAudioEngine:getInstance():stopMusic()

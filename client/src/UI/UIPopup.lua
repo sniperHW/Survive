@@ -42,7 +42,7 @@ function UIPopup:showPopMessag(msgStr)
         self:removeFromParent()
     end
 
-    if MgrGuideStep >= 10 and MgrGuideStep <= 12 then
+    --[[if MgrGuideStep >= 10 and MgrGuideStep <= 12 then
         self.btnConfirm  = self.createButton{
             pos = {x = 0, y = -60},
             icon = "UI/common/kuang2.png",
@@ -50,7 +50,7 @@ function UIPopup:showPopMessag(msgStr)
             ignore = false,
             parent =  self    
         }
-    else
+    else]]
         self.btnConfirm  = self.createButton{
             pos = {x = -100, y = -60},
             icon = "UI/common/kuang2.png",
@@ -65,7 +65,7 @@ function UIPopup:showPopMessag(msgStr)
             ignore = false,
             parent =  self    
         }
-    end
+    --end
 end
 
 return UIPopup

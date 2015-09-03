@@ -28,9 +28,9 @@ function MgrSkill.CanUseSkill(skillID)
 		end
 	end
 	
-    if TableSkill[skillID].Energy then
+    --[[if TableSkill[skillID].Energy then
         return MgrFight.anger >= TableSkill[skillID].Energy
-	end
+	end]]--
 	
 	return true
 end
@@ -109,12 +109,12 @@ function MgrSkill.UseSkill(skillID, selfPos, selfDir, targets)
 			CMD_USESKILL_DIR(skillID, selfDir, targets)
 		end
 		
-        if skillInfo.Energy then
+        --[[if skillInfo.Energy then
             MgrFight.anger = MgrFight.anger - skillInfo.Energy
             local scene = cc.Director:getInstance():getRunningScene()
             local fight = scene.hud:getUI("UIFightLayer")
             fight:UpdateAnger()
-        end
+        end]]--
 		
 		print("Use skill:"..skillID)
 		return true

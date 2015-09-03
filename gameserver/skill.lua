@@ -277,7 +277,7 @@ local function UseSkill(avatar,skill,byAi,param)
 	if check_buf and check_buf > 0 and not avatar.buff:HasBuff(check_buf) then
 		return false
 	end
-	--print("UseSkill1",skill.id)
+	print("UseSkill1",skill.id)
 	local single_target = atk_type == 0 or atk_type == 3
 	if not byAi then -- from client
 		local rpk = param[1]

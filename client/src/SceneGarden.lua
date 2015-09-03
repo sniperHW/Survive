@@ -537,7 +537,7 @@ function SceneGarden:OpenResult(action, count, reward_item)
         
         local hud = cc.Director:getInstance():getRunningScene().hud
         
-        if MgrGuideStep == 10 then
+        --[[if MgrGuideStep == 10 then
             local ui = hud:openUI("UIGuide")
             ui:createClipNode(self.btnGather)
             CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)  
@@ -557,7 +557,7 @@ function SceneGarden:OpenResult(action, count, reward_item)
             
             local ui = hud:openUI("UINPCTalk")            
             ui:ShowTalk(10, onTalkEnd)
-        end
+        end]]--
     end
     
     local item1 = 0
@@ -571,10 +571,10 @@ function SceneGarden:OpenResult(action, count, reward_item)
 
     local items = {{item1, count}, {4003, 1}, {4004, 2}}
 
-    if MgrGuideStep >= 10 and MgrGuideStep <= 12 then
+    --[[if MgrGuideStep >= 10 and MgrGuideStep <= 12 then
         local strAwards = TableNewbie_Reward[MgrGuideStep].Guide_Reward
         items = comm.parseMutilItems(strAwards)
-    end
+    end]]--
     
     --[[
     if MgrGuideStep == 10 then

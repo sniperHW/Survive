@@ -29,7 +29,7 @@ function UIBag:ctor()
     
     local function onNodeEvent(event)
         if "enter" == event then
-            if MgrGuideStep == 6 then
+            --[[if MgrGuideStep == 6 then
                 local hud = cc.Director:getInstance():getRunningScene().hud        
                 local cell = self.tableBag:cellAtIndex(0)
                 
@@ -59,11 +59,11 @@ function UIBag:ctor()
                 hud:closeUI("UIGuide")
                 local ui = hud:openUI("UIGuide")    
                 ui:createWidgetGuide(self.btnBody[5], "UI/bag/icon.png", false)
-            end
+            end]]--
         end
 
         if "exit" == event then
-            if MgrGuideStep == 6 then         
+            --[[if MgrGuideStep == 6 then         
                 local hud = cc.Director:getInstance():getRunningScene().hud        
                 hud:closeUI("UIGuide")  
                 
@@ -75,7 +75,7 @@ function UIBag:ctor()
                 hud:closeUI("UIGuide")
                 local main = hud:getUI("UIMainLayer")                                
                 main.UpdateGuide()
-            end
+            end]]--
         end
     end
     self:registerScriptHandler(onNodeEvent)
@@ -104,7 +104,7 @@ function UIBag:createEquip()
             bagState = bagStateTake
             self:UpdateBag()
             
-            if MgrGuideStep == 15 then
+            --[[if MgrGuideStep == 15 then
                 local hud = cc.Director:getInstance():getRunningScene().hud 
                 hud:closeUI("UIGuide")
         
@@ -128,7 +128,7 @@ function UIBag:createEquip()
                     local ui = hud:openUI("UIGuide")    
                     ui:createWidgetGuide(cell.item[equipIdx].back, "UI/bag/iconB.png", true)
                 end
-            end
+            end]]--
         else    
             local cellPos = sender:getPosition3D()
             local parent = sender:getParent()

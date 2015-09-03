@@ -80,11 +80,11 @@ function SceneLoading:ctor()
                 if self.mapID == 205 then
                     scene = require("SceneGarden").create(0)
                 else
-                    if MgrGuideStep == 4 or MgrGuideStep == 17 then
-                        scene = require("SceneGuidePVE").create(targetMapID)
-                    else
-                        scene = require("SceneCity").create(targetMapID)
-                    end
+                    --if MgrGuideStep == 4 or MgrGuideStep == 17 then
+                     --   scene = require("SceneGuidePVE").create(targetMapID)
+                    --else
+                    scene = require("SceneCity").create(targetMapID)
+                    --end
                 end
                 cc.Director:getInstance():replaceScene(scene)
             else

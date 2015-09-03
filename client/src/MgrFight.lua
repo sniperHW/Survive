@@ -136,10 +136,10 @@ local function HitEff(atkerid, sufferid, type)
 end
 
 RegNetHandler(function (packet) 
-    --print("CMD_SC_NOTIATK")
+    print("CMD_SC_NOTIATK")
     local atker = MgrPlayer[packet.atkerid]
     if not atker then
-        --print("no find atker:"..packet.atkerid)
+        print("no find atker:"..packet.atkerid)
         return
     end 
     local skillid = packet.skillid
@@ -158,8 +158,9 @@ RegNetHandler(function (packet)
             end
         end
     end
+    print(success,skillid)
     --if success and packet.atkerid ~= maincha.id then
-    if success then
+    if success > 0 then
         if success == 2 and skillid ~= 1040 then
             local sprite3D =  atker:GetAvatar3D()
             if sprite3D then
@@ -186,7 +187,7 @@ RegNetHandler(function (packet)
 end,netCmd.CMD_SC_NOTIATK)
 
 RegNetHandler(function (packet) 
-    --print("CMD_SC_NOTIATKSUFFER")    
+    print("CMD_SC_NOTIATKSUFFER")    
     local sufferer = MgrPlayer[packet.suffererid]
     local atker = MgrPlayer[packet.atkerid]
 

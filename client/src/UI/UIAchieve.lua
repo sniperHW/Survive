@@ -35,7 +35,7 @@ function UIAchieve:ctor()
     
     local function onNodeEvent(event)
         if "exit" == event then
-            if MgrGuideStep == 8 or MgrGuideStep == 20 then
+            --[[if MgrGuideStep == 8 or MgrGuideStep == 20 then
                 local hud = cc.Director:getInstance():getRunningScene().hud
                 hud:closeUI("UIGuide")
                 CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
@@ -45,7 +45,7 @@ function UIAchieve:ctor()
                 local main = hud:getUI("UIMainLayer")  
                 main.UpdateGuide()                              
                 --ui:createWidgetGuide(main.btnBag, "UI/main/bag.png", false)
-            end
+            end]]--
         end
     end
     self:registerScriptHandler(onNodeEvent)
@@ -84,12 +84,12 @@ function UIAchieve:createUI()
             addItem(4004, 163)
         end
         ]]
-        if MgrGuideStep == 8 or MgrGuideStep == 20 then
+        --[[if MgrGuideStep == 8 or MgrGuideStep == 20 then
             local hud = cc.Director:getInstance():getRunningScene().hud
             hud:closeUI("UIGuide")
             local ui = hud:openUI("UIGuide")            
             ui:createWidgetGuide(self.btnClose, "UI/common/close.png", false)
-        end
+        end]]--
     end
 
     local function numOfCells(table)

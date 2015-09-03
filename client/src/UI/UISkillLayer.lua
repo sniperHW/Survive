@@ -47,14 +47,14 @@ function UISkillLayer:ctor()
     
     local function onNodeEvent(event)
         if "enter" == event then
-            if MgrGuideStep == 13 then
+            --[[if MgrGuideStep == 13 then
                 local hud = cc.Director:getInstance():getRunningScene().hud
                 hud:closeUI("UIGuide")
                 local ui = hud:openUI("UIGuide")
 
                 ui:createWidgetGuide(self.skillCell[1].iconSkill, 
                     "UI/skill/KK.png", true)
-            end            
+            end]]--            
 
             local weaponid = maincha.equip[2].id
             if weaponid > 5000 and weaponid < 5100 then
@@ -67,14 +67,14 @@ function UISkillLayer:ctor()
             
             self:UpdateSkill()
         elseif "exit" == event then
-            if MgrGuideStep == 13 then
+            --[[if MgrGuideStep == 13 then
                 local hud = cc.Director:getInstance():getRunningScene().hud
                 hud:closeUI("UIGuide")
                 --CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
                 --MgrGuideStep = 12
                 local main = hud:getUI("UIMainLayer")  
                 main.UpdateGuide()    
-            end
+            end]]
         end
     end
     self:registerScriptHandler(onNodeEvent)
@@ -309,13 +309,13 @@ function UISkillLayer:createSkillInfo()
                 return
             end 
             CMD_UPGRADESKILL(curSkillID)
-            if MgrGuideStep == 13 then            
+            --[[if MgrGuideStep == 13 then            
                 local hud = cc.Director:getInstance():getRunningScene().hud
                 hud:closeUI("UIGuide")
                 local ui = hud:openUI("UIGuide")            
                 ui:createWidgetGuide(self.skillCell[2].iconSkill, 
                     "UI/skill/KK.png", true)
-            end
+            end]]--
         else
             for key, value in pairs(allSkill[curWeapon]) do
                 if value == curSkillID then
@@ -328,11 +328,11 @@ function UISkillLayer:createSkillInfo()
                             UIMessage.showMessage(Lang.SoulNotEnough) 
                         else
                             CMD_UNLOCKSKILL(curSkillID)
-                            local hud = cc.Director:getInstance():getRunningScene().hud
+                            --[[local hud = cc.Director:getInstance():getRunningScene().hud
                             hud:closeUI("UIGuide")
                             local ui = hud:openUI("UIGuide")   
                             ui:createWidgetGuide(self.btnClose, 
-                                "UI/common/close.png", false)
+                                "UI/common/close.png", false)]]
                         end
                     else
                         UIMessage.showMessage(Lang.LastSkillLocked) 

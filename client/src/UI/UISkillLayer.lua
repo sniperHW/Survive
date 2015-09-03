@@ -150,12 +150,12 @@ function UISkillLayer:createLeft()
             self:UpdateSkillInfo()
         end
         
-        if MgrGuideStep == 13 then            
+        --[[if MgrGuideStep == 13 then            
             local hud = cc.Director:getInstance():getRunningScene().hud
             hud:closeUI("UIGuide")
             local ui = hud:openUI("UIGuide")            
             ui:createWidgetGuide(self.btnSkillHandle, "UI/common/k.png", true)
-        end
+        end]]
     end
     
     self.iconWeapon = self.createSprite("UI/skill/0DJ.png", {x = 340, y = 318}, {nodeSkill})

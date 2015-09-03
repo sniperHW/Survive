@@ -100,6 +100,7 @@ SuperReg(function (rpk)
 	--技能
 	packet.skill = {}
 	size = ReadUint16(rpk)
+	print("skill size",size)
 	for i=1,size do
 		local skill = {}
 		skill.id = ReadUint16(rpk)

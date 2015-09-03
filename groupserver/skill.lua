@@ -55,7 +55,8 @@ function skills:DbStr()
 end
 
 function skills:Save()
-	local cmd = "hmset chaid:" .. self.ply.chaid .. " skill  " .. self:DbStr()
+	local cmd = "hmset chaid:" .. self.ply.chaid .. " skills  " .. self:DbStr()
+	print(cmd)
 	Db.CommandAsync(cmd)	
 end
 

@@ -279,7 +279,7 @@ if ret then
 	if TcpServer.Listen(ip,port,function (sock)
 			print("new client")
 			sock:Establish(CSocket.rpkdecoder(4096),1024)
-			toclient:Add(sock,OnClientMsg,Player.OnPlayerDisconnected,60000)		
+			toclient:Add(sock,OnClientMsg,Player.OnPlayerDisconnected)		
 		end) then
 		log_gateserver:Log(CLog.LOG_ERROR,string.format("start server on %s:%d error",ip,port))
 

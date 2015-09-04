@@ -50,25 +50,6 @@ function UIEquip:ctor()
     self:createInlay()
     self:createStar()
     self:createRightTab()
-
-    local function onNodeEvent(event)
-        local hud = cc.Director:getInstance():getRunningScene().hud
-        if "enter" == event then
-            --[[if MgrGuideStep == 23 then
-                hud:closeUI("UIGuide")
-                local ui = hud:openUI("UIGuide")
-                ui:createWidgetGuide(self.btnIntensifyBack, 
-                    "UI/equip/btnback0.png", true)
-            end]]
-        elseif "exit" == event then
-            --[[if MgrGuideStep == 23 then
-                hud:closeUI("UIGuide")
-                local main = hud:getUI("UIMainLayer")  
-                main.UpdateGuide()    
-            end]]
-        end
-    end
-    self:registerScriptHandler(onNodeEvent)
 end
 
 function UIEquip:createRightTab()
@@ -379,15 +360,7 @@ function UIEquip:createUpgrade()
         self.UpNeedItem[i] = item
     end
 
-    local function onUpgradeTouched(sender, event)
-        --[[if MgrGuideStep == 23 then
-            local hud = cc.Director:getInstance():getRunningScene().hud
-            hud:closeUI("UIGuide")
-            local ui = hud:openUI("UIGuide")
-            ui:createWidgetGuide(self.btnClose, 
-                "UI/common/close.png", false)
-        end]]--
-        
+    local function onUpgradeTouched(sender, event)        
         local equip = maincha.equip[self.selectedBagPos]
         if equip then
             local intensify = bit.rshift(equip.attr[3], 16)

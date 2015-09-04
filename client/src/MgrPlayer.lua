@@ -6,7 +6,6 @@ MgrSetting = MgrSetting or
     {bPlayMusic = true, bPlayEffect = true, bJoyStickType = false}
 MgrControl = MgrControl or 
     {bTouchJoyStick = false}
-MgrGuideStep = 0
 MgrAchieve = nil
 MgrFriend = {Friend = {}, Black = {}}
 MgrMail = MgrMail or {}

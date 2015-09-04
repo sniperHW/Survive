@@ -50,25 +50,6 @@ function UICharacter:ctor()
     local eventDispatcher = self:getEventDispatcher()
     eventDispatcher:addEventListenerWithSceneGraphPriority(listener, self)
     ]]
-
-    local function onNodeEvent(event)
-        local hud = cc.Director:getInstance():getRunningScene().hud
-        if "enter" == event then
-            --[[if MgrGuideStep == 25 then
-                hud:closeUI("UIGuide")
-                local ui = hud:openUI("UIGuide")
-                ui:createWidgetGuide(self.btnAddPoint, 
-                    "UI/pve/jt.png", false)
-            end]]
-        elseif "exit" == event then
-            --[[if MgrGuideStep == 25 then
-                hud:closeUI("UIGuide")
-                local main = hud:getUI("UIMainLayer")  
-                main.UpdateGuide()    
-            end]]--
-        end
-    end
-    self:registerScriptHandler(onNodeEvent)
 end
 
 function UICharacter:createRightTab()
@@ -102,14 +83,6 @@ function UICharacter:createRightTab()
         self.back2:setVisible(true)
         self.back3:setVisible(true)
         self.back4:setVisible(false)
-
-        if MgrGuideStep == 25 then
-            local hud = cc.Director:getInstance():getRunningScene().hud
-            hud:closeUI("UIGuide")
-            local ui = hud:openUI("UIGuide")
-            ui:createWidgetGuide(self.btnAddpower, 
-                "UI/character/addH.png", false)
-        end
     end
 
     local function onBtnAchieveTouched(sender, type)
@@ -339,14 +312,6 @@ function UICharacter:createAddAttr()
         else
             UIMessage.showMessage(Lang.NoMorePotential)            
         end        
-
-        --[[if MgrGuideStep == 25 then
-            local hud = cc.Director:getInstance():getRunningScene().hud
-            hud:closeUI("UIGuide")
-            local ui = hud:openUI("UIGuide")
-            ui:createWidgetGuide(self.btnConfirmAdd, 
-                "UI/pve/kstz.png", false)
-        end]]--
     end
 
     local function onSubAttrTouched(sender, type)
@@ -375,14 +340,6 @@ function UICharacter:createAddAttr()
 
         CMD_ADDPOINT(addpower, addendurance, addconstitution, addagile,
             addlucky, addaccurate)
-
-        --[[if MgrGuideStep == 25 then
-            local hud = cc.Director:getInstance():getRunningScene().hud
-            hud:closeUI("UIGuide")
-            local ui = hud:openUI("UIGuide")
-            ui:createWidgetGuide(self.btnClose, 
-                "UI/common/close.png", false)
-        end]]--
     end
 
     local posY = 420

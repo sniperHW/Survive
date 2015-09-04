@@ -245,106 +245,6 @@ function UIMainLayer:ctor()
     local eventDispatcher = self:getEventDispatcher()
     eventDispatcher:addEventListenerWithSceneGraphPriority(listener, self)
     
-    --[[MgrGuideStep = maincha.attr.introduce_step
-    local function onTalkEnd()
-        local hud = cc.Director:getInstance():getRunningScene().hud
-        if MgrGuideStep > maincha.attr.introduce_step then
-            CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
-        end
-        
-        if MgrGuideStep == 0 then
-            local ui = hud:openUI("UINPCTalk")
-            ui:ShowTalk(1, onTalkEnd)     
-        elseif MgrGuideStep == 1 then
-            local ui = hud:openUI("UIGetAward")
-            ui:setOnEnd(onTalkEnd)            
-        elseif MgrGuideStep == 2 then
-            local ui = hud:openUI("UINPCTalk")
-            ui:ShowTalk(2, onTalkEnd)
-        elseif MgrGuideStep == 3 then
-            local scene = require("SceneLoading").create(202)
-            cc.Director:getInstance():replaceScene(scene)
-        elseif MgrGuideStep == 4 then
-            local ui = hud:openUI("UINPCTalk")
-            ui:ShowTalk(8, onTalkEnd)
-        elseif MgrGuideStep == 5 then
-            local ui = hud:openUI("UIGuide")
-            ui:createWidgetGuide(self.btnBag, "UI/main/bag.png", false)
-        elseif MgrGuideStep == 6 then
-            self.showMenu()
-            local ui = hud:openUI("UINewOpen")
-            ui:Show("UI/main/xs.png", cc.p(self.visibleSize.width - 91, 180), onTalkEnd)
-        elseif MgrGuideStep == 7 then
-            hud:closeUI("UINewOpen")
-            self.btnAchieve:setVisible(true)
-            local ui = hud:openUI("UIGuide")
-            ui:createWidgetGuide(self.btnAchieve, "UI/main/xs.png", false)
-        elseif MgrGuideStep == 8 then
-            local ui = hud:openUI("UINPCTalk")
-            ui:ShowTalk(9, onTalkEnd)
-        elseif MgrGuideStep >= 9 and MgrGuideStep <= 11 then
-            local ui = hud:openUI("UIGuide")
-            ui:createClipNode(maps[1])
-        elseif MgrGuideStep == 12 then
-            hud:closeUI("UIGuide")
-            local ui = hud:openUI("UIGuide")
-            ui:createWidgetGuide(self.btnSkill, "UI/main/skill.png", false)
-        elseif MgrGuideStep == 13 then
-            local ui = hud:openUI("UINPCTalk")
-            ui:ShowTalk(11, onTalkEnd)
-        elseif MgrGuideStep == 14 then
-            local ui = hud:openUI("UIGuide")
-            ui:createWidgetGuide(self.btnBag, "UI/main/bag.png", false)
-        elseif MgrGuideStep == 15 then        
-            local ui = hud:openUI("UINPCTalk")
-            ui:ShowTalk(12, onTalkEnd)
-        elseif MgrGuideStep == 16 then
-            local scene = require("SceneLoading").create(202)
-            cc.Director:getInstance():replaceScene(scene)
-        elseif MgrGuideStep == 17 then
-            local ui = hud:openUI("UINPCTalk")
-            ui:ShowTalk(13, onTalkEnd)
-        elseif MgrGuideStep == 18 then
-            local ui = hud:openUI("UIGuide")
-            ui:createClipNode(maps[1])
-        elseif MgrGuideStep == 19 then
-            local ui = hud:openUI("UIGuide")
-            ui:createWidgetGuide(self.btnAchieve, "UI/main/xs.png", false)
-        elseif MgrGuideStep == 20 then
-            self.showMenu()
-            local ui = hud:openUI("UINewOpen")
-            ui:Show("UI/main/mrrw.png", cc.p(self.visibleSize.width - 91, 270), onTalkEnd)
-        elseif MgrGuideStep == 21 then
-            hud:closeUI("UINewOpen")
-            self.btnDayMission:setVisible(true)
-            local ui = hud:openUI("UINPCTalk")
-            ui:ShowTalk(14, onTalkEnd)
-        elseif MgrGuideStep == 22 then
-            if maincha.attr.level >= 10 then
-                local ui = hud:openUI("UIGuide")
-                ui:createWidgetGuide(self.btnEquip, 
-                    "UI/main/wax.png", false)
-            end
-        elseif MgrGuideStep == 23 then
-            local function onEnd()
-                local ui = hud:openUI("UIGuide")
-                ui:createWidgetGuide(self.btnDayMission, "UI/main/mrrw.png", false)
-            end
-            local ui = hud:openUI("UINPCTalk")
-            ui:ShowTalk(15, onEnd)
-        elseif MgrGuideStep == 24 then
-            if maincha.attr.level >= 20 then
-                local ui = hud:openUI("UIGuide")
-                ui:createWidgetGuide(self.btnHead, "yuan.png", true)
-            end            
-        end
-        
-        MgrGuideStep = MgrGuideStep + 1
-    end
-    
-    self.UpdateGuide = onTalkEnd
-    --]]
-    
     local function onNodeEvent(event)
         if "enter" == event then
             --onTalkEnd()
@@ -695,23 +595,18 @@ function UIMainLayer:createRightBottom()
         handle = onAchieveTouched,
         parent = funcNodeV
     }
-    self.btnAchieve:setVisible(MgrGuideStep > 6)
+    self.btnAchieve:setVisible(true)
     
     local function onDayMissionTouched( ... )
         local hud = cc.Director:getInstance():getRunningScene().hud
         hud:openUI("UIDayMission")
-        
-        if MgrGuideStep == 24 then
-            CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
-            hud:closeUI("UIGuide")
-        end
     end
     self.btnDayMission = self.createButton{icon = "UI/main/mrrw.png",
         pos = {x = -91, y = 210},
         handle = onDayMissionTouched,
         parent = funcNodeV
     }
-    self.btnDayMission:setVisible(MgrGuideStep > 20)
+    self.btnDayMission:setVisible(true)
     
     local barSprite = cc.Sprite:create("UI/main/exppro.png")
     local exppro = cc.ProgressTimer:create(barSprite)

@@ -67,24 +67,6 @@ function UIHintLayer:ctor()
     listener:registerScriptHandler(onTouchBegan,cc.Handler.EVENT_TOUCH_BEGAN)
     local eventDispatcher = self:getEventDispatcher()
     eventDispatcher:addEventListenerWithSceneGraphPriority(listener, self)
-    
-    local function onNodeEvent(event)
-        if "enter" == event then
-
-        end
-
-        if "exit" == event then
-            --[[if MgrGuideStep == 6 then         
-                CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)       
-                local hud = cc.Director:getInstance():getRunningScene().hud        
-                hud:closeUI("UIGuide")              
-                local ui = hud:openUI("UIGuide")
-                local bag = hud:getUI("UIBag")    
-                ui:createWidgetGuide(bag.btnClose, "UI/common/close.png", false)
-            end]]--
-        end
-    end
-    self:registerScriptHandler(onNodeEvent)
 end
 
 local startPosX = 20
@@ -124,14 +106,6 @@ function UIHintLayer:showHint(source, itemIdx)
 end 
 
 function UIHintLayer:UpdateGuide()
-    if MgrGuideStep == 6 then
-        local ui = require "UI.UIGuide"
-        local hud = cc.Director:getInstance():getRunningScene().hud        
-        hud:closeUI("UIGuide")
-        local target = self:getChildByTag(EnumBtnType.Equip)                
-        local ui = hud:openUI("UIGuide")    
-        ui:createWidgetGuide(target, "UI/common/exp.png", false)
-    end
 end
 
 function UIHintLayer:createBtn(btns, posY)

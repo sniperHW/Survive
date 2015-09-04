@@ -32,23 +32,6 @@ function UIAchieve:ctor()
         handle = onBtnCloseTouched,
         parent = self.nodeMid}
     self.btnClose:setLocalZOrder(1)    
-    
-    local function onNodeEvent(event)
-        if "exit" == event then
-            --[[if MgrGuideStep == 8 or MgrGuideStep == 20 then
-                local hud = cc.Director:getInstance():getRunningScene().hud
-                hud:closeUI("UIGuide")
-                CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
-                --MgrGuideStep = MgrGuideStep + 1
-
-                --local ui = hud:openUI("UIGuide")
-                local main = hud:getUI("UIMainLayer")  
-                main.UpdateGuide()                              
-                --ui:createWidgetGuide(main.btnBag, "UI/main/bag.png", false)
-            end]]--
-        end
-    end
-    self:registerScriptHandler(onNodeEvent)
 end
 
 function UIAchieve:createUI()
@@ -71,25 +54,6 @@ function UIAchieve:createUI()
 
     local function onGetAwardTouched(sender, event)   
         CMD_ACHIEVE_AWARD(sender:getTag())     
-        --[[
-        local achieve = sender:getTag()
-        if achieve == 1 then
-            addItem(5502, 20)
-            addItem(4004, 100)
-        elseif achieve == 4 then
-            addItem(4001, 10000)
-            addItem(4004, 122)
-        elseif achieve == 5 then
-            addItem(4001, 10000)
-            addItem(4004, 163)
-        end
-        ]]
-        --[[if MgrGuideStep == 8 or MgrGuideStep == 20 then
-            local hud = cc.Director:getInstance():getRunningScene().hud
-            hud:closeUI("UIGuide")
-            local ui = hud:openUI("UIGuide")            
-            ui:createWidgetGuide(self.btnClose, "UI/common/close.png", false)
-        end]]--
     end
 
     local function numOfCells(table)
@@ -224,15 +188,6 @@ function UIAchieve:UpdateAchieve()
 end
 
 function UIAchieve:UpdateGuide()
-    if MgrGuideStep == 8 or MgrGuideStep == 20 then
-        local hud = cc.Director:getInstance():getRunningScene().hud        
-        local cell = self.tableAchieve:cellAtIndex(0)
-        if cell.btnGet:isVisible() then
-            hud:closeUI("UIGuide")
-            local ui = hud:openUI("UIGuide")    
-            ui:createWidgetGuide(cell.btnGet, "UI/pve/kstz.png", true)
-        end
-    end
 end
 
 function UIAchieve:onUpdateAchieve()
@@ -250,9 +205,6 @@ function UIAchieve:onUpdateAchieve()
     end
 
     self:UpdateAchieve()
-    if MgrGuideStep == 8 or MgrGuideStep == 20 then
-        self:UpdateGuide()
-    end
 end
 
 return UIAchieve

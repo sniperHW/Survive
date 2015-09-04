@@ -72,19 +72,13 @@ function SceneLoading:ctor()
         else
             if MgrPlayer[maincha.id] 
                 or self.mapID == 205
-                or self.mapID == 202
-                or MgrGuideStep == 4 
-                or MgrGuideStep == 15 then
+                or self.mapID == 202 then
                 
                 local scene = nil 
                 if self.mapID == 205 then
                     scene = require("SceneGarden").create(0)
                 else
-                    --if MgrGuideStep == 4 or MgrGuideStep == 17 then
-                     --   scene = require("SceneGuidePVE").create(targetMapID)
-                    --else
                     scene = require("SceneCity").create(targetMapID)
-                    --end
                 end
                 cc.Director:getInstance():replaceScene(scene)
             else

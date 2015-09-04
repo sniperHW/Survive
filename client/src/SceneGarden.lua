@@ -94,12 +94,6 @@ function SceneGarden:ctor()
             elseif sender == self.btnPVE then
                 curState = statePVE
                 self:walkTo({x = 55, y = 105})    
-                
-                --[[if MgrGuideStep == 19 then
-                    hud:closeUI("UIGuide")
-                    local ui = hud:openUI("UIGuide")
-                    ui:createClipNode()
-                end]]--
             end
             
             local function onDone()
@@ -107,14 +101,7 @@ function SceneGarden:ctor()
                 hud:closeUI("UIGuide")
                 local ui = hud:openUI("UIGuide")
                 ui:createClipNode(sender)
-            end
-            
-            --[[if MgrGuideStep >= 10 and MgrGuideStep <= 12 then
-                hud:closeUI("UIGuide")
-                local ui = hud:openUI("UIGuide")
-                ui:createClipNode()
-                self.guideSchID = cc.Director:getInstance():getScheduler():scheduleScriptFunc(onDone, 10, false)
-            end]]--            
+            end          
         else
             local hud = cc.Director:getInstance():getRunningScene().hud
             hud:closeUI("UIGuide")
@@ -267,29 +254,11 @@ function SceneGarden:ctor()
     local function onNodeEvent(event)
         local hud = cc.Director:getInstance():getRunningScene().hud
         if "enter" == event then
-            --[[if MgrGuideStep == 10 then
-                local ui = hud:openUI("UIGuide")
-                ui:createClipNode(self.btnFish)
-            elseif MgrGuideStep == 11 then
-                local ui = hud:openUI("UIGuide")
-                ui:createClipNode(self.btnGather)
-            elseif MgrGuideStep == 12 then
-                local ui = hud:openUI("UIGuide")
-                ui:createClipNode(self.btnSit)
-            elseif MgrGuideStep == 19 then
-                local ui = hud:openUI("UIGuide")
-                ui:createClipNode(self.btnPVE)
-            end]]--
         end
         
         if "exit" == event then
             cc.Director:getInstance():getScheduler():unscheduleScriptEntry(self.schedulerID)
             cc.SimpleAudioEngine:getInstance():stopMusic()
-            --[[
-            if MgrGuideStep == 17 then
-                
-            end
-            ]]
         end
     end
     self:registerScriptHandler(onNodeEvent)
@@ -534,30 +503,6 @@ function SceneGarden:OpenResult(action, count, reward_item)
     
     local function onGetTouched(sender, event)
         back:removeFromParent()
-        
-        local hud = cc.Director:getInstance():getRunningScene().hud
-        
-        --[[if MgrGuideStep == 10 then
-            local ui = hud:openUI("UIGuide")
-            ui:createClipNode(self.btnGather)
-            CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)  
-            MgrGuideStep = 11
-        elseif MgrGuideStep == 11 then
-            local ui = hud:openUI("UIGuide")
-            ui:createClipNode(self.btnSit)
-            CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
-            MgrGuideStep = 12
-        elseif MgrGuideStep == 12 then
-            CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
-            
-            local function onTalkEnd()
-                local ui = hud:openUI("UIGuide")
-                ui:createClipNode(self.btnBack)
-            end
-            
-            local ui = hud:openUI("UINPCTalk")            
-            ui:ShowTalk(10, onTalkEnd)
-        end]]--
     end
     
     local item1 = 0
@@ -570,22 +515,6 @@ function SceneGarden:OpenResult(action, count, reward_item)
     end
 
     local items = {{item1, count}, {4003, 1}, {4004, 2}}
-
-    --[[if MgrGuideStep >= 10 and MgrGuideStep <= 12 then
-        local strAwards = TableNewbie_Reward[MgrGuideStep].Guide_Reward
-        items = comm.parseMutilItems(strAwards)
-    end]]--
-    
-    --[[
-    if MgrGuideStep == 10 then
-        items = {{4001, 30000}, {5813, 50}}
-    elseif MgrGuideStep == 11 then
-        items = {{4003, 10000}, {5811, 100}}
-    elseif MgrGuideStep == 12 then
-        items = {{4004, 52}, {5812, 50}}
-    end
-    ]]
-    
     for i = 1, #items do
         local itemInfo = TableItem[items[i][1]]
         

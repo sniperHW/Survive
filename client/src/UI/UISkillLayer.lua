@@ -47,15 +47,6 @@ function UISkillLayer:ctor()
     
     local function onNodeEvent(event)
         if "enter" == event then
-            --[[if MgrGuideStep == 13 then
-                local hud = cc.Director:getInstance():getRunningScene().hud
-                hud:closeUI("UIGuide")
-                local ui = hud:openUI("UIGuide")
-
-                ui:createWidgetGuide(self.skillCell[1].iconSkill, 
-                    "UI/skill/KK.png", true)
-            end]]--            
-
             local weaponid = maincha.equip[2].id
             if weaponid > 5000 and weaponid < 5100 then
                 curWeapon = 1
@@ -64,17 +55,8 @@ function UISkillLayer:ctor()
             elseif weaponid > 5200 and weaponid < 5300 then
                 curWeapon = 3
             end
-            
             self:UpdateSkill()
         elseif "exit" == event then
-            --[[if MgrGuideStep == 13 then
-                local hud = cc.Director:getInstance():getRunningScene().hud
-                hud:closeUI("UIGuide")
-                --CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
-                --MgrGuideStep = 12
-                local main = hud:getUI("UIMainLayer")  
-                main.UpdateGuide()    
-            end]]
         end
     end
     self:registerScriptHandler(onNodeEvent)
@@ -149,13 +131,6 @@ function UISkillLayer:createLeft()
             end
             self:UpdateSkillInfo()
         end
-        
-        --[[if MgrGuideStep == 13 then            
-            local hud = cc.Director:getInstance():getRunningScene().hud
-            hud:closeUI("UIGuide")
-            local ui = hud:openUI("UIGuide")            
-            ui:createWidgetGuide(self.btnSkillHandle, "UI/common/k.png", true)
-        end]]
     end
     
     self.iconWeapon = self.createSprite("UI/skill/0DJ.png", {x = 340, y = 318}, {nodeSkill})
@@ -309,13 +284,6 @@ function UISkillLayer:createSkillInfo()
                 return
             end 
             CMD_UPGRADESKILL(curSkillID)
-            --[[if MgrGuideStep == 13 then            
-                local hud = cc.Director:getInstance():getRunningScene().hud
-                hud:closeUI("UIGuide")
-                local ui = hud:openUI("UIGuide")            
-                ui:createWidgetGuide(self.skillCell[2].iconSkill, 
-                    "UI/skill/KK.png", true)
-            end]]--
         else
             for key, value in pairs(allSkill[curWeapon]) do
                 if value == curSkillID then

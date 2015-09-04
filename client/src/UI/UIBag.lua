@@ -26,59 +26,6 @@ function UIBag:ctor()
     self:createBag()
     self:createCompound()
     self.createLabel(Lang.Bag, 24, {x = 490, y = 550}, nil, {self.nodeMid})
-    
-    local function onNodeEvent(event)
-        if "enter" == event then
-            --[[if MgrGuideStep == 6 then
-                local hud = cc.Director:getInstance():getRunningScene().hud        
-                local cell = self.tableBag:cellAtIndex(0)
-                
-                local equipIdx = 0
-                local bagdata = maincha.bag
-                if bagdata then
-                    for i = 1, 4 do
-                        local bagIdx = self.curBagItemsIdx[i]
-                        if bagIdx and nil ~= bagdata[bagIdx] then
-                            local itemInfo = TableItem[bagdata[bagIdx].id]
-                            if itemInfo.Item_Type >= 2 and 
-                                itemInfo.Item_Type <= 4 then
-                                equipIdx = i
-                                break
-                            end
-                        end
-                    end
-                end
-                
-                if equipIdx > 0 then
-                    hud:closeUI("UIGuide")
-                    local ui = hud:openUI("UIGuide")    
-                    ui:createWidgetGuide(cell.item[equipIdx].back, "UI/bag/iconB.png", true)
-                end
-            elseif MgrGuideStep == 15 then
-                local hud = cc.Director:getInstance():getRunningScene().hud 
-                hud:closeUI("UIGuide")
-                local ui = hud:openUI("UIGuide")    
-                ui:createWidgetGuide(self.btnBody[5], "UI/bag/icon.png", false)
-            end]]--
-        end
-
-        if "exit" == event then
-            --[[if MgrGuideStep == 6 then         
-                local hud = cc.Director:getInstance():getRunningScene().hud        
-                hud:closeUI("UIGuide")  
-                
-                local main = hud:getUI("UIMainLayer")                                
-                main.UpdateGuide()
-            elseif MgrGuideStep == 15 then
-                CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
-                local hud = cc.Director:getInstance():getRunningScene().hud 
-                hud:closeUI("UIGuide")
-                local main = hud:getUI("UIMainLayer")                                
-                main.UpdateGuide()
-            end]]--
-        end
-    end
-    self:registerScriptHandler(onNodeEvent)
 end
 
 function UIBag:createEquip()
@@ -103,32 +50,6 @@ function UIBag:createEquip()
         
             bagState = bagStateTake
             self:UpdateBag()
-            
-            --[[if MgrGuideStep == 15 then
-                local hud = cc.Director:getInstance():getRunningScene().hud 
-                hud:closeUI("UIGuide")
-        
-                local cell = self.tableBag:cellAtIndex(0)
-                local equipIdx = 0
-                local bagdata = maincha.bag
-                if bagdata then
-                    for i = 1, 4 do
-                        local bagIdx = self.curBagItemsIdx[i]
-                        if bagIdx and nil ~= bagdata[bagIdx] then
-                            local itemInfo = TableItem[bagdata[bagIdx].id]
-                            if itemInfo.Tag == 0 then
-                                equipIdx = i
-                                break
-                            end
-                        end
-                    end
-                end
-
-                if equipIdx > 0 then
-                    local ui = hud:openUI("UIGuide")    
-                    ui:createWidgetGuide(cell.item[equipIdx].back, "UI/bag/iconB.png", true)
-                end
-            end]]--
         else    
             local cellPos = sender:getPosition3D()
             local parent = sender:getParent()
@@ -564,14 +485,6 @@ function UIBag:createBag()
                     if itemInfo.Tag == 0 and bagState == bagStateTake then
                         CMD_LOADBATTLEITEM(bagdata[bagIdx].bagpos)
                         bagState = bagSateNormal
-                        
-                        if MgrGuideStep == 15 then              
-                            local hud = cc.Director:getInstance():getRunningScene().hud        
-                            hud:closeUI("UIGuide")              
-                            local ui = hud:openUI("UIGuide")
-                            local bag = hud:getUI("UIBag")    
-                            ui:createWidgetGuide(bag.btnClose, "UI/common/close.png", false)
-                        end
                     --[[                        
                     elseif TableStone[itemid] then
                         self:UpdateCompound(itemid)

@@ -448,7 +448,6 @@ SuperReg(function (rpk)
                 Pseudo.BegPlay(1004)
                 clearMaincha()
 			elseif round == 1004 or round == 1003 then
-			    CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
                 local ui = hud:openUI("UIPVEResult")
                 local copy = TableSingle_Copy_Balance[round]
             	local awards = {{id = 4001, count = copy.Shell},
@@ -497,25 +496,13 @@ SuperReg(function (rpk)
     
     local scheduleID = nil
     local function openPVE()
-        --[[if MgrGuideStep == 19 then
-            local scene = require("SceneLogin").create()
-            cc.Director:getInstance():replaceScene(scene)
-            scene:setOpenUI("UIMainLayer")
-            MgrPlayer = {}
-        else]]
-            hud:closeUI("UIPVEResult")
-            hud:openUI("UIPVE")
-        --end
+        hud:closeUI("UIPVEResult")
+        hud:openUI("UIPVE")
         local scheduler = cc.Director:getInstance():getScheduler()
         scheduler:unscheduleScriptEntry(scheduleID)
     end
     local scheduler = cc.Director:getInstance():getScheduler()
     scheduleID = scheduler:scheduleScriptFunc(openPVE, 3, false)
-    
-    --if MgrGuideStep == 19 then
-     --   CMD_COMMIT_INTRODUCE_STEP(MgrGuideStep)
-    --end
-    
     for idx = 1, #scene.stars do
         scene.stars[idx]:removeFromParent()
     end

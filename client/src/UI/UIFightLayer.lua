@@ -167,13 +167,6 @@ function UIFightLayer:createLeftTop()
                 ccui.Scale9Sprite:create("UI/fight/dianjimoshi.png"), 
                 cc.CONTROL_STATE_NORMAL)
         end
-        
-        --if MgrGuideStep == 4 then
-            --local scene = cc.Director:getInstance():getRunningScene()
-            --local hud = scene.hud
-            --hud:closeUI("UIGuide")
-            self:createGuideRocker()
-        --end
     end
     
     local icon = nil
@@ -306,10 +299,6 @@ function UIFightLayer:createSkillNode()
     self:addChild(nodeRightButtom)
     self.nodeRightButtom = nodeRightButtom
 
-    if MgrGuideStep == 4 then
-        self.nodeRightButtom:setVisible(false)
-    end
-
     --self.createSprite("UI/fight/iconSkill.png", {x = -110, y = 119}, {nodeRightButtom})    
     --self.createSprite("icon/skillIcon/jianqi.png", {x = -68, y = 85}, {nodeRightButtom})
 
@@ -377,23 +366,11 @@ function UIFightLayer:createSkillNode()
         	   local skillID = MgrSkill.BaseSkill[lastBaseSkillIdx] 
         	   useSkill(skillID)
            end
-           
-           --[[if MgrGuideStep == 4 then
-                local hud = cc.Director:getInstance():getRunningScene().hud
-                hud:closeUI("UIGuide")
-                local ui = hud:openUI("UIGuide")
-           end]]--
-            
     	   return 
     	end
     	
     	for key, value in pairs(self.btnSkill) do
     		if value == sender then
-    		    --[[if MgrGuideStep == 4 then
-                    local hud = cc.Director:getInstance():getRunningScene().hud
-                    hud:closeUI("UIGuide")
-                end]]--
-    		    
                 local skillID = MgrSkill.EquipedSkill[key]
                 useSkill(skillID)
    		   end
@@ -643,12 +620,7 @@ function UIFightLayer:createItems()
             
             self.useItem[bagPos-4].cdEff:runAction(ac)            
             
-            if skillInfo then             
-                if MgrGuideStep == 17 then
-                    local hud = cc.Director:getInstance():getRunningScene().hud
-                    hud:closeUI("UIGuide")
-                end
-                
+            if skillInfo then                    
                 item.count = item.count - 1     
                 self.useItem[bagPos-4].lblNum:setString(item.count)          
                 if skillInfo.Attack_Types == 3 then --target self
@@ -792,12 +764,7 @@ function UIFightLayer:CreateJoyStick()
             
             player:Walk()
             self.moveSchID = scheduler:scheduleScriptFunc(moveTick, 0, false)
-            MgrControl.bTouchJoyStick = true
-            
-            --[[if MgrGuideStep == 4 then
-                self:createGuideBaseSkill()
-            end]]--
-            
+            MgrControl.bTouchJoyStick = true            
             return true
         end 
         return false

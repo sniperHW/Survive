@@ -21,7 +21,7 @@ while(list($ip,$info) = each($machine_status)){
 	if($first){
 		$first = false;
 	}else{
-		$outputstr = $outputstr + ",";
+		$outputstr = $outputstr . ",";
 	}
 	$outputstr = $outputstr . "{\"ip\":\"$ip\",\"status\":" . base64_decode($info) . "}";
 }

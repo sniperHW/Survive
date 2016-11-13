@@ -211,12 +211,14 @@
 					var tmp1 = PhysicalTree[machinedata[i].ip];
 					tmp1.machine	= machinedata[i].status[0];
 					tmp1.process = {};
-					var tmp2 = DeployPhyTree[machinedata[i].ip]
-					var tmp3 = machinedata[i].status[1];
-					for(var j = 0,len2 = tmp2.length; j < len2;j++){
-						var process = match(tmp2[j][0],tmp3);
-						if(process){
-							tmp1.process[tmp2[j][0]] = process;
+					var tmp2 = DeployPhyTree[machinedata[i].ip];
+					if(tmp2 != null){
+						var tmp3 = machinedata[i].status[1];
+						for(var j = 0,len2 = tmp2.length; j < len2;j++){
+							var process = match(tmp2[j][0],tmp3);
+							if(process){
+								tmp1.process[tmp2[j][0]] = process;
+							}
 						}
 					}	
 				}
